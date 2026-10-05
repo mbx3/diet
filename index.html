@@ -1,0 +1,3377 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E6171">
+<meta name="description" content="طراحی برنامه رژیم با فهرست جانشینی و ساخت فایل Word و PDF">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="برنامه‌ساز">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>برنامه‌ساز رژیم</title>
+<style>
+/* Layout: یک ستون موبایل‌محور در سه گام (بیمار، برنامه، خروجی)؛ نوار گام‌ها بالا و دکمه اصلی پایین ثابت */
+:root {
+  --bg: #F1F5F4; --surface: #FFFFFF; --surface-2: #E8EFEE; --ink: #1B2426; --muted: #5A696C; --line: #D3DDDC;
+  --teal: #2E6171; --teal-strong: #224B58; --teal-soft: #DCEAED; --on-teal: #FFFFFF;
+  --gold: #9C7A12; --gold-soft: #F4EAC6; --carb: #2E6171; --prot: #C9A227; --fat: #6F7F82;
+  --ok: #2E7A4C; --ok-soft: #DDF0E4; --warn: #9A5A06; --warn-soft: #FBEBD2; --danger: #B42318; --danger-soft: #FBE1DE;
+  --font-body: "Vazirmatn", "Noto Sans Arabic", Tahoma, sans-serif;
+  --font-display: "Noto Kufi Arabic", "Vazirmatn", Tahoma, sans-serif;
+  --r: 12px; --shadow: 0 1px 2px rgba(20, 40, 45, .06), 0 6px 18px rgba(20, 40, 45, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1415; --surface: #162022; --surface-2: #1C292C; --ink: #E5EDED; --muted: #9AAEB0; --line: #2A3B3E;
+    --teal: #6CB2C3; --teal-strong: #8AC5D3; --teal-soft: #173339; --on-teal: #0B1A1E;
+    --gold: #D9B444; --gold-soft: #3A3116; --carb: #6CB2C3; --prot: #D9B444; --fat: #8D9EA1;
+    --ok: #5CC08A; --ok-soft: #173426; --warn: #E8A23A; --warn-soft: #3A2A12; --danger: #F07063; --danger-soft: #3D1C1A;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1415; --surface: #162022; --surface-2: #1C292C; --ink: #E5EDED; --muted: #9AAEB0; --line: #2A3B3E;
+  --teal: #6CB2C3; --teal-strong: #8AC5D3; --teal-soft: #173339; --on-teal: #0B1A1E;
+  --gold: #D9B444; --gold-soft: #3A3116; --carb: #6CB2C3; --prot: #D9B444; --fat: #8D9EA1;
+  --ok: #5CC08A; --ok-soft: #173426; --warn: #E8A23A; --warn-soft: #3A2A12; --danger: #F07063; --danger-soft: #3D1C1A;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.7;
+  direction: rtl; -webkit-text-size-adjust: 100%; }
+.app { max-width: 720px; margin-inline: auto; padding-inline: 16px; padding-block: 0 140px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; }
+button, input, textarea, select { font: inherit; color: inherit; }
+.num, .tab-num { font-variant-numeric: tabular-nums; }
+
+/* سربرگ */
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 18px 10px; }
+.brand h1 { font-size: 21px; font-weight: 800; letter-spacing: 0; color: var(--ink); }
+.brand p { margin: 0; font-size: 13px; color: var(--muted); }
+.ghost { background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 13px;
+  cursor: pointer; color: var(--ink); white-space: nowrap; }
+.ghost:hover { border-color: var(--teal); }
+
+/* گام‌ها */
+.steps { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 6px 10px; }
+.steps-in { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 999px; }
+.steps button { border: 0; background: transparent; border-radius: 999px; padding: 8px 6px; cursor: pointer; font-weight: 500;
+  font-size: 14px; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.steps button .tab-num { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px;
+  background: var(--surface); color: var(--muted); }
+.steps button[aria-selected="true"] { background: var(--teal); color: var(--on-teal); }
+.steps button[aria-selected="true"] .tab-num { background: var(--on-teal); color: var(--teal); }
+.steps button:disabled { opacity: .45; cursor: not-allowed; }
+
+.notice { display: flex; gap: 10px; align-items: flex-start; background: var(--gold-soft); color: var(--ink); border-radius: var(--r);
+  padding: 10px 14px; font-size: 13.5px; margin-block: 4px 12px; }
+.notice b { color: var(--gold); }
+
+/* فرم */
+section.block { padding-block: 16px; border-bottom: 1px solid var(--line); }
+section.block:last-of-type { border-bottom: 0; }
+.block h2 { font-size: 15px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+.block h2 small { font-family: var(--font-body); font-weight: 400; font-size: 12.5px; color: var(--muted); }
+.grid { display: grid; gap: 10px 12px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.c2 { grid-column: span 2; } .c3 { grid-column: span 3; } .c6 { grid-column: span 6; }
+@media (max-width: 460px) { .m3 { grid-column: span 3; } .m6 { grid-column: span 6; } }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field label { font-size: 13px; color: var(--muted); }
+.field input, .field textarea { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); padding: 8px 12px; outline: none; }
+.field textarea { min-height: 48px; resize: vertical; overflow: hidden; line-height: 1.8; font-size: 14px; }
+.field input:focus, .field textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); }
+.field input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.field .err { color: var(--danger); font-size: 12.5px; min-height: 0; }
+.unit-in { position: relative; }
+.unit-in input { padding-left: 48px; }
+.unit-in span { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); pointer-events: none; }
+
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 12px; }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 7px 12px; cursor: pointer; font-size: 14px; color: var(--ink); min-height: 36px; }
+.seg button[aria-checked="true"] { background: var(--surface); color: var(--teal); font-weight: 700; box-shadow: var(--shadow); }
+.seg.full { display: grid; grid-template-columns: repeat(var(--n, 3), 1fr); width: 100%; }
+.seg:focus-within { outline: 2px solid var(--teal-soft); }
+.hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+.acts { display: grid; gap: 6px; }
+.act { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; border: 1px solid var(--line);
+  border-radius: 12px; padding: 10px 12px; background: var(--surface); cursor: pointer; text-align: start; width: 100%; }
+.act[aria-checked="true"] { border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal-soft); }
+.act .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); }
+.act[aria-checked="true"] .dot { border: 5px solid var(--teal); }
+.act b { font-weight: 700; font-size: 14px; display: block; }
+.act small { color: var(--muted); font-size: 12.5px; }
+.act .pal { font-size: 12.5px; color: var(--muted); direction: ltr; }
+
+.prefs { display: grid; gap: 8px; }
+.pref { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 10px; }
+.pref span { font-size: 14px; }
+.pref .seg { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); }
+
+details.adv { margin-top: 4px; }
+details.adv summary { cursor: pointer; color: var(--teal); font-size: 14px; padding-block: 6px; }
+.sumline { font-size: 12.5px; color: var(--muted); }
+.chipbtn { border: 1px dashed var(--teal); color: var(--teal); background: transparent; border-radius: 999px; padding: 2px 10px;
+  font-size: 12.5px; cursor: pointer; margin-top: 4px; align-self: flex-start; }
+
+/* نوار پایین */
+.bar { position: fixed; inset-inline: 0; bottom: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px); border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 720px; margin-inline: auto; display: flex; gap: 10px; align-items: center; }
+.primary { flex: 1; border: 0; border-radius: 12px; background: var(--teal); color: var(--on-teal); font-weight: 700; font-size: 16px;
+  min-height: 50px; cursor: pointer; }
+.primary:hover { background: var(--teal-strong); }
+.primary:disabled { opacity: .55; cursor: progress; }
+.secondary { border: 1px solid var(--teal); color: var(--teal); background: var(--surface); border-radius: 12px; min-height: 50px;
+  padding-inline: 18px; font-weight: 700; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+/* نتایج */
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 12px; }
+.card { background: var(--surface); border-radius: var(--r); padding: 12px 14px; box-shadow: var(--shadow); min-width: 0; }
+.card.wide { grid-column: span 2; }
+.card h3 { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; font-family: var(--font-body); }
+.big { font-size: 26px; font-weight: 800; line-height: 1.3; }
+.chip { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 12.5px; font-weight: 700; }
+.chip.ok { background: var(--ok-soft); color: var(--ok); } .chip.warn { background: var(--warn-soft); color: var(--warn); }
+.chip.bad { background: var(--danger-soft); color: var(--danger); } .chip.info { background: var(--teal-soft); color: var(--teal); }
+.kv { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.kv b { color: var(--ink); font-weight: 600; }
+.chain { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 8px; margin-top: 6px; }
+.chain .n { display: flex; flex-direction: column; align-items: center; }
+.chain .n b { font-size: 19px; font-weight: 800; line-height: 1.3; }
+.chain .n small { font-size: 11.5px; color: var(--muted); }
+.chain .op { font-size: 18px; color: var(--muted); padding-bottom: 14px; }
+.chain .n.goal b { color: var(--teal); }
+.macro-bar { display: flex; height: 12px; border-radius: 999px; overflow: hidden; margin-block: 8px 6px; background: var(--surface-2); }
+.macro-bar i { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; }
+.legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-inline-end: 6px; background: var(--c); }
+
+.tablewrap { overflow-x: auto; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); }
+table.plan { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 330px; }
+.plan th, .plan td { padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--line); }
+.plan thead th { background: var(--teal); color: var(--on-teal); font-weight: 700; font-size: 12.5px; position: sticky; top: 0; }
+.plan th[scope="row"] { text-align: start; padding-inline: 10px 4px; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.plan td.cell { cursor: pointer; font-weight: 600; }
+.plan td.cell.zero { color: var(--muted); font-weight: 400; }
+.plan td.cell[aria-selected="true"] { background: var(--teal-soft); outline: 2px solid var(--teal); outline-offset: -2px; }
+.plan td.kc { color: var(--muted); font-size: 13px; }
+.plan tfoot td, .plan tfoot th { background: var(--surface-2); font-weight: 800; border-bottom: 0; }
+.plan tfoot td.kc { color: var(--teal); }
+.planmeta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; font-size: 13.5px; }
+.linkbtn { background: none; border: 0; color: var(--teal); cursor: pointer; padding: 0; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; }
+
+.warns { display: grid; gap: 6px; margin-block: 12px; }
+.warns div { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; }
+.warns div::before { content: "!"; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--warn); color: var(--surface); font-weight: 800; font-size: 12px; margin-inline-end: 8px; }
+
+.menu-item { display: grid; gap: 4px; margin-bottom: 10px; }
+.menu-item .lab { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; font-weight: 700; }
+.menu-item .lab small { font-weight: 400; color: var(--muted); }
+.stale { color: var(--warn); font-size: 12.5px; }
+
+.stepper { position: fixed; inset-inline: 0; bottom: 0; z-index: 12; background: var(--surface); border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, .08); padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.stepper-in { max-width: 720px; margin-inline: auto; display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 10px; }
+.stepper .what { font-size: 13.5px; }
+.stepper .what b { display: block; font-size: 15px; }
+.stepper .val { min-width: 54px; text-align: center; font-size: 22px; font-weight: 800; }
+.round { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--teal); background: var(--surface); color: var(--teal);
+  font-size: 24px; line-height: 1; cursor: pointer; }
+.round.fill { background: var(--teal); color: var(--on-teal); }
+.closeb { grid-column: 1 / -1; justify-self: start; }
+
+/* خروجی */
+.paper { display: grid; place-items: center; background: var(--surface-2); border-radius: var(--r); padding: 16px; margin-block: 12px; }
+.paper canvas { width: min(100%, 340px); height: auto; box-shadow: var(--shadow); border-radius: 2px; background: #fff; }
+.paper p { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.exports { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.exports button { min-height: 54px; }
+.exports .share { grid-column: 1 / -1; }
+.top-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.status { min-height: 24px; font-size: 13.5px; margin-top: 10px; }
+.status.ok { color: var(--ok); } .status.bad { color: var(--danger); }
+.privacy { font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+.copybox { margin-top: 18px; }
+.copybox code { display: block; direction: rtl; text-align: right; font-size: 12px; background: var(--surface-2); border-radius: 8px;
+  padding: 8px 10px; overflow-x: auto; white-space: pre; user-select: all; }
+.empty { text-align: center; color: var(--muted); padding-block: 40px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@600;800&family=Vazirmatn:wght@400;500;700;800&display=swap">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <h1>برنامه‌ساز رژیم</h1>
+      <p>دکتر محمد بذرافشان · تغذیه و مدیریت وزن</p>
+    </div>
+    <div class="top-actions">
+      <button class="ghost" id="btn-install" type="button" hidden>نصب روی گوشی</button>
+      <button class="ghost" id="btn-new" type="button">بیمار جدید</button>
+    </div>
+  </header>
+
+  <nav class="steps" aria-label="گام‌ها">
+    <div class="steps-in" role="tablist">
+      <button role="tab" id="tab-patient" aria-controls="pane-patient" aria-selected="true" data-tab="patient" type="button"><span class="tab-num">۱</span>بیمار</button>
+      <button role="tab" id="tab-plan" aria-controls="pane-plan" aria-selected="false" data-tab="plan" type="button"><span class="tab-num">۲</span>برنامه</button>
+      <button role="tab" id="tab-export" aria-controls="pane-export" aria-selected="false" data-tab="export" type="button"><span class="tab-num">۳</span>خروجی</button>
+    </div>
+  </nav>
+
+  <!-- ۱. بیمار -->
+  <main id="pane-patient" role="tabpanel" aria-labelledby="tab-patient">
+    <div class="notice" id="sample-note" hidden><b>نمونه</b><span>این فرم با یک بیمار نمونه پر شده تا خروجی را ببینید. برای بیمار واقعی «بیمار جدید» را بزنید.</span></div>
+    <form id="form" novalidate>
+      <section class="block">
+        <h2>مشخصات بیمار</h2>
+        <div class="grid">
+          <div class="field c6"><label for="f-name">نام و نام خانوادگی</label><input id="f-name" autocomplete="off"></div>
+          <div class="field c3"><label for="f-file">شماره پرونده</label><input id="f-file" inputmode="numeric" autocomplete="off"></div>
+          <div class="field c3"><label>جنس</label>
+            <div class="seg full" style="--n:2" role="radiogroup" aria-label="جنس" data-name="sex">
+              <button type="button" role="radio" data-value="f">زن</button><button type="button" role="radio" data-value="m">مرد</button>
+            </div></div>
+          <div class="field c2 m6"><label for="f-age">سن</label><div class="unit-in"><input id="f-age" inputmode="numeric" autocomplete="off"><span>سال</span></div><div class="err" id="e-age"></div></div>
+          <div class="field c2 m3"><label for="f-height">قد</label><div class="unit-in"><input id="f-height" inputmode="decimal" autocomplete="off"><span>سانتی‌متر</span></div><div class="err" id="e-height"></div></div>
+          <div class="field c2 m3"><label for="f-weight">وزن</label><div class="unit-in"><input id="f-weight" inputmode="decimal" autocomplete="off"><span>کیلوگرم</span></div><div class="err" id="e-weight"></div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>اندازه‌ها <small>اختیاری؛ در سند چاپ می‌شوند</small></h2>
+        <div class="grid">
+          <div class="field c2 m3"><label for="f-waist">دور کمر</label><div class="unit-in"><input id="f-waist" inputmode="decimal"><span>سانتی‌متر</span></div></div>
+          <div class="field c2 m3"><label for="f-abdomen">دور شکم</label><div class="unit-in"><input id="f-abdomen" inputmode="decimal"><span>سانتی‌متر</span></div></div>
+          <div class="field c2 m3"><label for="f-thigh">دور ران</label><div class="unit-in"><input id="f-thigh" inputmode="decimal"><span>سانتی‌متر</span></div></div>
+          <div class="field c2 m3"><label for="f-wrist">دور مچ</label><div class="unit-in"><input id="f-wrist" inputmode="decimal"><span>سانتی‌متر</span></div></div>
+          <div class="field c2 m3"><label for="f-fat">درصد چربی</label><div class="unit-in"><input id="f-fat" inputmode="decimal"><span>٪</span></div></div>
+          <div class="field c2 m3"><label for="f-steps">قدم روزانه فعلی</label><div class="unit-in"><input id="f-steps" inputmode="numeric"><span>قدم</span></div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>فعالیت روزانه</h2>
+        <div class="acts" role="radiogroup" aria-label="سطح فعالیت" id="acts"></div>
+      </section>
+
+      <section class="block">
+        <h2>هدف و نوع برنامه</h2>
+        <div class="grid">
+          <div class="field c6"><label>هدف</label>
+            <div class="seg full" style="--n:3" role="radiogroup" aria-label="هدف" data-name="goal">
+              <button type="button" role="radio" data-value="lose">کاهش وزن</button><button type="button" role="radio" data-value="maintain">تثبیت وزن</button><button type="button" role="radio" data-value="gain">افزایش وزن</button>
+            </div></div>
+          <div class="field c6" id="deficit-field"><label>کسری کالری روزانه</label>
+            <div class="seg full" style="--n:4" role="radiogroup" aria-label="کسری کالری" data-name="deficit">
+              <button type="button" role="radio" data-value="250">۲۵۰</button><button type="button" role="radio" data-value="500">۵۰۰</button><button type="button" role="radio" data-value="750">۷۵۰</button><button type="button" role="radio" data-value="1000">۱۰۰۰</button>
+            </div>
+            <div class="hint">۵۰۰ تا ۷۵۰ کیلوکالری کسری طبق رهنمود AHA/ACC/TOS؛ کالری هدف کمتر از ۱۲۰۰ (زن) یا ۱۵۰۰ (مرد) نمی‌شود.</div></div>
+          <div class="field c6" id="surplus-field" hidden><label>اضافه کالری روزانه</label>
+            <div class="seg full" style="--n:3" role="radiogroup" aria-label="اضافه کالری" data-name="surplus">
+              <button type="button" role="radio" data-value="250">۲۵۰</button><button type="button" role="radio" data-value="300">۳۰۰</button><button type="button" role="radio" data-value="500">۵۰۰</button>
+            </div></div>
+          <div class="field c6"><label>نوع برنامه</label>
+            <div class="seg full" style="--n:3" role="radiogroup" aria-label="نوع برنامه" data-name="planType">
+              <button type="button" role="radio" data-value="Normal">عادی</button><button type="button" role="radio" data-value="DASH">DASH</button><button type="button" role="radio" data-value="Diabetic">دیابت</button>
+            </div>
+            <div class="hint" id="plan-hint"></div></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>ترجیحات بیمار <small>گروه‌هایی که کمتر یا بیشتر بخورد</small></h2>
+        <div class="prefs" id="prefs"></div>
+        <details class="adv" id="adv">
+          <summary>تنظیمات پیشرفته</summary>
+          <div class="grid" style="margin-top:8px">
+            <div class="field c6"><label for="f-kcal">کالری دستی (اختیاری)</label><div class="unit-in"><input id="f-kcal" inputmode="numeric" placeholder="خالی = محاسبه خودکار"><span>kcal</span></div><div class="err" id="e-kcal"></div></div>
+            <div class="field c2"><label for="f-c">کربوهیدرات ٪</label><input id="f-c" inputmode="numeric" placeholder="خودکار"></div>
+            <div class="field c2"><label for="f-p">پروتئین ٪</label><input id="f-p" inputmode="numeric" placeholder="خودکار"></div>
+            <div class="field c2"><label for="f-f">چربی ٪</label><input id="f-f" inputmode="numeric" placeholder="خودکار"></div>
+            <div class="c6 sumline" id="macro-sum">اگر هر سه خالی باشند، درصدها از نوع برنامه و ترجیحات محاسبه می‌شوند.</div>
+          </div>
+        </details>
+      </section>
+
+      <section class="block">
+        <h2>اطلاعات سند</h2>
+        <div class="grid">
+          <div class="field c3"><label for="f-date">تاریخ تنظیم</label><input id="f-date" autocomplete="off"></div>
+          <div class="field c3"><label for="f-target">وزن هدف این دوره</label><div class="unit-in"><input id="f-target" inputmode="decimal" autocomplete="off"><span>کیلوگرم</span></div>
+            <button type="button" class="chipbtn" id="target-suggest" hidden></button></div>
+          <div class="field c6"><label>مراجعه بعدی</label>
+            <div class="seg full" style="--n:4" role="radiogroup" aria-label="فاصله تا مراجعه بعدی" data-name="weeks">
+              <button type="button" role="radio" data-value="1">۱ هفته</button><button type="button" role="radio" data-value="2">۲ هفته</button><button type="button" role="radio" data-value="3">۳ هفته</button><button type="button" role="radio" data-value="4">۴ هفته</button>
+            </div></div>
+          <div class="field c6"><label for="f-next">تاریخ مراجعه بعدی</label><input id="f-next" autocomplete="off"></div>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <!-- ۲. برنامه -->
+  <main id="pane-plan" role="tabpanel" aria-labelledby="tab-plan" hidden>
+    <div id="plan-empty" class="empty">اول اطلاعات بیمار را وارد کنید و «طراحی برنامه» را بزنید.</div>
+    <div id="plan-body" hidden>
+      <div class="notice" id="plan-sample" hidden><b>نمونه</b><span>این برنامه برای یک بیمار نمونه است. برای بیمار واقعی «بیمار جدید» را بزنید.</span></div>
+      <div class="cards">
+        <div class="card"><h3>نمایه توده بدنی</h3><div class="big num" id="r-bmi"></div><span class="chip" id="r-bmi-chip"></span>
+          <div class="kv" id="r-range"></div></div>
+        <div class="card"><h3>دور کمر</h3><div id="r-waist"></div></div>
+        <div class="card wide"><h3>انرژی روزانه</h3><div class="chain" id="r-chain"></div><div class="kv" id="r-chain-note"></div></div>
+        <div class="card wide"><h3>درشت‌مغذی‌های برنامه</h3><div class="macro-bar" id="r-bar"></div><div class="legend" id="r-legend"></div>
+          <div class="kv" id="r-protein"></div></div>
+      </div>
+      <div class="warns" id="r-warns"></div>
+      <section class="block" style="border:0;padding-top:4px">
+        <h2>جدول واحدها <small>برای تغییر، روی هر عدد بزنید</small></h2>
+        <div class="tablewrap"><table class="plan" id="plan-table"></table></div>
+        <div class="planmeta"><span id="r-diff"></span><button type="button" class="linkbtn" id="btn-reset">بازگرداندن پیشنهاد اولیه</button></div>
+      </section>
+      <section class="block">
+        <h2>نمونه منوی یک روز <small>قابل ویرایش؛ همین متن در سند می‌آید</small></h2>
+        <div id="menu-editor"></div>
+      </section>
+      <section class="block">
+        <h2>نسخه ورزشی</h2>
+        <div id="rx-editor"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ۳. خروجی -->
+  <main id="pane-export" role="tabpanel" aria-labelledby="tab-export" hidden>
+    <div id="export-empty" class="empty">اول برنامه را طراحی کنید.</div>
+    <div id="export-body" hidden>
+      <section class="block" style="border:0">
+        <h2>محتوای فایل</h2>
+        <div class="seg full" style="--n:2" role="radiogroup" aria-label="محتوای فایل" data-name="scope">
+          <button type="button" role="radio" data-value="full">کامل با راهنما</button><button type="button" role="radio" data-value="personal">فقط برنامه شخصی</button>
+        </div>
+        <div class="hint">«فقط برنامه شخصی» دو صفحه اول است و برای مراجعه‌های بعدی کافی است.</div>
+        <div class="paper"><canvas id="preview" width="340" height="481" aria-label="پیش‌نمایش صفحه اول"></canvas><p id="preview-note">پیش‌نمایش صفحه اول</p></div>
+        <div class="exports">
+          <button type="button" class="secondary" id="btn-docx">دانلود Word</button>
+          <button type="button" class="primary" id="btn-pdf">دانلود PDF</button>
+          <button type="button" class="secondary share" id="btn-share" hidden>ارسال PDF (واتس‌اپ، تلگرام و…)</button>
+        </div>
+        <div class="status" id="status" role="status" aria-live="polite"></div>
+        <p class="privacy">اطلاعات بیمار فقط روی همین دستگاه پردازش می‌شود و به جایی فرستاده نمی‌شود. Word با فونت B Nazanin و PDF با فونت وزیرمتن ساخته می‌شود.</p>
+        <div class="copybox">
+          <h2 style="font-size:14px">ردیف برای فایل اکسل بیماران</h2>
+          <code id="tsv"></code>
+          <button type="button" class="chipbtn" id="btn-copy">کپی ردیف</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div class="bar" id="bar"><div class="bar-in">
+  <button type="button" class="primary" id="btn-main">طراحی برنامه</button>
+</div></div>
+
+<div class="stepper" id="stepper" hidden><div class="stepper-in">
+  <div class="what" id="st-what"></div>
+  <button type="button" class="round" id="st-minus" aria-label="نیم واحد کمتر">−</button>
+  <div class="val num" id="st-val"></div>
+  <button type="button" class="round fill" id="st-plus" aria-label="نیم واحد بیشتر">+</button>
+  <button type="button" class="linkbtn closeb" id="st-close">بستن</button>
+</div></div>
+
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"] };</script>
+<script>
+/* ---- fa.js ---- */
+/* قالب‌بندی فارسی: ارقام، کسرها، پیمانه‌ها، تاریخ شمسی */
+(function (root) {
+  'use strict';
+  const DIG = '۰۱۲۳۴۵۶۷۸۹';
+  const WORDS = ['صفر', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه', 'ده', 'یازده', 'دوازده', 'سیزده',
+    'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده', 'بیست'];
+
+  function digits(s) { return String(s).replace(/[0-9]/g, (d) => DIG[+d]); }
+
+  /** عدد با حداکثر `dec` رقم اعشار، ارقام فارسی و ممیز «٫» (صفرهای انتهایی حذف می‌شوند) */
+  function num(x, dec = 1) {
+    if (x === null || x === undefined || Number.isNaN(+x)) return '';
+    const p = Math.pow(10, dec);
+    const r = Math.round((+x) * p) / p;
+    let s = r.toFixed(dec);
+    if (s.indexOf('.') >= 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return digits(s.replace('.', '٫'));
+  }
+
+  /** نیم‌واحدها به حروف: ۰٫۵ «نصف»، ۱٫۵ «یک و نیم»، ۲ «دو» */
+  function words(x) {
+    const whole = Math.floor(x + 1e-9);
+    const half = Math.abs(x - whole - 0.5) < 1e-9;
+    if (whole === 0) return half ? 'نصف' : 'صفر';
+    const w = whole <= 20 ? WORDS[whole] : digits(whole);
+    return half ? `${w} و نیم` : w;
+  }
+
+  /** مقدار با واحد شمارشی: ۱ → «۱ لیوان»، ۱٫۵ → «یک و نیم لیوان»، ۰٫۵ → «نصف لیوان» */
+  function count(x, unit) {
+    const whole = Math.floor(x + 1e-9);
+    const half = Math.abs(x - whole - 0.5) < 1e-9;
+    if (!half) return `${digits(whole)} ${unit}`;
+    return `${words(x)} ${unit}`;
+  }
+
+  /** لیوان با کسرهای ۱/۴، ۱/۳، ۱/۲، ۲/۳، ۳/۴ */
+  function cups(c) {
+    const whole = Math.floor(c + 1e-9);
+    const frac = c - whole;
+    const near = (a) => Math.abs(frac - a) < 0.02;
+    let f = null;
+    if (near(0)) f = '';
+    else if (near(0.25)) f = 'یک‌چهارم';
+    else if (near(1 / 3)) f = 'یک‌سوم';
+    else if (near(0.5)) f = 'نیم';
+    else if (near(2 / 3)) f = 'دوسوم';
+    else if (near(0.75)) f = 'سه‌چهارم';
+    if (f === null) return null;
+    if (f === '') return `${digits(whole)} لیوان`;
+    if (whole === 0) return `${f === 'نیم' ? 'نصف' : f} لیوان`;
+    return `${WORDS[whole] || digits(whole)} و ${f} لیوان`;
+  }
+
+  /** برنج پخته: هر واحد یک‌سوم لیوان (حدود ۵ قاشق غذاخوری) */
+  function riceQty(units) {
+    const c = units / 3;
+    const nice = cups(c);
+    if (nice) return nice;
+    const whole = Math.floor(c + 1e-9);
+    const tbsp = Math.round((c - whole) * 16);
+    if (whole === 0) return `${digits(tbsp)} قاشق غذاخوری`;
+    return `${digits(whole)} لیوان و ${digits(tbsp)} قاشق غذاخوری`;
+  }
+
+  function tsp(x) { return count(x, 'قاشق مرباخوری'); }
+
+  /** تبدیل میلادی به شمسی (الگوریتم رایج jdf) */
+  function g2j(gy, gm, gd) {
+    const gdm = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    let jy = gy <= 1600 ? 0 : 979;
+    gy -= gy <= 1600 ? 621 : 1600;
+    const gy2 = gm > 2 ? gy + 1 : gy;
+    let days = 365 * gy + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) - 80 + gd + gdm[gm - 1];
+    jy += 33 * Math.floor(days / 12053);
+    days %= 12053;
+    jy += 4 * Math.floor(days / 1461);
+    days %= 1461;
+    jy += Math.floor((days - 1) / 365);
+    if (days > 365) days = (days - 1) % 365;
+    const jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+    const jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+    return [jy, jm, jd];
+  }
+
+  function jalali(date) {
+    const [y, m, d] = g2j(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    return digits(`${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')}`);
+  }
+  function jalaliMonth(date) { return g2j(date.getFullYear(), date.getMonth() + 1, date.getDate())[1]; }
+
+  const FA = { digits, num, words, count, cups, riceQty, tsp, g2j, jalali, jalaliMonth, WORDS };
+  root.FA = FA;
+  if (typeof module !== 'undefined' && module.exports) module.exports = FA;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- content.js ---- */
+/* متن ثابت الگوی ورد (برگرفته از نسخه تأییدشده Bazrafshan-diet-plan-template.docx) */
+(function (root) {
+  const CONTENT = {
+ "title": "برنامه غذایی شخصی",
+ "patient_labels": [
+  [
+   "نام و نام خانوادگی",
+   "شماره پرونده",
+   "تاریخ تنظیم"
+  ],
+  [
+   "سن",
+   "قد",
+   "وزن"
+  ],
+  [
+   "BMI",
+   "وزن هدف",
+   "کالری روزانه"
+  ],
+  [
+   "دور کمر",
+   "دور شکم",
+   "دور ران"
+  ],
+  [
+   "دور مچ",
+   "درصد چربی",
+   "مراجعه بعدی"
+  ]
+ ],
+ "plan_title": "برنامه روزانه شما",
+ "plan_columns": [
+  "وعده",
+  "ساعت",
+  "نان و غلات",
+  "گوشت",
+  "چربی",
+  "لبنیات",
+  "میوه",
+  "سبزی",
+  "کالری"
+ ],
+ "meal_times": [
+  "۷ تا ۹",
+  "۱۰ تا ۱۱:۳۰",
+  "۱۳ تا ۱۴",
+  "۱۶ تا ۱۸",
+  "تا ساعت ۲۰",
+  "قبل از خواب"
+ ],
+ "plan_total_label": "جمع روزانه",
+ "how_to_read_title": "این جدول را چطور بخوانید؟",
+ "how_to_read_2": "اندازه یک واحد از هر غذا در بخش «راهنمای واحدها» آمده است. هر غذا را می‌توانید با غذای دیگری از همان گروه عوض کنید، ولی واحد یک گروه را به گروه دیگر منتقل نکنید.",
+ "menu_title": "نمونه منوی یک روز",
+ "menu_intro": "یک نمونه بر اساس جدول بالا. هر غذا را می‌توانید با جانشین‌های هم‌گروه از راهنمای واحدها عوض کنید.",
+ "menu_sample": [
+  [
+   "صبحانه",
+   "۴۵ گرم نان سنگک (حدود یک و نیم کف دست) + ۱۵ گرم پنیر سفید (نصف قوطی کبریت) + ۲ نیمه گردو + نصف لیوان شیر کم‌چرب + نصف پرتقال"
+  ],
+  [
+   "میان‌وعده صبح",
+   "۱ کیوی درشت"
+  ],
+  [
+   "ناهار",
+   "۱ لیوان و ۳ قاشق غذاخوری برنج پخته + ۴۵ گرم ماهی کبابی یا بخارپز + ۱ لیوان سالاد شیرازی. سهم روغن این وعده (نصف قاشق مرباخوری) را در پخت یا روی سالاد استفاده کنید."
+  ],
+  [
+   "میان‌وعده عصر",
+   "۱ لیوان شیر کم‌چرب + یک‌چهارم لیوان جو دوسر خشک"
+  ],
+  [
+   "شام",
+   "املت با ۱ تخم‌مرغ کامل، ۱ سفیده، ۱ لیوان گوجه‌فرنگی خردشده (خام) و نصف قاشق مرباخوری روغن + ۷۵ گرم نان سنگک، بربری یا تافتون (حدود دو و نیم کف دست) + نصف لیوان ماست کم‌چرب"
+  ],
+  [
+   "میان‌وعده شب",
+   "۱ پرتقال متوسط"
+  ]
+ ],
+ "rx_title": "نسخه ورزشی شما",
+ "rx_labels": [
+  "ورزش هوازی",
+  "شدت مناسب",
+  "تمرین قدرتی",
+  "قدم روزانه"
+ ],
+ "rx_sample": [
+  "۱۵۰ دقیقه در هفته؛ مثلاً ۵ روز، روزی ۳۰ دقیقه پیاده‌روی تند",
+  "ضربان قلب [حداقل] تا [حداکثر] در دقیقه؛ یعنی بتوانید حرف بزنید ولی نتوانید آواز بخوانید",
+  "۲ جلسه در هفته، در روزهای غیرمتوالی (حرکت‌ها در بخش «ورزش در کنار رژیم» آمده است)",
+  "میانگین فعلی: [قدم فعلی] ← هدف این دوره: [هدف قدم]"
+ ],
+ "notes_title": "نکات مهم",
+ "notes": [
+  "بین شام و خواب دست‌کم سه ساعت فاصله بگذارید (میان‌وعده سبک شب از این قاعده جداست).",
+  "همه وعده‌ها را سر وقت بخورید. اگر وعده‌ای جا ماند، سهم آن را به وعده بعد اضافه نکنید.",
+  "روزانه ۸ تا ۱۲ لیوان آب ساده بنوشید و چای، دوغ و نوشیدنی‌های دیگر را جای آن حساب نکنید. اگر پزشک مصرف مایعات شما را محدود کرده است (مثلاً در بیماری قلبی یا کلیوی)، طبق دستور او عمل کنید.",
+  "آب بیشتر خورش‌ها آزاد است؛ فقط روغن روی آن را بگیرید. خورش‌های پرچرب آزاد نیستند: خورش بادمجان و خورش کدو (با بادمجان یا کدوی سرخ‌شده)، فسنجان و قیمه با سیب‌زمینی سرخ‌کرده. تکه‌های گوشت و حبوبات داخل خورش را با راهنمای واحدها حساب کنید.",
+  "غذا را بیشتر به‌صورت آب‌پز، بخارپز یا کبابی آماده کنید. اگر چیزی را سرخ می‌کنید، روغن آن از سهم چربی همان وعده بیشتر نشود."
+ ],
+ "guide": {
+  "title": "راهنمای واحدها (جدول جانشینی)",
+  "intro": "هر گروه غذایی یک «واحد» دارد. همه غذاهای یک جدول، در اندازه‌ای که روبه‌رویشان نوشته شده، تقریباً یک واحد حساب می‌شوند و می‌توانید آن‌ها را به‌جای هم بخورید. اندازه‌ها برای غذای پخته و آماده خوردن است، مگر اینکه خلافش نوشته شده باشد.",
+  "measures_title": "پیمانه‌ها",
+  "measures": [
+   [
+    "لیوان",
+    "لیوان معمولی آب‌خوری، ۲۴۰ میلی‌لیتر"
+   ],
+   [
+    "قاشق غذاخوری",
+    "۱۵ میلی‌لیتر، لب‌به‌لب (نه سرپر)"
+   ],
+   [
+    "قاشق مرباخوری",
+    "۵ میلی‌لیتر"
+   ],
+   [
+    "قوطی کبریت",
+    "اندازه یک تکه پنیر حدوداً ۳۰ گرمی"
+   ],
+   [
+    "کف دست",
+    "برای نان؛ چون اندازه دست‌ها فرق دارد، بهتر است یک بار نان را وزن کنید (۳۰ گرم = ۱ واحد)"
+   ]
+  ],
+  "measures_tip": "چند روز اول نان، برنج و گوشت را با ترازو یا لیوان اندازه بگیرید تا چشمتان عادت کند. یک بار هم ببینید کفگیر برنج شما چند لیوان است. ۳۰ گرم گوشت پخته تقریباً برابر ۴۰ گرم گوشت خام است.",
+  "units_title": "ارزش هر واحد",
+  "units_columns": [
+   "گروه",
+   "هر واحد تقریباً دارد",
+   "کالری هر واحد"
+  ],
+  "units": [
+   [
+    "نان و غلات",
+    "۱۵ گرم کربوهیدرات و ۲ تا ۳ گرم پروتئین",
+    "۷۵ تا ۸۰"
+   ],
+   [
+    "گوشت و جانشین‌ها",
+    "۷ گرم پروتئین",
+    "کم‌چرب ۴۵ تا ۵۵، چربی متوسط ۷۵ تا ۸۰، پرچرب حدود ۱۰۰"
+   ],
+   [
+    "چربی‌ها",
+    "۵ گرم چربی",
+    "۴۵"
+   ],
+   [
+    "لبنیات",
+    "۱۲ گرم کربوهیدرات و ۸ گرم پروتئین",
+    "۱۰۰ تا ۱۲۰ (کم‌چرب)"
+   ],
+   [
+    "میوه‌ها",
+    "۱۵ گرم کربوهیدرات",
+    "۶۰"
+   ],
+   [
+    "سبزی‌ها",
+    "۵ گرم کربوهیدرات و ۲ گرم پروتئین",
+    "۲۵"
+   ]
+  ],
+  "bread": {
+   "title": "گروه نان و غلات",
+   "def": "۱ واحد = ۱۵ گرم کربوهیدرات، حدود ۷۵ تا ۸۰ کالری",
+   "items": [
+    [
+     "نان سنگک",
+     "۳۰ گرم (حدود یک کف دست)"
+    ],
+    [
+     "نان بربری",
+     "۳۰ گرم (حدود یک کف دست)"
+    ],
+    [
+     "نان تافتون",
+     "۳۰ گرم (حدود یک کف دست)"
+    ],
+    [
+     "نان لواش",
+     "۳۰ گرم (حدود چهار کف دست)"
+    ],
+    [
+     "نان جو یا سبوس‌دار",
+     "۳۰ گرم"
+    ],
+    [
+     "نان باگت یا ساندویچی",
+     "۳۰ گرم"
+    ],
+    [
+     "نان تست",
+     "۱ برش (حدود ۳۰ گرم)"
+    ],
+    [
+     "برنج پخته (کته یا چلو)",
+     "یک‌سوم لیوان (حدود ۵ قاشق غذاخوری)"
+    ],
+    [
+     "ماکارونی یا رشته پخته",
+     "یک‌سوم لیوان"
+    ],
+    [
+     "جو پوست‌کنده پخته",
+     "یک‌سوم لیوان"
+    ],
+    [
+     "بلغور گندم پخته",
+     "نصف لیوان"
+    ],
+    [
+     "جو دوسر (پرک)",
+     "یک‌چهارم لیوان خشک یا نصف لیوان پخته"
+    ],
+    [
+     "غلات صبحانه بدون روکش شکر (مثل کورن‌فلکس ساده)",
+     "سه‌چهارم لیوان"
+    ],
+    [
+     "جوانه گندم",
+     "۳ قاشق غذاخوری"
+    ],
+    [
+     "آرد گندم",
+     "۳ قاشق غذاخوری"
+    ],
+    [
+     "سیب‌زمینی آب‌پز",
+     "نصف یک سیب‌زمینی متوسط (۹۰ گرم)"
+    ],
+    [
+     "پوره سیب‌زمینی (بی‌کره)",
+     "نصف لیوان"
+    ],
+    [
+     "سیب‌زمینی شیرین",
+     "نصف لیوان"
+    ],
+    [
+     "کدو حلوایی پخته",
+     "۱ لیوان"
+    ],
+    [
+     "ذرت (دانه)",
+     "نصف لیوان"
+    ],
+    [
+     "بلال",
+     "نصف یک بلال درشت"
+    ],
+    [
+     "نخود فرنگی",
+     "نصف لیوان"
+    ],
+    [
+     "باقلای سبز تازه (پخته و پوست‌کنده)",
+     "سه‌چهارم لیوان"
+    ],
+    [
+     "حبوبات پخته (عدس، لوبیا، نخود، لپه، ماش)",
+     "یک‌سوم لیوان"
+    ],
+    [
+     "پاپ‌کورن بی‌روغن",
+     "۳ لیوان"
+    ]
+   ],
+   "notes": [
+    "حبوبات پروتئین هم دارند: نصف لیوان حبوبات پخته برابر ۱ واحد نان و ۱ واحد گوشت کم‌چرب است.",
+    "نان جو و برنج قهوه‌ای قند خون را آرام‌تر از نان و برنج سفید بالا می‌برند.",
+    "شیرینی، تنقلات و فست‌فود در جدول «فست‌فود، شیرینی و تنقلات» آمده‌اند."
+   ]
+  },
+  "meat": {
+   "title": "گروه گوشت و جانشین‌ها",
+   "def": "۱ واحد = ۷ گرم پروتئین؛ اندازه‌ها برای گوشت پخته و بدون استخوان است",
+   "groups": [
+    {
+     "title": "کم‌چرب (بهترین انتخاب)",
+     "items": [
+      [
+       "گوشت قرمز بی‌چربی (گوساله یا گوسفند)",
+       "۳۰ گرم"
+      ],
+      [
+       "مرغ یا بوقلمون بی‌پوست",
+       "۳۰ گرم"
+      ],
+      [
+       "ماهی کبابی، بخارپز یا آب‌پز",
+       "۳۰ گرم"
+      ],
+      [
+       "تن ماهی کنسروی (روغنش گرفته‌شده)",
+       "۳ قاشق غذاخوری (۳۰ گرم)"
+      ],
+      [
+       "میگو",
+       "۳۰ گرم (حدود ۶ عدد متوسط)"
+      ],
+      [
+       "ساردین کنسروی",
+       "۲ عدد کوچک"
+      ],
+      [
+       "جگر، دل یا قلوه",
+       "۳۰ گرم"
+      ],
+      [
+       "سفیده تخم‌مرغ",
+       "۲ عدد"
+      ],
+      [
+       "پنیر کم‌چرب (چربی ۱۰ درصد یا کمتر)",
+       "۳۰ گرم"
+      ],
+      [
+       "سویای پروتئینی (خشک)",
+       "۲ و نیم قاشق غذاخوری (۱۵ گرم)"
+      ]
+     ]
+    },
+    {
+     "title": "چربی متوسط",
+     "items": [
+      [
+       "تخم‌مرغ کامل",
+       "۱ عدد"
+      ],
+      [
+       "پنیر سفید معمولی (فتا، لیقوان)",
+       "۳۰ گرم (اندازه یک قوطی کبریت)"
+      ],
+      [
+       "پنیر پیتزا (موزارلا)",
+       "۳۰ گرم (یک‌چهارم لیوان رنده‌شده)"
+      ],
+      [
+       "گوشت چرخ‌کرده معمولی",
+       "۳۰ گرم"
+      ],
+      [
+       "مرغ با پوست یا مرغ سرخ‌شده",
+       "۳۰ گرم"
+      ],
+      [
+       "ماهی سرخ‌شده",
+       "۳۰ گرم"
+      ]
+     ]
+    },
+    {
+     "title": "پرچرب: هر واحد = ۱ واحد گوشت + نیم واحد چربی؛ هفته‌ای حداکثر ۳ واحد",
+     "items": [
+      [
+       "سوسیس، کالباس یا همبرگر صنعتی",
+       "۳۰ گرم"
+      ],
+      [
+       "کباب کوبیده",
+       "۳۰ گرم"
+      ],
+      [
+       "پنیر پرچرب (چدار، گودا، پنیر ورقه‌ای)",
+       "۳۰ گرم"
+      ],
+      [
+       "گوشت پرچرب (دنده، گردن با چربی)",
+       "۳۰ گرم"
+      ]
+     ]
+    }
+   ],
+   "notes": [
+    "حبوبات هم جانشین گوشت هستند: نصف لیوان حبوبات پخته = ۱ واحد گوشت + ۱ واحد نان.",
+    "پنیر در این گروه حساب می‌شود، نه در گروه لبنیات."
+   ]
+  },
+  "fat": {
+   "title": "گروه چربی‌ها",
+   "def": "۱ واحد = ۵ گرم چربی، حدود ۴۵ کالری",
+   "items": [
+    [
+     "روغن مایع (زیتون، کانولا، آفتابگردان)",
+     "۱ قاشق مرباخوری"
+    ],
+    [
+     "روغن جامد، کره یا روغن حیوانی",
+     "۱ قاشق مرباخوری"
+    ],
+    [
+     "سس مایونز معمولی",
+     "۱ و نیم قاشق مرباخوری"
+    ],
+    [
+     "سس مایونز کم‌چرب",
+     "۱ قاشق غذاخوری"
+    ],
+    [
+     "سس سالاد معمولی",
+     "۱ قاشق غذاخوری"
+    ],
+    [
+     "خامه صبحانه یا پنیر خامه‌ای",
+     "۱ قاشق غذاخوری"
+    ],
+    [
+     "سرشیر",
+     "۲ قاشق مرباخوری"
+    ],
+    [
+     "آووکادو",
+     "۲ قاشق غذاخوری (۳۰ گرم)"
+    ],
+    [
+     "زیتون سیاه",
+     "۴ عدد درشت"
+    ],
+    [
+     "زیتون سبز",
+     "۱۰ عدد متوسط"
+    ],
+    [
+     "بادام درختی",
+     "۶ عدد"
+    ],
+    [
+     "بادام هندی",
+     "۶ عدد"
+    ],
+    [
+     "فندق",
+     "۵ عدد"
+    ],
+    [
+     "پسته",
+     "۱۶ عدد"
+    ],
+    [
+     "بادام‌زمینی",
+     "۱۰ عدد"
+    ],
+    [
+     "گردو",
+     "۴ نیمه (۲ عدد کامل)"
+    ],
+    [
+     "مغز تخمه آفتابگردان یا کدو",
+     "۱ قاشق غذاخوری"
+    ],
+    [
+     "کنجد",
+     "۱ قاشق غذاخوری"
+    ],
+    [
+     "ارده",
+     "۲ قاشق مرباخوری"
+    ],
+    [
+     "کره بادام‌زمینی",
+     "۱ و نیم قاشق مرباخوری"
+    ]
+   ],
+   "notes": [
+    "روغن جامد، کره و روغن حیوانی چربی اشباع زیادی دارند؛ روغن مایع و مغزها انتخاب بهتری هستند.",
+    "روغنی که در پخت غذا می‌ریزید هم جزو سهم چربی است."
+   ]
+  },
+  "dairy": {
+   "title": "گروه لبنیات",
+   "def": "۱ واحد = ۱۲ گرم کربوهیدرات و ۸ گرم پروتئین، حدود ۱۰۰ تا ۱۲۰ کالری",
+   "columns": [
+    "ماده غذایی",
+    "مقدار ۱ واحد"
+   ],
+   "items": [
+    [
+     "شیر کم‌چرب (۱٫۵ درصد)",
+     "۱ لیوان"
+    ],
+    [
+     "ماست کم‌چرب",
+     "۱ لیوان"
+    ],
+    [
+     "دوغ کم‌نمک",
+     "۲ لیوان"
+    ],
+    [
+     "ماست یونانی کم‌چرب",
+     "دوسوم لیوان"
+    ],
+    [
+     "کفیر",
+     "۱ لیوان"
+    ],
+    [
+     "شیر بدون لاکتوز",
+     "۱ لیوان"
+    ],
+    [
+     "شیر یا ماست پرچرب (۳ درصد)",
+     "۱ لیوان = ۱ واحد لبنیات + نیم واحد چربی"
+    ],
+    [
+     "شیرکاکائو",
+     "۱ لیوان = ۱ واحد لبنیات + ۱ واحد نان"
+    ]
+   ],
+   "notes": [
+    "پنیر در گروه گوشت و بستنی در جدول «فست‌فود، شیرینی و تنقلات» آمده است."
+   ]
+  },
+  "fruit": {
+   "title": "گروه میوه‌ها",
+   "def": "۱ واحد = ۱۵ گرم کربوهیدرات، حدود ۶۰ کالری",
+   "items": [
+    [
+     "سیب",
+     "۱ عدد کوچک"
+    ],
+    [
+     "موز",
+     "نصف یک موز درشت"
+    ],
+    [
+     "پرتقال",
+     "۱ عدد متوسط"
+    ],
+    [
+     "نارنگی",
+     "۱ عدد درشت"
+    ],
+    [
+     "لیموشیرین",
+     "۱ عدد متوسط"
+    ],
+    [
+     "گریپ‌فروت",
+     "نصف یک گریپ‌فروت درشت"
+    ],
+    [
+     "کیوی",
+     "۱ عدد درشت"
+    ],
+    [
+     "انار",
+     "نصف یک انار متوسط (نصف لیوان دانه)"
+    ],
+    [
+     "خرمالو",
+     "نصف یک خرمالوی متوسط"
+    ],
+    [
+     "انگور",
+     "۱۷ حبه کوچک"
+    ],
+    [
+     "هلو",
+     "۱ عدد متوسط"
+    ],
+    [
+     "شلیل",
+     "۱ عدد متوسط"
+    ],
+    [
+     "زردآلو",
+     "۴ عدد"
+    ],
+    [
+     "آلو",
+     "۲ عدد کوچک"
+    ],
+    [
+     "گیلاس",
+     "۱۲ عدد"
+    ],
+    [
+     "آلبالو",
+     "۱ لیوان"
+    ],
+    [
+     "توت‌فرنگی",
+     "یک و یک‌چهارم لیوان"
+    ],
+    [
+     "توت یا شاه‌توت تازه",
+     "سه‌چهارم لیوان"
+    ],
+    [
+     "انبه",
+     "نصف لیوان"
+    ],
+    [
+     "آناناس",
+     "سه‌چهارم لیوان"
+    ],
+    [
+     "انجیر تازه",
+     "۲ عدد متوسط"
+    ],
+    [
+     "گلابی",
+     "نصف یک گلابی درشت"
+    ],
+    [
+     "هندوانه",
+     "یک و یک‌چهارم لیوان خردشده (یک برش حدود ۳۰۰ گرمی با پوست)"
+    ],
+    [
+     "طالبی، خربزه یا گرمک",
+     "۱ لیوان خردشده"
+    ],
+    [
+     "خرما",
+     "۲ عدد مضافتی یا ۳ عدد کوچک خشک"
+    ],
+    [
+     "کشمش",
+     "۲ قاشق غذاخوری"
+    ],
+    [
+     "برگه زردآلو",
+     "۸ تکه"
+    ],
+    [
+     "برگه سیب",
+     "۴ حلقه"
+    ],
+    [
+     "انجیر خشک",
+     "۳ عدد کوچک"
+    ],
+    [
+     "آلو خشک (آلو بخارا)",
+     "۳ عدد"
+    ],
+    [
+     "توت خشک",
+     "۳ قاشق غذاخوری (حدود ۲۰ گرم)"
+    ],
+    [
+     "لواشک",
+     "۲۰ گرم"
+    ],
+    [
+     "کمپوت (آبکش‌شده)",
+     "یک‌سوم لیوان"
+    ],
+    [
+     "آب‌میوه طبیعی (سیب، پرتقال، انار)",
+     "نصف لیوان"
+    ],
+    [
+     "آب انگور",
+     "یک‌سوم لیوان"
+    ]
+   ],
+   "notes": [
+    "میوه کامل از آب‌میوه بهتر است؛ آب‌میوه‌ها و شربت‌های صنعتی شیرین‌شده را کنار بگذارید."
+   ]
+  },
+  "veg": {
+   "title": "گروه سبزی‌ها",
+   "def": "۱ واحد = نصف لیوان سبزی پخته یا ۱ لیوان سبزی خام، حدود ۲۵ کالری",
+   "list": "کدو سبز، بادمجان، گوجه‌فرنگی، خیار، هویج، کلم (سفید، قرمز، بروکلی، گل‌کلم)، اسفناج پخته، فلفل دلمه‌ای، قارچ، پیاز، لوبیا سبز، بامیه، کرفس، شلغم، لبو، تره‌فرنگی، تربچه و سبزی‌های پخته آش و خورش",
+   "notes": [
+    "سیب‌زمینی، ذرت، نخود فرنگی، کدو حلوایی و باقلا در گروه نان هستند.",
+    "سبزی خوردن، کاهو و برگ‌های سبز سالاد آزادند (جدول «مواد آزاد»)."
+   ]
+  },
+  "dishes": {
+   "title": "غذاهای ایرانی",
+   "note": "در این جدول «۲ نان» یعنی ۲ واحد از گروه نان و غلات، نه ۲ عدد نان. عددها برای دستور پخت خانگی معمول حساب شده و تقریبی است؛ هرچه روغن بیشتر باشد، واحد چربی هم بیشتر می‌شود. برای خورش‌ها نکته ۴ از «نکات مهم» را ببینید.",
+   "columns": [
+    "غذا",
+    "مقدار",
+    "معادل تقریبی"
+   ],
+   "items": [
+    [
+     "عدس‌پلو (بی‌کشمش)",
+     "۱ لیوان",
+     "۳ نان + ۱ چربی"
+    ],
+    [
+     "ماکارونی با گوشت",
+     "۱ لیوان",
+     "۲ نان + ۱ گوشت + ۲ چربی"
+    ],
+    [
+     "آش رشته (با کمی کشک و پیاز داغ)",
+     "۱ لیوان",
+     "۲ نان + ۱ چربی"
+    ],
+    [
+     "عدسی",
+     "۱ لیوان",
+     "۲٫۵ نان + نیم چربی"
+    ],
+    [
+     "حلیم (بی‌شکر و کره)",
+     "۱ لیوان",
+     "۱٫۵ نان + ۱ گوشت"
+    ],
+    [
+     "آبگوشت (با گوشت و حبوبات، بدون دنبه و نان)",
+     "۱ لیوان",
+     "۱٫۵ نان + ۱ گوشت + نیم چربی"
+    ],
+    [
+     "سوپ جو",
+     "۲ لیوان",
+     "۱ نان + ۱ گوشت + ۱ چربی + ۱ سبزی"
+    ],
+    [
+     "کوکو سبزی",
+     "۱ تکه متوسط (۱۰۰ گرم)",
+     "۱ گوشت + ۱ سبزی + ۲ چربی"
+    ],
+    [
+     "کتلت",
+     "۱ عدد متوسط (۷۰ گرم)",
+     "نیم نان + ۱ گوشت + ۱٫۵ چربی"
+    ],
+    [
+     "الویه",
+     "نصف لیوان",
+     "نیم نان + ۱ گوشت + ۲ چربی"
+    ],
+    [
+     "میرزاقاسمی",
+     "نصف لیوان",
+     "۱ سبزی + نیم گوشت + ۱٫۵ چربی"
+    ],
+    [
+     "باقالی‌قاتق",
+     "نصف لیوان",
+     "نیم نان + نیم گوشت + ۱ چربی"
+    ],
+    [
+     "کشک بادمجان (با بادمجان سرخ‌شده)",
+     "نصف لیوان",
+     "۲ سبزی + نیم گوشت + ۴ چربی"
+    ],
+    [
+     "شله‌زرد",
+     "نصف لیوان",
+     "۲ نان + نیم چربی"
+    ],
+    [
+     "شیربرنج (بی‌شکر)",
+     "نصف لیوان",
+     "نیم نان + نیم لبنیات"
+    ]
+   ],
+   "after": "هر قاشق غذاخوری شکر یا عسل روی حلیم و شیربرنج = ۱ واحد نان؛ هر قاشق مرباخوری کره = ۱ واحد چربی."
+  },
+  "snacks": {
+   "title": "فست‌فود، شیرینی و تنقلات",
+   "note": "این‌ها را گاه‌به‌گاه و به‌جای واحدهای هم‌ارز بخورید. در این جدول «نان» یعنی ۱ واحد کربوهیدرات. برای خوراکی‌های بسته‌بندی، عدد «کربوهیدرات» را از جدول ارزش غذایی پشت بسته بخوانید (نه «قند» در برچسب رنگی): هر ۱۵ گرم کربوهیدرات حدوداً ۱ واحد نان و هر ۵ گرم چربی ۱ واحد چربی است.",
+   "columns": [
+    "خوراکی",
+    "مقدار",
+    "معادل تقریبی"
+   ],
+   "items": [
+    [
+     "پیتزا (خمیر معمولی)",
+     "۱ برش از ۸ برش پیتزای بزرگ",
+     "۲٫۵ نان + ۱ گوشت + ۱٫۵ چربی"
+    ],
+    [
+     "ساندویچ سوسیس",
+     "۱ ساندویچ معمولی",
+     "۳٫۵ نان + ۱٫۵ گوشت + ۵ چربی"
+    ],
+    [
+     "ساندویچ همبرگر",
+     "۱ ساندویچ معمولی",
+     "۳ نان + ۱٫۵ گوشت + ۴ چربی"
+    ],
+    [
+     "مرغ سوخاری",
+     "۱ تکه سینه (حدود ۲۰۰ گرم با استخوان)",
+     "۱ نان + ۶ گوشت"
+    ],
+    [
+     "مرغ سوخاری",
+     "۱ تکه بال",
+     "نیم نان + ۲ گوشت"
+    ],
+    [
+     "ناگت مرغ",
+     "۶ عدد (حدود ۱۰۰ گرم)",
+     "۱ نان + ۲ گوشت + ۱ چربی"
+    ],
+    [
+     "سیب‌زمینی سرخ‌کرده",
+     "۱ پرس کوچک (۱۰۰ گرم)",
+     "۲٫۵ نان + ۲ چربی"
+    ],
+    [
+     "چیپس",
+     "۱۵ عدد (حدود ۳۰ گرم)",
+     "۱ نان + ۲ چربی"
+    ],
+    [
+     "پاپ‌کورن با روغن یا کره",
+     "۳ لیوان",
+     "۱ نان + ۲ چربی"
+    ],
+    [
+     "بیسکویت ساده یا کراکر",
+     "۲۰ گرم",
+     "۱ نان + نیم چربی"
+    ],
+    [
+     "شیرینی خشک",
+     "۲ عدد کوچک (۲۰ گرم)",
+     "۱ نان + ۱ چربی"
+    ],
+    [
+     "کیک ساده (بی‌رویه)",
+     "۱ تکه ۵ در ۵ سانتی‌متر (حدود ۳۰ گرم)",
+     "۱ نان + ۱ چربی"
+    ],
+    [
+     "کیک خامه‌ای",
+     "۱ تکه ۵ در ۵ سانتی‌متر (حدود ۶۰ گرم)",
+     "۲ نان + ۱ چربی"
+    ],
+    [
+     "کیک یزدی",
+     "۱ عدد متوسط",
+     "۱٫۵ نان + ۲ چربی"
+    ],
+    [
+     "دونات شکری",
+     "۱ عدد",
+     "۲ نان + ۲ چربی"
+    ],
+    [
+     "شکلات (تلخ یا شیری)",
+     "۳۰ گرم",
+     "۱ نان + ۲ چربی"
+    ],
+    [
+     "بستنی معمولی",
+     "نصف لیوان",
+     "۱ نان + ۲ چربی"
+    ],
+    [
+     "بستنی کم‌چرب",
+     "نصف لیوان",
+     "۱ نان + ۱ چربی"
+    ],
+    [
+     "شکر، عسل یا مربا",
+     "۱ قاشق غذاخوری",
+     "۱ نان"
+    ],
+    [
+     "قند",
+     "۳ حبه",
+     "۱ نان"
+    ],
+    [
+     "نوشابه معمولی",
+     "۱ قوطی (۳۳۰ میلی‌لیتر)",
+     "۲٫۵ نان"
+    ],
+    [
+     "شربت یا آب‌میوه صنعتی شیرین",
+     "۱ لیوان",
+     "۲ نان"
+    ]
+   ]
+  },
+  "free": {
+   "title": "مواد آزاد",
+   "note": "مواد آزاد در هر نوبت کمتر از ۲۰ کالری دارند. آن‌هایی که مقدار دارند را حداکثر ۳ بار در روز و با فاصله بخورید.",
+   "items": [
+    [
+     "آب، آب معدنی و آب گازدار ساده",
+     "آزاد"
+    ],
+    [
+     "چای، قهوه و دمنوش بی‌قند",
+     "آزاد"
+    ],
+    [
+     "سبزی خوردن، کاهو و برگ‌های سبز سالاد",
+     "آزاد"
+    ],
+    [
+     "سرکه، آب‌لیمو، آبغوره و آب‌نارنج",
+     "آزاد (به اندازه چاشنی)"
+    ],
+    [
+     "ادویه‌ها، سیر و سبزی‌های معطر",
+     "آزاد"
+    ],
+    [
+     "خردل و سس فلفل تند",
+     "آزاد"
+    ],
+    [
+     "آدامس بی‌قند",
+     "آزاد"
+    ],
+    [
+     "نوشابه رژیمی و شیرین‌کننده‌های بی‌قند",
+     "کالری ندارند؛ کم مصرف کنید"
+    ],
+    [
+     "خیارشور",
+     "تا ۱ و نیم عدد متوسط"
+    ],
+    [
+     "ترشی (بی‌شکر)",
+     "تا ۱ قاشق غذاخوری"
+    ],
+    [
+     "رب گوجه‌فرنگی",
+     "تا ۱ قاشق غذاخوری"
+    ],
+    [
+     "سس گوجه‌فرنگی (کچاپ)",
+     "تا ۱ قاشق غذاخوری"
+    ],
+    [
+     "ماست",
+     "تا ۲ قاشق غذاخوری"
+    ],
+    [
+     "پودر کاکائوی بی‌شکر",
+     "تا ۱ قاشق غذاخوری"
+    ]
+   ]
+  }
+ },
+ "exercise": {
+  "title": "ورزش در کنار رژیم",
+  "intro": "ورزش منظم به کاهش وزن کمک می‌کند، احتمال برگشت وزن را کم می‌کند، به حفظ عضله‌ها در دوران رژیم کمک می‌کند و برای قلب، قند خون، خواب و حال روحی هم مفید است.",
+  "sections": [
+   {
+    "title": "۱. ورزش هوازی",
+    "bullets": [
+     "هفته‌ای دست‌کم ۱۵۰ دقیقه ورزش با شدت متوسط؛ مثلاً ۵ روز، روزی ۳۰ دقیقه. برای کاهش وزن بیشتر و نگه داشتن آن، ۲۰۰ تا ۳۰۰ دقیقه در هفته بهتر است.",
+     "نمونه‌های ورزش متوسط: پیاده‌روی تند، دوچرخه‌سواری آرام، شنا و ایروبیک سبک. دویدن، طناب‌زدن و فوتبال ورزش شدیدند و هر دقیقه‌شان تقریباً دو دقیقه ورزش متوسط حساب می‌شود؛ اگر تازه شروع کرده‌اید یا زانودرد دارید، با پیاده‌روی شروع کنید.",
+     "شدت مناسب: نفس‌تان تندتر شود و بتوانید حرف بزنید، ولی نتوانید آواز بخوانید. ضربان هدف شما در «نسخه ورزشی شما» آمده است.",
+     "برای گرفتن ضربان، بلافاصله بعد از ورزش نبض مچ را ۱۵ ثانیه بشمارید و عدد را در ۴ ضرب کنید.",
+     "اگر داروی فشار خون یا ضربان قلب (مثل پروپرانولول) مصرف می‌کنید، ضربان معیار خوبی نیست؛ همان آزمون حرف‌زدن را ملاک بگذارید.",
+     "اگر تازه شروع می‌کنید، با ۱۰ دقیقه در روز شروع کنید و طی ۶ تا ۱۲ هفته کم‌کم به هدف برسید. ورزش در نوبت‌های کوتاه هم حساب می‌شود."
+    ]
+   },
+   {
+    "title": "۲. تمرین قدرتی",
+    "bullets": [
+     "هفته‌ای ۲ تا ۳ جلسه در روزهای غیرمتوالی، برای همه عضله‌های بزرگ: پا، باسن، شکم، پشت، سینه و بازو.",
+     "در خانه هم می‌شود: نشستن و برخاستن از صندلی (اسکات)، شنای سوئدی روی دیوار یا روی زانو، پل باسن و کش ورزشی؛ هر حرکت ۸ تا ۱۲ تکرار، ۲ تا ۳ دور. پلانک را ۲۰ تا ۳۰ ثانیه نگه دارید.",
+     "تمرین قدرتی در دوران رژیم کمک می‌کند وزنی که کم می‌کنید بیشتر از چربی باشد، نه از عضله.",
+     "بدنسازی و کار با وزنه تمرین قدرتی خوبی است. ورزش‌های گروهی مثل فوتبال و والیبال هم جزو فعالیت بدنی هفته حساب می‌شوند."
+    ]
+   },
+   {
+    "title": "۳. کمتر نشستن",
+    "bullets": [
+     "هر ۳۰ تا ۶۰ دقیقه نشستن را با چند دقیقه راه رفتن یا ایستادن قطع کنید."
+    ]
+   },
+   {
+    "title": "۴. روش شمارش قدم",
+    "numbered": [
+     "سه روز پشت‌سرهم قدم‌هایتان را با گوشی یا مچ‌بند بشمارید و میانگین بگیرید.",
+     "به این میانگین، روزانه حدود ۲۰۰۰ قدم اضافه کنید (حدود ۱۵ تا ۲۰ دقیقه پیاده‌روی) و یک هفته تا ده روز همین را ادامه دهید.",
+     "دوباره ۲۰۰۰ قدم اضافه کنید و همین کار را تکرار کنید تا به حدود ۱۰ هزار قدم در روز برسید.",
+     "پیاده‌روی تند جزو همان ۱۵۰ دقیقه ورزش هوازی هم حساب می‌شود."
+    ]
+   },
+   {
+    "title": "۵. ایمنی",
+    "bullets": [
+     "اگر بیماری قلبی یا کلیوی، دیابت (با هر دارویی)، فشار خون کنترل‌نشده، درد مفاصل یا بارداری دارید، پیش از شروع ورزش با پزشک خود هماهنگ کنید.",
+     "اگر هنگام ورزش درد یا فشار در قفسه سینه، تنگی نفس شدید، سرگیجه یا تپش قلب غیرعادی داشتید، فوراً ورزش را قطع کنید. اگر درد یا فشار قفسه سینه با چند دقیقه استراحت برطرف نشد، با اورژانس ۱۱۵ تماس بگیرید."
+    ]
+   }
+  ]
+ },
+ "sources_title": "منابع",
+ "sources": [
+  "American Diabetes Association; Academy of Nutrition and Dietetics. Choose Your Foods: Food Lists for Diabetes. 2019.",
+  "U.S. Department of Agriculture. FoodData Central (SR Legacy food composition data).",
+  "Kazemi F, et al. Glycemic Index (GI) Values for Major Sources of Dietary Carbohydrates in Iran. Int J Endocrinol Metab. 2020;18(3):e99793.",
+  "Bull FC, et al. World Health Organization 2020 guidelines on physical activity and sedentary behaviour. Br J Sports Med. 2020;54:1451-1462.",
+  "Donnelly JE, et al. ACSM Position Stand: Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Med Sci Sports Exerc. 2009;41(2):459-471."
+ ],
+ "sources_note": "مقادیر غذاهای ایرانی و ساندویچ‌ها از دستور پخت معمول و داده‌های ترکیب مواد غذایی محاسبه شده و تقریبی است.",
+ "brand": {
+  "name": "دکتر محمد بذرافشان",
+  "subtitle": "تغذیه و مدیریت وزن",
+  "ig": "@dr.bazrafshan.fitlife",
+  "clinic_ig": "@kian_clinic.k",
+  "footer_inperson": "نوبت حضوری:",
+  "footer_online": "مشاوره آنلاین:"
+ }
+};
+  root.CONTENT = CONTENT;
+  if (typeof module !== "undefined" && module.exports) module.exports = CONTENT;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script>
+<script>
+/* ---- engine.js ---- */
+/* موتور محاسبه برنامه رژیم — هم‌خوان خط‌به‌خط با functions.py (هر تغییر باید در هر دو اعمال شود) */
+(function (root) {
+  'use strict';
+
+  const GROUPS = ['Grains', 'Protein', 'Fats', 'Dairy', 'Fruits', 'Vegetables'];
+  const MEALS = ['Breakfast', 'Morning Snack', 'Lunch', 'Evening Snack', 'Dinner', 'Night Snack'];
+  const ELEMENTS = ['carbo', 'fat', 'pro', 'sodium', 'fiber', 'calorie'];
+
+  const MACRO_GROUPS = {
+    Grains:     { carbo: 15, fat: 0, pro: 3, sodium: 80,  fiber: 2, calorie: 75 },
+    Protein:    { carbo: 0,  fat: 5, pro: 7, sodium: 25,  fiber: 0, calorie: 80 },
+    Fats:       { carbo: 0,  fat: 5, pro: 0, sodium: 55,  fiber: 0, calorie: 45 },
+    Dairy:      { carbo: 12, fat: 5, pro: 8, sodium: 160, fiber: 0, calorie: 120 },
+    Fruits:     { carbo: 15, fat: 0, pro: 0, sodium: 0,   fiber: 2, calorie: 60 },
+    Vegetables: { carbo: 5,  fat: 0, pro: 2, sodium: 15,  fiber: 2, calorie: 25 },
+  };
+
+  const GROUP_FA = { Grains: 'نان و غلات', Protein: 'گوشت', Fats: 'چربی', Dairy: 'لبنیات', Fruits: 'میوه', Vegetables: 'سبزی' };
+  const MEAL_FA = {
+    'Breakfast': 'صبحانه', 'Morning Snack': 'میان‌وعده صبح', 'Lunch': 'ناهار',
+    'Evening Snack': 'میان‌وعده عصر', 'Dinner': 'شام', 'Night Snack': 'میان‌وعده شب',
+  };
+
+  const ACTIVITY_LEVELS = {
+    bed:      { pal: 1.20, fa: 'بستری یا بی‌حرکت' },
+    inactive: { pal: 1.50, fa: 'کم‌تحرک: کار نشسته، بدون ورزش منظم' },
+    low:      { pal: 1.60, fa: 'کمی فعال: روزانه ۳۰ تا ۶۰ دقیقه پیاده‌روی یا فعالیت متوسط' },
+    active:   { pal: 1.75, fa: 'فعال: روزانه ۱ تا ۲ ساعت فعالیت متوسط یا کار پرتحرک' },
+    very:     { pal: 1.90, fa: 'خیلی فعال: ورزش سنگین روزانه یا کار بدنی سنگین' },
+  };
+  const GOALS = { lose: 'کاهش وزن', maintain: 'تثبیت وزن', gain: 'افزایش وزن' };
+  const KCAL_FLOOR = { f: 1200, m: 1500 };
+
+  const NORMAL_DIST = {
+    'Breakfast':     { Grains: 0.2, Protein: 0.2, Fats: 0.3, Dairy: 0.4, Fruits: 0.2, Vegetables: 0 },
+    'Morning Snack': { Grains: 0,   Protein: 0,   Fats: 0,   Dairy: 0,   Fruits: 0.4, Vegetables: 0 },
+    'Lunch':         { Grains: 0.4, Protein: 0.4, Fats: 0.3, Dairy: 0,   Fruits: 0,   Vegetables: 0.5 },
+    'Evening Snack': { Grains: 0.1, Protein: 0,   Fats: 0,   Dairy: 0.4, Fruits: 0,   Vegetables: 0 },
+    'Dinner':        { Grains: 0.3, Protein: 0.4, Fats: 0.4, Dairy: 0.2, Fruits: 0,   Vegetables: 0.5 },
+    'Night Snack':   { Grains: 0,   Protein: 0,   Fats: 0,   Dairy: 0,   Fruits: 0.4, Vegetables: 0 },
+  };
+  const DASH_DIST = {
+    'Breakfast':     { Grains: 0.2, Protein: 0.2, Fats: 0.3, Dairy: 0.4, Fruits: 0.2, Vegetables: 0.1 },
+    'Morning Snack': { Grains: 0,   Protein: 0,   Fats: 0,   Dairy: 0,   Fruits: 0.3, Vegetables: 0 },
+    'Lunch':         { Grains: 0.4, Protein: 0.4, Fats: 0.3, Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Evening Snack': { Grains: 0.1, Protein: 0,   Fats: 0,   Dairy: 0.4, Fruits: 0.2, Vegetables: 0 },
+    'Dinner':        { Grains: 0.3, Protein: 0.4, Fats: 0.4, Dairy: 0.2, Fruits: 0,   Vegetables: 0.45 },
+    'Night Snack':   { Grains: 0,   Protein: 0,   Fats: 0,   Dairy: 0,   Fruits: 0.3, Vegetables: 0 },
+  };
+  const DIABETIC_DIST = {
+    'Breakfast':     { Grains: 0.25, Protein: 0.2, Fats: 0.3, Dairy: 0.35, Fruits: 0,   Vegetables: 0 },
+    'Morning Snack': { Grains: 0,    Protein: 0,   Fats: 0,   Dairy: 0,    Fruits: 0.4, Vegetables: 0 },
+    'Lunch':         { Grains: 0.35, Protein: 0.4, Fats: 0.3, Dairy: 0,    Fruits: 0,   Vegetables: 0.5 },
+    'Evening Snack': { Grains: 0.15, Protein: 0,   Fats: 0,   Dairy: 0.35, Fruits: 0.3, Vegetables: 0 },
+    'Dinner':        { Grains: 0.25, Protein: 0.4, Fats: 0.4, Dairy: 0,    Fruits: 0,   Vegetables: 0.5 },
+    'Night Snack':   { Grains: 0,    Protein: 0,   Fats: 0,   Dairy: 0.3,  Fruits: 0.3, Vegetables: 0 },
+  };
+
+  const PLAN_TYPES = {
+    Normal:   { fa: 'عادی', macros: { C: 55, P: 20, F: 25 }, bounds: { C: [45, 65], P: [15, 25], F: [20, 35] }, dist: NORMAL_DIST },
+    DASH:     { fa: 'DASH (فشار خون)', macros: { C: 55, P: 18, F: 27 }, bounds: { C: [50, 60], P: [15, 25], F: [22, 30] }, dist: DASH_DIST },
+    Diabetic: { fa: 'دیابت', macros: { C: 45, P: 20, F: 35 }, bounds: { C: [35, 55], P: [15, 25], F: [25, 40] }, dist: DIABETIC_DIST },
+  };
+
+  const DASH_LEVELS = [[1300, [2.5, 3.5, 3.5]], [1500, [2.5, 4.0, 3.5]], [1700, [2.5, 4.0, 3.5]],
+                       [2000, [2.5, 4.5, 4.5]], [2300, [2.5, 4.5, 4.5]], [2850, [3.0, 5.5, 5.5]]];
+  const DASH_TOP = [3.5, 6.0, 6.0];
+  const FIXED_STEP = { Dairy: 0.5, Fruits: 1.0, Vegetables: 1.0 };
+  const FIXED_MIN = { Dairy: 1.0, Fruits: 1.0, Vegetables: 2.0 };
+  const FIXED_MAX = { Dairy: 4.0, Fruits: 6.0, Vegetables: 8.0 };
+  const MIN_UNITS = { Grains: 0.0, Protein: 1.0, Fats: 1.0 };
+  const MACRO_STEP = 5;
+  const KCAL_TOLERANCE = 25.0;
+  const SEARCH_RADIUS = 8.0;
+
+  // ------------------------------------------------------------------ helpers
+  function toNumber(text) {
+    if (typeof text === 'number') return text;
+    const map = { '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4', '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+                  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9',
+                  '٫': '.', '،': '.', ',': '.' };
+    const s = String(text).trim().replace(/[۰-۹٠-٩٫،,]/g, (c) => map[c]);
+    if (!/^-?\d+(\.\d+)?$|^-?\.\d+$/.test(s)) return NaN;
+    return parseFloat(s);
+  }
+  const roundHalf = (x) => Math.floor(x * 2 + 0.5) / 2;
+  const roundTo = (x, step) => Math.floor(x / step + 0.5) * step;
+  const sexOf = (g) => (['m', 'male', 'مرد'].includes(String(g).trim().toLowerCase()) ? 'm' : 'f');
+
+  // ------------------------------------------------------------------ body
+  function bmi(weight, heightCm) { const h = heightCm / 100; return weight / (h * h); }
+  function bmiClass(b) {
+    if (b < 18.5) return ['under', 'کم‌وزن'];
+    if (b < 25) return ['normal', 'وزن طبیعی'];
+    if (b < 30) return ['over', 'اضافه‌وزن'];
+    if (b < 35) return ['obese1', 'چاقی درجه ۱'];
+    if (b < 40) return ['obese2', 'چاقی درجه ۲'];
+    return ['obese3', 'چاقی درجه ۳'];
+  }
+  function normalWeightRange(heightCm) { const h = heightCm / 100; return [18.5 * h * h, 24.9 * h * h]; }
+  function idealBodyWeight(heightCm, sex) { const inches = heightCm / 2.54; return (sexOf(sex) === 'm' ? 50.0 : 45.5) + 2.3 * (inches - 60); }
+  function referenceWeight(weight, heightCm) { const h = heightCm / 100; return Math.min(weight, 25 * h * h); }
+  function waistRisk(waist, heightCm) {
+    if (!waist) return null;
+    const whtr = waist / heightCm;
+    const wc = waist >= 95 ? 'پرخطر (۹۵ سانتی‌متر یا بیشتر)' : (waist >= 90 ? 'در معرض خطر (۹۰ تا ۹۴ سانتی‌متر)' : 'طبیعی (کمتر از ۹۰ سانتی‌متر)');
+    const wh = whtr >= 0.6 ? 'خطر بالا' : (whtr >= 0.5 ? 'افزایش خطر' : 'طبیعی');
+    return { whtr, waist_label: wc, whtr_label: wh, waist_code: waist >= 95 ? 'high' : (waist >= 90 ? 'risk' : 'ok'),
+             whtr_code: whtr >= 0.6 ? 'high' : (whtr >= 0.5 ? 'risk' : 'ok') };
+  }
+
+  // ------------------------------------------------------------------ energy
+  function rmrMifflin(weight, heightCm, age, sex) { return 10 * weight + 6.25 * heightCm - 5 * age + (sexOf(sex) === 'm' ? 5 : -161); }
+  function palValue(activity) { return typeof activity === 'number' ? activity : (ACTIVITY_LEVELS[activity] || ACTIVITY_LEVELS.inactive).pal; }
+  function targetCalories(tee, sex, goal, deficit, surplus) {
+    const s = sexOf(sex);
+    let e; let floorApplied = false;
+    if (goal === 'lose') {
+      e = tee - deficit;
+      if (e < KCAL_FLOOR[s]) { e = KCAL_FLOOR[s]; floorApplied = true; }
+    } else if (goal === 'gain') {
+      e = tee + surplus;
+    } else {
+      e = tee;
+    }
+    return [roundTo(e, 25), floorApplied];
+  }
+
+  // ------------------------------------------------------------------ plan
+  function normalizePrefs(preferences) {
+    const p = {};
+    for (const g of GROUPS) p[g] = 0;
+    if (preferences) for (const g of GROUPS) if (g in preferences) p[g] = Math.max(-1, Math.min(1, Math.trunc(preferences[g])));
+    return p;
+  }
+
+  function fixedGroupUnits(planType, calories, prefs) {
+    const e = calories;
+    let dairy, fruit, veg;
+    if (planType === 'DASH') {
+      let values = DASH_TOP;
+      for (const [limit, vals] of DASH_LEVELS) { if (e < limit) { values = vals; break; } }
+      [dairy, fruit, veg] = values;
+    } else if (planType === 'Diabetic') {
+      dairy = e < 1800 ? 2.0 : 2.5;
+      fruit = e < 1800 ? 2.0 : 3.0;
+      veg = e < 1600 ? 4.0 : 5.0;
+    } else {
+      dairy = e < 1800 ? 2.0 : (e < 2600 ? 2.5 : 3.0);
+      fruit = e < 1400 ? 2.0 : (e < 2000 ? 3.0 : 4.0);
+      veg = e < 1600 ? 3.0 : (e < 1800 ? 4.0 : 5.0);
+    }
+    const out = { Dairy: dairy, Fruits: fruit, Vegetables: veg };
+    for (const g of ['Dairy', 'Fruits', 'Vegetables']) {
+      const v = out[g] + FIXED_STEP[g] * (prefs[g] || 0);
+      out[g] = Math.min(FIXED_MAX[g], Math.max(FIXED_MIN[g], v));
+    }
+    return out;
+  }
+
+  function proteinFloorGrams(goal, refWeight) { return (goal === 'lose' ? 1.2 : 0.8) * refWeight; }
+
+  function macroTargets(planType, calories, prefs, proteinFloorG, override) {
+    const pt = PLAN_TYPES[planType];
+    const bounds = pt.bounds;
+    const K = ['C', 'P', 'F'];
+    if (override) {
+      const w = { C: +override.C, P: +override.P, F: +override.F };
+      const t = w.C + w.P + w.F;
+      return { C: w.C * 100.0 / t, P: w.P * 100.0 / t, F: w.F * 100.0 / t };
+    }
+    const base = pt.macros;
+    const want = { C: base.C + MACRO_STEP * prefs.Grains, P: base.P + MACRO_STEP * prefs.Protein, F: base.F + MACRO_STEP * prefs.Fats };
+    const pinned = { C: prefs.Grains !== 0, P: prefs.Protein !== 0, F: prefs.Fats !== 0 };
+    const floorPct = proteinFloorG * 400.0 / calories;
+    if (want.P < floorPct) { want.P = floorPct; pinned.P = true; }
+    for (const k of K) { const [lo, hi] = bounds[k]; want[k] = Math.min(hi, Math.max(lo, want[k])); }
+    let diff = 100.0 - (want.C + want.P + want.F);
+    for (const k of ['C', 'F', 'P']) {
+      if (pinned[k] || Math.abs(diff) < 1e-9) continue;
+      const [lo, hi] = bounds[k];
+      const nv = Math.min(hi, Math.max(lo, want[k] + diff));
+      diff -= nv - want[k];
+      want[k] = nv;
+    }
+    for (let it = 0; it < 3; it++) {
+      const free = ['C', 'F', 'P'].filter((k) => pinned[k] &&
+        (diff > 0 ? want[k] < bounds[k][1] - 1e-9 : want[k] > bounds[k][0] + 1e-9));
+      if (Math.abs(diff) < 1e-9 || free.length === 0) break;
+      const share = diff / free.length;
+      for (const k of free) {
+        const [lo, hi] = bounds[k];
+        const nv = Math.min(hi, Math.max(lo, want[k] + share));
+        diff -= nv - want[k];
+        want[k] = nv;
+      }
+    }
+    if (Math.abs(diff) > 1e-9) {
+      const t = want.C + want.P + want.F;
+      return { C: want.C * 100.0 / t, P: want.P * 100.0 / t, F: want.F * 100.0 / t };
+    }
+    return want;
+  }
+
+  function planTotals(units) {
+    const out = {};
+    for (const e of ELEMENTS) out[e] = 0.0;
+    for (const g of GROUPS) {
+      const u = units[g] || 0.0;
+      for (const e of ELEMENTS) out[e] += u * MACRO_GROUPS[g][e];
+    }
+    return out;
+  }
+
+  function macroPercents(t) {
+    const energy = 4 * t.carbo + 4 * t.pro + 9 * t.fat;
+    if (energy <= 0) return { C: 0.0, P: 0.0, F: 0.0 };
+    return { C: 400.0 * t.carbo / energy, P: 400.0 * t.pro / energy, F: 900.0 * t.fat / energy };
+  }
+
+  function planLoss(units, calories, macros) {
+    const t = planTotals(units);
+    const pc = macroPercents(t);
+    const err = t.calorie - calories;
+    const outside = Math.max(0.0, Math.abs(err) - KCAL_TOLERANCE);
+    let loss = 1000.0 * outside * outside;
+    for (const k of ['C', 'P', 'F']) { const d = (pc[k] - macros[k]) / 2.5; loss += d * d; }
+    loss += 0.01 * (err / 25.0) * (err / 25.0);
+    return loss;
+  }
+
+  function dailyUnits(calories, macros, fixed) {
+    const D = fixed.Dairy, Fr = fixed.Fruits, V = fixed.Vegetables;
+    const carbG = calories * macros.C / 400.0;
+    const proG = calories * macros.P / 400.0;
+    const s0 = roundHalf(Math.max(0.0, (carbG - (12 * D + 15 * Fr + 5 * V)) / 15.0));
+    const m0 = roundHalf(Math.max(0.0, (proG - (8 * D + 2 * V + 3 * s0)) / 7.0));
+    const fixedKcal = D * MACRO_GROUPS.Dairy.calorie + Fr * MACRO_GROUPS.Fruits.calorie + V * MACRO_GROUPS.Vegetables.calorie;
+    const kS = MACRO_GROUPS.Grains.calorie, kM = MACRO_GROUPS.Protein.calorie, kF = MACRO_GROUPS.Fats.calorie;
+    const sLo = Math.max(MIN_UNITS.Grains, s0 - SEARCH_RADIUS);
+    const mLo = Math.max(MIN_UNITS.Protein, m0 - SEARCH_RADIUS);
+    const nS = Math.round((s0 + SEARCH_RADIUS - sLo) * 2) + 1;
+    const nM = Math.round((m0 + SEARCH_RADIUS - mLo) * 2) + 1;
+    let best = null, bestLoss = null;
+    const consider = (s, m, f) => {
+      const cand = { Grains: s, Protein: m, Fats: f, Dairy: D, Fruits: Fr, Vegetables: V };
+      const loss = planLoss(cand, calories, macros);
+      if (best === null || loss < bestLoss - 1e-12) { best = cand; bestLoss = loss; }
+    };
+    for (let i = 0; i < nS; i++) {
+      const s = sLo + i / 2.0;
+      for (let j = 0; j < nM; j++) {
+        const m = mLo + j / 2.0;
+        const fMid = roundHalf((calories - fixedKcal - s * kS - m * kM) / kF);
+        for (const f of [fMid - 0.5, fMid, fMid + 0.5]) {
+          if (f < MIN_UNITS.Fats) continue;
+          consider(s, m, f);
+        }
+        if (fMid - 0.5 < MIN_UNITS.Fats) consider(s, m, MIN_UNITS.Fats);
+      }
+    }
+    return best;
+  }
+
+  function distribute(totals, distribution) {
+    const plan = {};
+    for (const meal of MEALS) { plan[meal] = {}; for (const g of GROUPS) plan[meal][g] = 0.0; }
+    for (const g of GROUPS) {
+      const halves = Math.round((totals[g] || 0.0) * 2);
+      if (halves <= 0) continue;
+      const shares = MEALS.map((meal) => +(((distribution[meal] || {})[g]) || 0.0));
+      const ssum = shares.reduce((a, b) => a + b, 0);
+      if (ssum <= 0) continue;
+      const ideal = shares.map((sh) => halves * sh / ssum);
+      const base = ideal.map((x) => Math.floor(x + 1e-9));
+      const rem = halves - base.reduce((a, b) => a + b, 0);
+      const frac = ideal.map((x, i) => Math.floor((x - base[i]) * 1e9 + 0.5) / 1e9);
+      const order = MEALS.map((_, i) => i).filter((i) => shares[i] > 0).sort((a, b) => (frac[b] - frac[a]) || (a - b));
+      for (let k = 0; k < rem; k++) base[order[k % order.length]] += 1;
+      MEALS.forEach((meal, i) => { plan[meal][g] = base[i] / 2.0; });
+    }
+    return plan;
+  }
+
+  function mealCalories(plan) {
+    const out = {};
+    for (const meal of MEALS) { let s = 0; for (const g of GROUPS) s += plan[meal][g] * MACRO_GROUPS[g].calorie; out[meal] = s; }
+    return out;
+  }
+
+  function unitsFromPlan(plan) {
+    const u = {};
+    for (const g of GROUPS) { let s = 0; for (const meal of MEALS) s += plan[meal][g]; u[g] = s; }
+    return u;
+  }
+
+  function designPlan(calorieGoal, planType, preferences, macros, goal, refWeight) {
+    if (!PLAN_TYPES[planType]) planType = 'Normal';
+    const prefs = normalizePrefs(preferences);
+    const e = +calorieGoal;
+    const floorG = refWeight ? proteinFloorGrams(goal, refWeight) : 0.0;
+    const target = macroTargets(planType, e, prefs, floorG, macros);
+    const fixed = fixedGroupUnits(planType, e, prefs);
+    const units = dailyUnits(e, target, fixed);
+    const dist = JSON.parse(JSON.stringify(PLAN_TYPES[planType].dist));
+    const plan = distribute(units, dist);
+    const totals = planTotals(units);
+    const actual = macroPercents(totals);
+    const warnings = [];
+    const gap = Math.max(...['C', 'P', 'F'].map((k) => Math.abs(actual[k] - target[k])));
+    if (gap > 3) warnings.push(`درصد درشت‌مغذی‌ها تا ${Math.round(gap)} واحد با هدف فاصله دارد؛ این ترکیب ترجیحات با واحدهای جانشینی دقیقاً قابل دستیابی نیست.`);
+    if (floorG && totals.pro < 0.95 * floorG) warnings.push(`پروتئین برنامه (${Math.round(totals.pro)} گرم) کمتر از حداقل پیشنهادی (${Math.round(floorG)} گرم) است.`);
+    if (e < 800) warnings.push('کالری کمتر از ۸۰۰: رژیم بسیار کم‌کالری فقط با پایش پزشکی.');
+    return { calories: e, plan_type: planType, prefs, macros_target: target, protein_floor_g: floorG,
+             fixed, units, plan, totals, macros_actual: actual, meal_calories: mealCalories(plan), warnings };
+  }
+
+  function assessPatient(p) {
+    const sex = sexOf(p.sex);
+    const b = bmi(p.weight, p.height);
+    const [code, label] = bmiClass(b);
+    const rmr = rmrMifflin(p.weight, p.height, p.age, sex);
+    const pal = palValue(p.activity);
+    const tee = rmr * pal;
+    let target, floorApplied;
+    if (p.calorieOverride) { target = Math.round(p.calorieOverride); floorApplied = false; }
+    else [target, floorApplied] = targetCalories(tee, sex, p.goal, p.deficit, p.surplus);
+    const refW = referenceWeight(p.weight, p.height);
+    const warnings = [];
+    if (p.age < 18) warnings.push('این محاسبات برای بزرگسالان (۱۸ سال به بالا) است.');
+    if (p.goal === 'lose' && b < 18.5) warnings.push('BMI کمتر از ۱۸٫۵ است؛ کاهش وزن توصیه نمی‌شود.');
+    if (floorApplied) warnings.push(`کالری هدف به حداقل توصیه‌شده (${KCAL_FLOOR[sex]} کیلوکالری) رسید؛ کسری واقعی ${Math.round(tee - target)} کیلوکالری است.`);
+    if (p.calorieOverride && target < KCAL_FLOOR[sex]) warnings.push(`کالری دستی کمتر از حداقل توصیه‌شده برای ${sex === 'm' ? 'مردان' : 'زنان'} (${KCAL_FLOOR[sex]} کیلوکالری) است.`);
+    return { sex, bmi: b, bmi_code: code, bmi_label: label, normal_range: normalWeightRange(p.height),
+             ideal_weight: idealBodyWeight(p.height, sex), reference_weight: refW, rmr, tee, pal,
+             target_calories: target, floor_applied: floorApplied,
+             waist: p.waist ? waistRisk(p.waist, p.height) : null, warnings };
+  }
+
+  function buildFullPlan(p) {
+    const a = assessPatient(p);
+    const d = designPlan(a.target_calories, p.planType || 'Normal', p.preferences, p.macros || null, p.goal, a.reference_weight);
+    d.assessment = a;
+    d.warnings = a.warnings.concat(d.warnings);
+    return d;
+  }
+
+  const Engine = {
+    GROUPS, MEALS, ELEMENTS, MACRO_GROUPS, GROUP_FA, MEAL_FA, ACTIVITY_LEVELS, GOALS, PLAN_TYPES, KCAL_FLOOR,
+    toNumber, roundHalf, roundTo, bmi, bmiClass, normalWeightRange, idealBodyWeight, referenceWeight, waistRisk,
+    rmrMifflin, palValue, targetCalories, normalizePrefs, fixedGroupUnits, proteinFloorGrams, macroTargets,
+    planTotals, macroPercents, planLoss, dailyUnits, distribute, mealCalories, unitsFromPlan, designPlan,
+    assessPatient, buildFullPlan,
+  };
+  root.Engine = Engine;
+  if (typeof module !== 'undefined' && module.exports) module.exports = Engine;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- menu.js ---- */
+/* ساخت خودکار «نمونه منوی یک روز» و متن‌های شخصی از روی جدول واحدها */
+(function (root) {
+  'use strict';
+  const FA = root.FA || require('./fa.js');
+  const { digits, num, words, count, cups, riceQty, tsp } = FA;
+
+  // میوه هر وعده: خرداد تا شهریور میوه تابستانی، بقیه سال مرکبات و کیوی
+  function fruitsFor(month) {
+    const warm = month >= 3 && month <= 6;
+    return warm
+      ? { B: ['سیب', 'کوچک'], MS: ['هلو', 'متوسط'], ES: ['شلیل', 'متوسط'], NS: ['سیب', 'کوچک'] }
+      : { B: ['پرتقال', 'متوسط'], MS: ['کیوی', 'درشت'], ES: ['نارنگی', 'درشت'], NS: ['پرتقال', 'متوسط'] };
+  }
+
+  function fruit(u, f) {
+    const [noun, size] = f;
+    if (Math.abs(u - 0.5) < 1e-9) return `نصف ${noun}`;
+    const whole = Math.floor(u + 1e-9);
+    if (Math.abs(u - whole) < 1e-9) return `${digits(whole)} ${noun} ${size}`;
+    return `${words(u)} ${noun}`;
+  }
+
+  const bread = (g) => `${num(30 * g)} گرم نان سنگک (حدود ${words(g)} کف دست)`;
+  const cheese = (u) => `${num(30 * u)} گرم پنیر سفید (${Math.abs(u - 0.5) < 1e-9 ? 'نصف قوطی کبریت' : (Math.abs(u - 1) < 1e-9 ? 'یک قوطی کبریت' : `${words(u)} قوطی کبریت`)})`;
+  const almonds = (u) => `${num(6 * u, 0)} عدد بادام`;
+  const oats = (g) => `${cups(g / 4) || `${num(4 * g)} قاشق غذاخوری`} جو دوسر خشک`;
+
+  function joinFa(list) {
+    if (list.length <= 1) return list.join('');
+    return `${list.slice(0, -1).join('، ')} و ${list[list.length - 1]}`;
+  }
+
+  function menuForMeal(meal, u, fr) {
+    const G = u.Grains, P = u.Protein, F = u.Fats, D = u.Dairy, Fr = u.Fruits, V = u.Vegetables;
+    const parts = [];
+    if (meal === 'Breakfast') {
+      if (G) parts.push(bread(G));
+      if (P) {
+        const eggs = P >= 1.5 ? Math.ceil(P - 1) : 0;
+        const ch = P - eggs;
+        if (eggs) parts.push(`${digits(eggs)} تخم‌مرغ آب‌پز`);
+        if (ch) parts.push(cheese(ch));
+      }
+      if (F) {
+        const walnut = Math.min(F, 1);
+        parts.push(`${num(4 * walnut, 0)} نیمه گردو`);
+        if (F > walnut) parts.push(`${num(4 * (F - walnut), 0)} عدد زیتون سیاه`);
+      }
+      if (D) parts.push(`${cups(D)} شیر کم‌چرب`);
+      if (Fr) parts.push(fruit(Fr, fr.B));
+      if (V) parts.push(`${cups(V)} خیار و گوجه‌فرنگی`);
+      return parts.join(' + ');
+    }
+    if (meal === 'Lunch') {
+      if (G) parts.push(`${riceQty(G)} برنج پخته`);
+      if (P) parts.push(`${num(30 * P)} گرم مرغ یا ماهی کبابی، آب‌پز یا بخارپز`);
+      if (V) parts.push(`${cups(V)} سالاد شیرازی`);
+      if (D) parts.push(`${cups(D)} ماست کم‌چرب`);
+      if (Fr) parts.push(fruit(Fr, fr.B));
+      let t = parts.join(' + ');
+      if (F) t += `${t ? '. ' : ''}سهم روغن این وعده (${tsp(F)}) را در پخت یا روی سالاد استفاده کنید.`;
+      return t;
+    }
+    if (meal === 'Dinner') {
+      if (P && P <= 2.5) {
+        const eggs = Math.floor(P + 1e-9);
+        const whites = Math.round((P - eggs) * 2);
+        const tomato = Math.min(V, 1);
+        const salad = V - tomato;
+        const oilIn = salad > 0 ? Math.min(F, 1) : F;
+        const oilSalad = F - oilIn;
+        const inner = [];
+        if (eggs) inner.push(`${digits(eggs)} تخم‌مرغ کامل`);
+        if (whites) inner.push(`${digits(whites)} سفیده`);
+        if (tomato) inner.push(`${cups(tomato)} گوجه‌فرنگی خردشده (خام)`);
+        if (oilIn) inner.push(`${tsp(oilIn)} روغن`);
+        parts.push(`املت با ${joinFa(inner)}`);
+        if (salad) parts.push(`${cups(salad)} سالاد${oilSalad ? ` با ${tsp(oilSalad)} روغن زیتون` : ''}`);
+      } else {
+        if (P) parts.push(`${num(30 * P)} گرم مرغ یا گوشت کم‌چرب (پخته)`);
+        if (V) parts.push(`${cups(V)} سالاد`);
+        if (F) parts.push(`${tsp(F)} روغن زیتون روی سالاد`);
+      }
+      if (G) parts.push(`${num(30 * G)} گرم نان سنگک، بربری یا تافتون (حدود ${words(G)} کف دست)`);
+      if (D) parts.push(`${cups(D)} ماست کم‌چرب`);
+      if (Fr) parts.push(fruit(Fr, fr.B));
+      return parts.join(' + ');
+    }
+    // میان‌وعده‌ها
+    const key = meal === 'Morning Snack' ? 'MS' : (meal === 'Evening Snack' ? 'ES' : 'NS');
+    if (D) parts.push(`${cups(D)} ${key === 'MS' ? 'ماست کم‌چرب' : 'شیر کم‌چرب'}`);
+    if (G) parts.push(key === 'ES' ? oats(G) : `${num(30 * G)} گرم نان سنگک`);
+    if (Fr) parts.push(fruit(Fr, fr[key]));
+    if (P) parts.push(cheese(P));
+    if (F) parts.push(almonds(F));
+    if (V) parts.push(`${cups(V)} خیار`);
+    return parts.join(' + ');
+  }
+
+  function generateMenu(plan, MEALS, date) {
+    const fr = fruitsFor(FA.jalaliMonth(date || new Date()));
+    const out = {};
+    for (const m of MEALS) out[m] = menuForMeal(m, plan[m], fr) || '—';
+    return out;
+  }
+
+  /** متن «این جدول را چطور بخوانید» با عدد واقعی همین برنامه */
+  function howToRead(plan, MEALS, MEAL_FA) {
+    let meal = 'Breakfast';
+    if (!plan.Breakfast.Grains) meal = MEALS.find((m) => plan[m].Grains > 0) || 'Breakfast';
+    const g = plan[meal].Grains || 1;
+    return `هر عدد نشان می‌دهد از هر گروه غذایی چند «واحد» در آن وعده بخورید. مثلاً ${num(g)} در ستون «نان و غلات» ` +
+      `${MEAL_FA[meal]} یعنی ${words(g)} واحد نان؛ برای نمونه ${num(30 * g)} گرم نان سنگک یا ${riceQty(g)} برنج پخته.`;
+  }
+
+  /** ضربان هدف ورزش متوسط: ۶۵ تا ۷۵ درصد ضربان بیشینه (۲۲۰ منهای سن) — ACSM */
+  function heartRate(age) {
+    const max = 220 - age;
+    return [Math.round(max * 0.65), Math.round(max * 0.75)];
+  }
+
+  function rxTexts(age, steps) {
+    const [lo, hi] = heartRate(age);
+    let stepText;
+    if (steps && steps > 0) {
+      const target = steps >= 10000 ? steps : Math.min(steps + 2000, 10000);
+      stepText = `میانگین فعلی: ${num(steps, 0)} ← هدف این دوره: ${num(target, 0)}`;
+    } else {
+      stepText = 'سه روز قدم‌هایتان را بشمارید؛ هدف این دوره: ۲۰۰۰ قدم بیشتر از میانگین';
+    }
+    return [
+      '۱۵۰ دقیقه در هفته؛ مثلاً ۵ روز، روزی ۳۰ دقیقه پیاده‌روی تند',
+      `ضربان قلب ${num(lo, 0)} تا ${num(hi, 0)} در دقیقه؛ یعنی بتوانید حرف بزنید ولی نتوانید آواز بخوانید`,
+      '۲ جلسه در هفته، در روزهای غیرمتوالی (حرکت‌ها در بخش «ورزش در کنار رژیم» آمده است)',
+      stepText,
+    ];
+  }
+
+  const Menu = { generateMenu, menuForMeal, howToRead, heartRate, rxTexts, fruitsFor };
+  root.Menu = Menu;
+  if (typeof module !== 'undefined' && module.exports) module.exports = Menu;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- docmodel.js ---- */
+/* مدل سند: فهرست بلوک‌هایی که هم Word و هم PDF از آن ساخته می‌شوند (ترتیب و متن = الگوی تأییدشده) */
+(function (root) {
+  'use strict';
+  const FA = root.FA || require('./fa.js');
+
+  function valueOr(v, suffix) {
+    if (v === null || v === undefined || v === '' || Number.isNaN(v)) return '—';
+    return suffix ? `${typeof v === 'number' ? FA.num(v) : v} ${suffix}` : (typeof v === 'number' ? FA.num(v) : String(v));
+  }
+
+  /**
+   * doc: {
+   *   patient: {name, fileNo, date, age, height, weight, bmi, targetWeight, kcal, waist, abdomen, thigh, wrist, bodyFat, nextVisit},
+   *   rows: [{meal, time, units:[6], kcal}], total: {units:[6], kcal},
+   *   howToRead, menu: [[mealFa, text]×6], rx: [4 texts]
+   * }
+   */
+  function buildModel(doc, C, opts) {
+    const o = opts || {};
+    const p = doc.patient;
+    const B = [];
+    B.push({ t: 'title', text: C.title });
+    const L = C.patient_labels;
+    const V = [
+      [valueOr(p.name), valueOr(p.fileNo), valueOr(p.date)],
+      [valueOr(p.age, 'سال'), valueOr(p.height, 'سانتی‌متر'), valueOr(p.weight, 'کیلوگرم')],
+      [valueOr(p.bmi), valueOr(p.targetWeight, 'کیلوگرم'), valueOr(p.kcal)],
+      [valueOr(p.waist, 'سانتی‌متر'), valueOr(p.abdomen, 'سانتی‌متر'), valueOr(p.thigh, 'سانتی‌متر')],
+      [valueOr(p.wrist, 'سانتی‌متر'), p.bodyFat ? `${FA.num(p.bodyFat)}٪` : '—', valueOr(p.nextVisit)],
+    ];
+    B.push({ t: 'patient', rows: L.map((labels, i) => labels.map((lab, j) => [lab, V[i][j]])) });
+
+    B.push({ t: 'h2', text: C.plan_title, before: 220 });
+    const cell = (u) => (u ? FA.num(u) : '–');
+    B.push({
+      t: 'plan', header: C.plan_columns,
+      rows: doc.rows.map((r) => [r.meal, r.time, ...r.units.map(cell), FA.num(r.kcal)]),
+      total: [C.plan_total_label, '', ...doc.total.units.map((u) => FA.num(u)), FA.num(doc.total.kcal)],
+    });
+    B.push({ t: 'gap', after: 160 });
+    B.push({ t: 'box', title: C.how_to_read_title, paras: [doc.howToRead, C.how_to_read_2] });
+
+    B.push({ t: 'pagebreak' });
+    B.push({ t: 'h2', text: C.menu_title, before: 0 });
+    B.push({ t: 'p', text: C.menu_intro, style: 'small-muted', after: 80 });
+    B.push({ t: 'kv', widths: [1700, 8166], rows: doc.menu });
+    B.push({ t: 'h2', text: C.rx_title, before: 260 });
+    B.push({ t: 'kv', widths: [1700, 8166], rows: C.rx_labels.map((l, i) => [l, doc.rx[i]]) });
+    B.push({ t: 'h2', text: C.notes_title, before: 260 });
+    B.push({ t: 'list', kind: 'nums-notes', items: C.notes, size: 'body', after: 60, justify: true });
+    if (o.personalOnly) return B;
+
+    const G = C.guide;
+    B.push({ t: 'pagebreak' });
+    B.push({ t: 'h1', text: G.title, before: 120 });
+    B.push({ t: 'p', text: G.intro, style: 'body', align: 'justify', after: 120 });
+    B.push({ t: 'h2', text: G.measures_title, before: 120 });
+    B.push({ t: 'kv', widths: [1900, 7966], rows: G.measures });
+    B.push({ t: 'p', text: G.measures_tip, style: 'small-muted', align: 'justify', before: 60, after: 80 });
+    B.push({ t: 'h2', text: G.units_title, before: 160 });
+    B.push({ t: 'listTable', columns: G.units_columns, items: G.units, widths: [2000, 3600, 4266] });
+
+    const group = (gr, wName) => {
+      B.push({ t: 'h2', text: gr.title, before: 200 });
+      B.push({ t: 'p', text: gr.def, style: 'def', after: 60, keepNext: true });
+      B.push({ t: 'pairTable', items: gr.items, groups: gr.groups, wName });
+      if (gr.notes) B.push({ t: 'list', kind: 'dots', items: gr.notes, size: 'small', color: 'muted', after: 30 });
+    };
+    group(G.bread, 2930);
+    group(G.meat, 2930);
+    group(G.fat, 2930);
+    B.push({ t: 'h2', text: G.dairy.title, before: 200 });
+    B.push({ t: 'p', text: G.dairy.def, style: 'def', after: 60, keepNext: true });
+    B.push({ t: 'listTable', columns: G.dairy.columns, items: G.dairy.items, widths: [3600, 6266] });
+    B.push({ t: 'list', kind: 'dots', items: G.dairy.notes, size: 'small', color: 'muted', after: 30 });
+    group(G.fruit, 2600);
+    B.push({ t: 'h2', text: G.veg.title, before: 200 });
+    B.push({ t: 'p', text: G.veg.def, style: 'def', after: 60, keepNext: true });
+    B.push({ t: 'cellbox', text: G.veg.list });
+    B.push({ t: 'list', kind: 'dots', items: G.veg.notes, size: 'small', color: 'muted', after: 30 });
+    B.push({ t: 'h2', text: G.dishes.title, before: 200 });
+    B.push({ t: 'p', text: G.dishes.note, style: 'small-muted', align: 'justify', after: 60, keepNext: true });
+    B.push({ t: 'listTable', columns: G.dishes.columns, items: G.dishes.items, widths: [3500, 2300, 4066] });
+    B.push({ t: 'p', text: G.dishes.after, style: 'small-muted', before: 40 });
+    B.push({ t: 'h2', text: G.snacks.title, before: 200 });
+    B.push({ t: 'p', text: G.snacks.note, style: 'small-muted', align: 'justify', after: 60, keepNext: true });
+    B.push({ t: 'listTable', columns: G.snacks.columns, items: G.snacks.items, widths: [3100, 2900, 3866] });
+    B.push({ t: 'h2', text: G.free.title, before: 200 });
+    B.push({ t: 'p', text: G.free.note, style: 'small-muted', align: 'justify', after: 60, keepNext: true });
+    B.push({ t: 'pairTable', items: G.free.items, wName: 3100, amtLabel: 'مقدار' });
+
+    const E = C.exercise;
+    B.push({ t: 'h1', text: E.title, before: 360 });
+    B.push({ t: 'p', text: E.intro, style: 'body', align: 'justify', after: 80 });
+    for (const s of E.sections) {
+      B.push({ t: 'h2', text: s.title, before: 160 });
+      if (s.bullets) B.push({ t: 'list', kind: 'dots', items: s.bullets, size: 'body', after: 50, justify: true });
+      if (s.numbered) B.push({ t: 'list', kind: 'nums-steps', items: s.numbered, size: 'body', after: 50, justify: true });
+    }
+    B.push({ t: 'h2', text: C.sources_title, before: 280 });
+    for (const s of C.sources) B.push({ t: 'ltr', text: s });
+    B.push({ t: 'p', text: C.sources_note, style: 'tiny-muted', before: 40 });
+    return B;
+  }
+
+  const DocModel = { buildModel };
+  root.DocModel = DocModel;
+  if (typeof module !== 'undefined' && module.exports) module.exports = DocModel;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- docx-backend.js ---- */
+/* ساخت فایل Word از مدل سند — همان قالب‌بندی الگوی تأییدشده (A4، راست‌به‌چپ، B Nazanin/B Titr) */
+(function (root) {
+  'use strict';
+
+  function buildDocx(docx, model, C, meta) {
+    const {
+      Document, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle, ShadingType,
+      VerticalAlign, TableLayoutType, Header, Footer, PageNumber, LevelFormat, PageBreak, HeightRule,
+    } = docx;
+
+    const FONT_FA = 'B Nazanin', FONT_TITLE = 'B Titr', FONT_LAT = 'Calibri';
+    const INK = '1E1E1E', TEAL = '2E6171', GOLD = 'C9A227', ZEBRA = 'F4F1EA', PAPER = 'F7F5F0',
+      LINE = 'C8C2B4', MUTED = '5A5A5A', WHITE = 'FFFFFF', TINT = 'E4EBED';
+    const W = 9866;
+    const SZ = { body: 24, table: 22, small: 20, tiny: 17, h1: 30, h2: 26, title: 38 };
+    const LRM = '‎';
+
+    function run(text, o = {}) {
+      const latin = !!o.latin;
+      const size = o.size || SZ.body;
+      return new TextRun({
+        text, rightToLeft: !latin, bold: !!o.bold, boldComplexScript: !!o.bold, color: o.color || INK,
+        size, sizeComplexScript: size,
+        font: { ascii: FONT_LAT, hAnsi: FONT_LAT, cs: o.title ? FONT_TITLE : FONT_FA },
+        language: latin ? { value: 'en-US' } : { value: 'en-US', bidirectional: 'fa-IR' },
+      });
+    }
+    function runs(text, o = {}) {
+      const parts = String(text).split(/(‎?@?[A-Za-z][A-Za-z0-9._\-]*)/).filter((p) => p !== '');
+      return parts.map((p) => (/[A-Za-z]/.test(p) ? run(p.startsWith('@') ? LRM + p : p, { ...o, latin: true }) : run(p, o)));
+    }
+    function para(text, o = {}) {
+      return new Paragraph({
+        bidirectional: !o.ltr, alignment: o.align, keepNext: !!o.keepNext, keepLines: !!o.keepLines,
+        spacing: { before: o.before ?? 0, after: o.after ?? 80, line: o.line ?? 264 },
+        border: o.border, numbering: o.numbering,
+        children: Array.isArray(text) ? text : runs(text, o),
+      });
+    }
+    const NONE = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+    const thin = (c = LINE) => ({ style: BorderStyle.SINGLE, size: 4, color: c });
+    const gridBorders = { top: thin(), bottom: thin(), left: thin(), right: thin(), insideHorizontal: thin(), insideVertical: thin() };
+
+    function cell(content, width, o = {}) {
+      const children = (Array.isArray(content) ? content : [content]).map((c) => (c instanceof Paragraph ? c
+        : para(String(c), { size: o.size || SZ.table, bold: o.bold, color: o.color, align: o.align, after: 0, line: 252, ltr: o.ltr, latin: o.latin })));
+      return new TableCell({
+        width: { size: width, type: WidthType.DXA }, columnSpan: o.span,
+        shading: o.fill ? { fill: o.fill, type: ShadingType.CLEAR, color: 'auto' } : undefined,
+        margins: { top: o.padV ?? 45, bottom: o.padV ?? 45, left: 90, right: 90 },
+        verticalAlign: o.valign || VerticalAlign.CENTER, borders: o.borders, children,
+      });
+    }
+    function table(widths, rows, o = {}) {
+      return new Table({
+        width: { size: widths.reduce((a, b) => a + b, 0), type: WidthType.DXA }, columnWidths: widths,
+        visuallyRightToLeft: true, layout: TableLayoutType.FIXED, borders: o.borders || gridBorders, rows,
+      });
+    }
+    function headerRow(labels, widths, o = {}) {
+      return new TableRow({
+        tableHeader: true, cantSplit: true,
+        children: labels.map((l, i) => cell(l, widths[i], { fill: TEAL, color: WHITE, bold: true, align: o.align || AlignmentType.CENTER, size: o.size })),
+      });
+    }
+    function spanRow(text, widths) {
+      const total = widths.reduce((a, b) => a + b, 0);
+      return new TableRow({ cantSplit: true, children: [cell(text, total, { span: widths.length, fill: TINT, bold: true, color: TEAL })] });
+    }
+    function pairTable(items, o = {}) {
+      const wName = o.wName || 2930, wAmt = (W - 2 * wName) / 2;
+      const widths = [wName, wAmt, wName, wAmt];
+      const lab = o.amtLabel || 'مقدار ۱ واحد';
+      const rows = [headerRow(['ماده غذایی', lab, 'ماده غذایی', lab], widths)];
+      const pushPairs = (list) => {
+        for (let i = 0; i < list.length; i += 2) {
+          const a = list[i], b = list[i + 1] || ['', ''];
+          const fill = rows.length % 2 === 0 ? ZEBRA : undefined;
+          rows.push(new TableRow({ cantSplit: true, children: [
+            cell(a[0], wName, { bold: true, fill }), cell(a[1], wAmt, { fill }),
+            cell(b[0], wName, { bold: true, fill }), cell(b[1], wAmt, { fill }),
+          ] }));
+        }
+      };
+      if (o.groups) for (const g of o.groups) { rows.push(spanRow(g.title, widths)); pushPairs(g.items); }
+      else pushPairs(items);
+      return table(widths, rows);
+    }
+    function listTable(columns, items, widths) {
+      const rows = [headerRow(columns, widths)];
+      items.forEach((r, idx) => {
+        const fill = idx % 2 === 1 ? ZEBRA : undefined;
+        rows.push(new TableRow({ cantSplit: true, children: r.map((v, i) => cell(v, widths[i], { fill, bold: i === 0 })) }));
+      });
+      return table(widths, rows);
+    }
+    function kvTable(widths, rows) {
+      return table(widths, rows.map(([a, b]) => new TableRow({ cantSplit: true, children: [
+        cell(a, widths[0], { fill: ZEBRA, bold: true }), cell(b, widths[1], {}),
+      ] })));
+    }
+    const STYLE = {
+      'small-muted': { size: SZ.small, color: MUTED }, body: {}, 'tiny-muted': { size: SZ.tiny, color: MUTED },
+      def: { size: SZ.small, color: TEAL, bold: true },
+    };
+
+    const body = [];
+    for (const b of model) {
+      switch (b.t) {
+        case 'title':
+          body.push(para(b.text, { title: true, size: SZ.title, color: INK, align: AlignmentType.CENTER, before: 60, after: 140 }));
+          break;
+        case 'patient': {
+          const widths = [1800, 1489, 1800, 1489, 1800, 1488];
+          body.push(table(widths, b.rows.map((r) => new TableRow({ cantSplit: true, children: r.flatMap(([l, v], j) => [
+            cell(l, widths[2 * j], { fill: ZEBRA, bold: true, size: SZ.small }), cell(v, widths[2 * j + 1], { size: SZ.table }),
+          ]) }))));
+          break;
+        }
+        case 'h1':
+          body.push(para(b.text, { title: true, size: SZ.h1, color: TEAL, before: b.before ?? 120, after: 120, keepNext: true,
+            border: { bottom: { style: BorderStyle.SINGLE, size: 10, color: GOLD, space: 4 } } }));
+          break;
+        case 'h2':
+          body.push(para(b.text, { bold: true, size: SZ.h2, color: INK, before: b.before ?? 200, after: 40, keepNext: true }));
+          break;
+        case 'plan': {
+          const g = 975;
+          const widths = [1750, 1250, g, g, g, g, g, g, 1016];
+          const rows = [headerRow(b.header, widths, { size: SZ.small })];
+          b.rows.forEach((r, idx) => {
+            const fill = idx % 2 === 1 ? ZEBRA : undefined;
+            rows.push(new TableRow({ cantSplit: true, height: { value: 470, rule: HeightRule.ATLEAST }, children: r.map((v, i) => cell(v, widths[i], {
+              fill, bold: i === 0 || i === 8, align: i === 0 ? undefined : AlignmentType.CENTER, size: i === 1 ? SZ.small : 24,
+            })) }));
+          });
+          rows.push(new TableRow({ cantSplit: true, height: { value: 470, rule: HeightRule.ATLEAST }, children: b.total.map((v, i) => cell(v, widths[i], {
+            fill: TINT, bold: true, color: TEAL, align: i === 0 ? undefined : AlignmentType.CENTER, size: 24,
+          })) }));
+          body.push(table(widths, rows));
+          break;
+        }
+        case 'gap':
+          body.push(new Paragraph({ spacing: { before: 0, after: b.after }, children: [] }));
+          break;
+        case 'box':
+          body.push(table([W], [new TableRow({ children: [cell([
+            para(b.title, { bold: true, color: TEAL, size: SZ.body, after: 40 }),
+            ...b.paras.map((t) => para(t, { size: SZ.small, after: 40, align: AlignmentType.BOTH })),
+          ], W, { fill: PAPER, padV: 90 })] })], { borders: { top: thin(GOLD), bottom: thin(GOLD), left: thin(GOLD), right: thin(GOLD), insideHorizontal: NONE, insideVertical: NONE } }));
+          break;
+        case 'pagebreak':
+          body.push(new Paragraph({ children: [new PageBreak()] }));
+          break;
+        case 'p': {
+          const st = STYLE[b.style] || {};
+          body.push(para(b.text, { ...st, align: b.align === 'justify' ? AlignmentType.BOTH : undefined,
+            before: b.before ?? 0, after: b.after ?? 80, keepNext: !!b.keepNext }));
+          break;
+        }
+        case 'kv':
+          body.push(kvTable(b.widths, b.rows));
+          break;
+        case 'list':
+          for (const it of b.items) {
+            body.push(para(it, { size: b.size === 'small' ? SZ.small : SZ.body, color: b.color === 'muted' ? MUTED : undefined,
+              numbering: { reference: b.kind, level: 0 }, after: b.after, align: b.justify ? AlignmentType.BOTH : undefined }));
+          }
+          break;
+        case 'listTable':
+          body.push(listTable(b.columns, b.items, b.widths));
+          break;
+        case 'pairTable':
+          body.push(pairTable(b.items, { groups: b.groups, wName: b.wName, amtLabel: b.amtLabel }));
+          break;
+        case 'cellbox':
+          body.push(table([W], [new TableRow({ children: [cell(b.text, W, { fill: PAPER, padV: 80, size: SZ.table })] })]));
+          break;
+        case 'ltr':
+          body.push(para([run(b.text, { latin: true, size: SZ.tiny, color: MUTED })], { ltr: true, align: AlignmentType.LEFT, after: 30 }));
+          break;
+        default:
+          break;
+      }
+    }
+
+    const brand = C.brand;
+    const headerTable = new Table({
+      width: { size: W, type: WidthType.DXA }, columnWidths: [6200, W - 6200], visuallyRightToLeft: true, layout: TableLayoutType.FIXED,
+      borders: { top: NONE, left: NONE, right: NONE, insideHorizontal: NONE, insideVertical: NONE, bottom: { style: BorderStyle.SINGLE, size: 12, color: GOLD } },
+      rows: [new TableRow({ children: [
+        cell([
+          para(brand.name, { title: true, size: 26, after: 0, line: 240 }),
+          para(brand.subtitle, { size: SZ.small, color: TEAL, after: 20, line: 240 }),
+        ], 6200, { padV: 20 }),
+        cell([para([run(brand.ig, { latin: true, size: 19, color: INK })], { ltr: true, align: AlignmentType.LEFT, after: 0 })], W - 6200, { padV: 20, valign: VerticalAlign.BOTTOM }),
+      ] })],
+    });
+    const pn = (field) => new TextRun({ children: [field], rightToLeft: true, size: SZ.tiny, sizeComplexScript: SZ.tiny, color: MUTED,
+      font: { ascii: FONT_LAT, hAnsi: FONT_LAT, cs: FONT_FA } });
+    const footerPara = new Paragraph({
+      bidirectional: true, alignment: AlignmentType.CENTER, spacing: { before: 60, after: 0 },
+      border: { top: { style: BorderStyle.SINGLE, size: 4, color: LINE, space: 4 } },
+      children: [
+        run(brand.footer_inperson + ' ', { size: SZ.tiny, color: MUTED }),
+        run(LRM + brand.clinic_ig, { latin: true, size: SZ.tiny, color: MUTED }),
+        run('   |   ' + brand.footer_online + ' ', { size: SZ.tiny, color: MUTED }),
+        run(LRM + brand.ig, { latin: true, size: SZ.tiny, color: MUTED }),
+        run('   |   صفحه ', { size: SZ.tiny, color: MUTED }), pn(PageNumber.CURRENT),
+        run(' از ', { size: SZ.tiny, color: MUTED }), pn(PageNumber.TOTAL_PAGES),
+      ],
+    });
+    const numLevel = (format, text) => ({ level: 0, format, text, alignment: AlignmentType.START,
+      style: { paragraph: { indent: { left: 400, hanging: 300 } },
+        run: { font: { ascii: FONT_LAT, hAnsi: FONT_LAT, cs: FONT_FA }, color: TEAL, bold: true, boldComplexScript: true, rightToLeft: true } } });
+
+    return new Document({
+      creator: brand.name, lastModifiedBy: brand.name, title: (meta && meta.title) || C.title,
+      description: (meta && meta.description) || 'برنامه غذایی',
+      styles: { default: {
+        document: { run: { font: { ascii: FONT_LAT, hAnsi: FONT_LAT, cs: FONT_FA }, size: SZ.body, sizeComplexScript: SZ.body, color: INK },
+          paragraph: { spacing: { after: 80, line: 264 } } },
+      } },
+      numbering: { config: [
+        { reference: 'dots', levels: [numLevel(LevelFormat.BULLET, '•')] },
+        { reference: 'nums-notes', levels: [numLevel(LevelFormat.DECIMAL, '%1.')] },
+        { reference: 'nums-steps', levels: [numLevel(LevelFormat.DECIMAL, '%1.')] },
+      ] },
+      sections: [{
+        properties: { page: { size: { width: 11906, height: 16838 }, margin: { top: 1500, bottom: 1134, left: 1020, right: 1020, header: 500, footer: 450 } } },
+        headers: { default: new Header({ children: [headerTable, new Paragraph({ spacing: { after: 0 }, children: [] })] }) },
+        footers: { default: new Footer({ children: [footerPara] }) },
+        children: body,
+      }],
+    });
+  }
+
+  const DocxBackend = { buildDocx };
+  root.DocxBackend = DocxBackend;
+  if (typeof module !== 'undefined' && module.exports) module.exports = DocxBackend;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- pdf-backend.js ---- */
+/* ساخت PDF در خود مرورگر: صفحه‌آرایی مدل سند روی canvas (شکل‌دهی و راست‌به‌چپ با موتور متن مرورگر)
+   و بسته‌بندی صفحه‌ها در یک فایل PDF استاندارد. هیچ کتابخانه بیرونی لازم نیست. */
+(function (root) {
+  'use strict';
+  const FA = root.FA;
+
+  const FAMILY = '"Vazirmatn", "Noto Sans Arabic", "Noto Naskh Arabic", Tahoma, "DejaVu Sans", sans-serif';
+  const PAGE_W = 595.28, PAGE_H = 841.89;
+  const MX = 51, TOP = 75, BOTTOM = PAGE_H - 56.7, CW = PAGE_W - 2 * MX, RIGHT = PAGE_W - MX;
+  const COL = { ink: '#1E1E1E', teal: '#2E6171', gold: '#C9A227', zebra: '#F4F1EA', paper: '#F7F5F0', line: '#C8C2B4',
+                muted: '#5A5A5A', white: '#FFFFFF', tint: '#E4EBED' };
+  const SZ = { body: 9.4, table: 8.7, small: 8.1, tiny: 6.9, h1: 13, h2: 10.6, title: 16 };
+  const LH = 1.66;          // ضریب ارتفاع خط
+  const PADX = 4.5, PADV = 2.4;
+  const tw = (twips) => twips / 20;
+
+  // ------------------------------------------------------------------ اندازه‌گیری متن
+  let mctx = null;
+  function measurer() {
+    if (!mctx) mctx = document.createElement('canvas').getContext('2d');
+    return mctx;
+  }
+  const fontStr = (size, weight) => `${weight || 400} ${size}px ${FAMILY}`;
+  function textWidth(text, size, weight) {
+    const ctx = measurer();
+    ctx.font = fontStr(size * 10, weight);
+    return ctx.measureText(text).width / 10;
+  }
+  function wrap(text, width, size, weight) {
+    const words = String(text).split(/ +/);
+    const lines = [];
+    let cur = '';
+    for (const w of words) {
+      const cand = cur ? `${cur} ${w}` : w;
+      if (!cur || textWidth(cand, size, weight) <= width) { cur = cand; continue; }
+      lines.push(cur);
+      cur = w;
+    }
+    if (cur || lines.length === 0) lines.push(cur);
+    return lines;
+  }
+
+  // ------------------------------------------------------------------ آیتم‌های صفحه‌بندی
+  // هر آیتم: {h, before, after, keepNext, draw(ops, y), header?, isHeader?, pageBreak?}
+  const textOp = (ops, x, y, s, size, weight, color, align, dir) =>
+    ops.push({ k: 'text', x, y, s, size, weight: weight || 400, color: color || COL.ink, align: align || 'right', dir: dir || 'rtl' });
+
+  function lineItems(text, o) {
+    const size = o.size || SZ.body, weight = o.weight || 400, color = o.color || COL.ink;
+    const indent = o.indent || 0;
+    const width = CW - indent;
+    const lines = o.ltr ? wrapLtr(text, width, size, weight) : wrap(text, width, size, weight);
+    const lh = size * LH;
+    return lines.map((ln, i) => ({
+      h: lh, before: i === 0 ? (o.before || 0) : 0, after: i === lines.length - 1 ? (o.after || 0) : 0,
+      keepNext: !!o.keepNext || i < lines.length - 1 && lines.length <= 3,
+      draw(ops, y) {
+        const mid = y + lh / 2;
+        if (o.ltr) textOp(ops, MX, mid, ln, size, weight, color, 'left', 'ltr');
+        else if (o.align === 'center') textOp(ops, PAGE_W / 2, mid, ln, size, weight, color, 'center');
+        else textOp(ops, RIGHT - indent, mid, ln, size, weight, color, 'right');
+        if (i === 0 && o.marker) textOp(ops, RIGHT - 4, mid, o.marker, size, 700, COL.teal, 'right');
+        if (i === lines.length - 1 && o.underline) {
+          ops.push({ k: 'line', x1: MX, y1: y + lh + 2, x2: RIGHT, y2: y + lh + 2, color: COL.gold, lw: 1.1 });
+        }
+      },
+    }));
+  }
+  function wrapLtr(text, width, size, weight) {
+    return wrap(text, width, size, weight);
+  }
+
+  // جدول: ستون اول سمت راست
+  function tableItems(widths, rows, opt) {
+    const xs = [];
+    let x = RIGHT;
+    for (const w of widths) { xs.push(x); x -= w; }
+    const items = [];
+    let headerItem = null;
+    rows.forEach((row, ri) => {
+      // row: {cells:[{text, bold, color, fill, align, size, span}], minH, isHeader, keepNext}
+      const cellsLayout = [];
+      let ci = 0, maxH = row.minH || 0;
+      for (const c of row.cells) {
+        const span = c.span || 1;
+        let w = 0; for (let k = 0; k < span; k++) w += widths[ci + k];
+        const size = c.size || SZ.table, weight = c.bold ? 700 : 400;
+        const inner = w - 2 * PADX;
+        const paras = Array.isArray(c.text) ? c.text : [c.text];
+        const blocks = paras.map((pp) => (typeof pp === 'string' ? { text: pp, size, weight, color: c.color } : pp));
+        const laid = blocks.map((b) => ({ ...b, lines: wrap(b.text, inner, b.size || size, b.weight || weight) }));
+        let h = 2 * (c.padV ?? PADV);
+        laid.forEach((b, bi) => { h += b.lines.length * (b.size || size) * LH + (bi < laid.length - 1 ? (b.gap || 0) : 0); });
+        maxH = Math.max(maxH, h);
+        cellsLayout.push({ x: xs[ci], w, laid, c, size });
+        ci += span;
+      }
+      const item = {
+        h: maxH, before: 0, after: 0, keepNext: !!row.isHeader || !!row.keepNext, isHeader: !!row.isHeader,
+        draw(ops, y) {
+          for (const L of cellsLayout) {
+            const left = L.x - L.w;
+            if (L.c.fill) ops.push({ k: 'rect', x: left, y, w: L.w, h: maxH, fill: L.c.fill });
+            if (!opt.noGrid) ops.push({ k: 'stroke', x: left, y, w: L.w, h: maxH, color: opt.border || COL.line, lw: 0.5 });
+            let content = 0;
+            L.laid.forEach((b) => { content += b.lines.length * (b.size || L.size) * LH + (b.gap || 0); });
+            let ty = y + (maxH - content) / 2;
+            for (const b of L.laid) {
+              const sz = b.size || L.size, lh = sz * LH;
+              for (const ln of b.lines) {
+                const mid = ty + lh / 2;
+                if (L.c.align === 'center') textOp(ops, L.x - L.w / 2, mid, ln, sz, b.weight, b.color || L.c.color, 'center');
+                else textOp(ops, L.x - PADX, mid, ln, sz, b.weight, b.color || L.c.color, 'right');
+                ty += lh;
+              }
+              ty += b.gap || 0;
+            }
+          }
+          if (opt.outer) ops.push({ k: 'stroke', x: xs[0] - widths.reduce((a, b) => a + b, 0), y, w: widths.reduce((a, b) => a + b, 0), h: maxH, color: opt.outer, lw: 0.7 });
+        },
+      };
+      if (row.isHeader) headerItem = item;
+      else if (headerItem) item.header = headerItem;
+      items.push(item);
+    });
+    if (items.length) { items[0].before = opt.before || 0; items[items.length - 1].after = opt.after || 0; }
+    return items;
+  }
+
+  // ------------------------------------------------------------------ مدل → آیتم‌ها
+  function itemsFromModel(model) {
+    const items = [];
+    const W = (tws) => tws.map(tw);
+    const head = (labels, size) => ({ isHeader: true, cells: labels.map((l) => ({ text: l, bold: true, color: COL.white, fill: COL.teal, align: 'center', size: size || SZ.table })) });
+    for (const b of model) {
+      switch (b.t) {
+        case 'title':
+          items.push(...lineItems(b.text, { size: SZ.title, weight: 800, align: 'center', before: 2, after: 8 }));
+          break;
+        case 'patient': {
+          const widths = W([1800, 1489, 1800, 1489, 1800, 1488]);
+          items.push(...tableItems(widths, b.rows.map((r) => ({ cells: r.flatMap(([l, v]) => [
+            { text: l, bold: true, fill: COL.zebra, size: SZ.small }, { text: v, size: SZ.table }]) })), {}));
+          break;
+        }
+        case 'h1':
+          items.push(...lineItems(b.text, { size: SZ.h1, weight: 800, color: COL.teal, before: tw(b.before ?? 120), after: 8, keepNext: true, underline: true }));
+          break;
+        case 'h2':
+          items.push(...lineItems(b.text, { size: SZ.h2, weight: 700, before: tw(b.before ?? 200), after: 2, keepNext: true }));
+          break;
+        case 'plan': {
+          const widths = W([1750, 1250, 975, 975, 975, 975, 975, 975, 1016]);
+          const rows = [head(b.header, SZ.small)];
+          b.rows.forEach((r, idx) => rows.push({ minH: 22, cells: r.map((v, i) => ({ text: v, fill: idx % 2 === 1 ? COL.zebra : null,
+            bold: i === 0 || i === 8, align: i === 0 ? 'right' : 'center', size: i === 1 ? SZ.small : SZ.body })) }));
+          rows.push({ minH: 22, cells: b.total.map((v, i) => ({ text: v, fill: COL.tint, bold: true, color: COL.teal, align: i === 0 ? 'right' : 'center', size: SZ.body })) });
+          items.push(...tableItems(widths, rows, {}));
+          break;
+        }
+        case 'gap':
+          items.push({ h: 0, before: 0, after: tw(b.after), draw() {} });
+          break;
+        case 'box': {
+          const paras = [{ text: b.title, size: SZ.body, weight: 700, color: COL.teal, gap: 2 },
+            ...b.paras.map((t) => ({ text: t, size: SZ.small, gap: 2 }))];
+          items.push(...tableItems([CW], [{ cells: [{ text: paras, fill: COL.paper, padV: 6 }] }], { noGrid: true, outer: COL.gold }));
+          break;
+        }
+        case 'pagebreak':
+          items.push({ pageBreak: true });
+          break;
+        case 'p': {
+          const st = { 'small-muted': { size: SZ.small, color: COL.muted }, body: { size: SZ.body },
+            'tiny-muted': { size: SZ.tiny, color: COL.muted }, def: { size: SZ.small, color: COL.teal, weight: 700 } }[b.style] || {};
+          items.push(...lineItems(b.text, { ...st, before: tw(b.before ?? 0), after: tw(b.after ?? 80), keepNext: !!b.keepNext }));
+          break;
+        }
+        case 'kv': {
+          const widths = W(b.widths);
+          items.push(...tableItems(widths, b.rows.map(([k, v]) => ({ cells: [{ text: k, bold: true, fill: COL.zebra }, { text: v }] })), {}));
+          break;
+        }
+        case 'list':
+          b.items.forEach((t, i) => {
+            const marker = b.kind === 'dots' ? '•' : `${FA.digits(i + 1)}.`;
+            items.push(...lineItems(t, { size: b.size === 'small' ? SZ.small : SZ.body, color: b.color === 'muted' ? COL.muted : COL.ink,
+              indent: 16, marker, after: tw(b.after ?? 60) }));
+          });
+          break;
+        case 'listTable': {
+          const widths = W(b.widths);
+          const rows = [head(b.columns)];
+          b.items.forEach((r, idx) => rows.push({ cells: r.map((v, i) => ({ text: v, bold: i === 0, fill: idx % 2 === 1 ? COL.zebra : null })) }));
+          items.push(...tableItems(widths, rows, {}));
+          break;
+        }
+        case 'pairTable': {
+          const wName = tw(b.wName || 2930), wAmt = (CW - 2 * wName) / 2;
+          const widths = [wName, wAmt, wName, wAmt];
+          const lab = b.amtLabel || 'مقدار ۱ واحد';
+          const rows = [head(['ماده غذایی', lab, 'ماده غذایی', lab])];
+          const pushPairs = (list) => {
+            for (let i = 0; i < list.length; i += 2) {
+              const a = list[i], c = list[i + 1] || ['', ''];
+              const fill = rows.length % 2 === 0 ? COL.zebra : null;
+              rows.push({ cells: [{ text: a[0], bold: true, fill }, { text: a[1], fill }, { text: c[0], bold: true, fill }, { text: c[1], fill }] });
+            }
+          };
+          if (b.groups) for (const g of b.groups) { rows.push({ keepNext: true, cells: [{ text: g.title, bold: true, color: COL.teal, fill: COL.tint, span: 4 }] }); pushPairs(g.items); }
+          else pushPairs(b.items);
+          items.push(...tableItems(widths, rows, {}));
+          break;
+        }
+        case 'cellbox':
+          items.push(...tableItems([CW], [{ cells: [{ text: b.text, fill: COL.paper, padV: 5 }] }], {}));
+          break;
+        case 'ltr':
+          items.push(...lineItems(b.text, { size: SZ.tiny, color: COL.muted, ltr: true, after: 1.5 }));
+          break;
+        default:
+          break;
+      }
+    }
+    return items;
+  }
+
+  // ------------------------------------------------------------------ صفحه‌بندی
+  function paginate(items) {
+    const pages = [[]];
+    let y = TOP;
+    const newPage = () => { pages.push([]); y = TOP; };
+    const chainHeight = (i) => {
+      let h = 0, k = i, first = true;
+      while (k < items.length) {
+        const it = items[k];
+        if (it.pageBreak) break;
+        h += (first && y === TOP ? 0 : it.before) + it.h;
+        first = false;
+        if (!it.keepNext) break;
+        h += it.after;
+        k++;
+      }
+      return h;
+    };
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      if (it.pageBreak) { newPage(); continue; }
+      if (y + chainHeight(i) > BOTTOM && y > TOP) newPage();
+      let ops = pages[pages.length - 1];
+      if (y === TOP && it.header && !it.isHeader) {
+        it.header.draw(ops, y);
+        y += it.header.h;
+      }
+      const top = y + (y === TOP ? 0 : it.before);
+      it.draw(ops, top);
+      y = top + it.h + it.after;
+      if (y > BOTTOM + 0.5 && i < items.length - 1) { newPage(); ops = pages[pages.length - 1]; }
+    }
+    return pages.filter((p, i) => p.length || i === 0);
+  }
+
+  // ------------------------------------------------------------------ رسم
+  function drawPage(ctx, ops, pageNo, total, brand, scale) {
+    ctx.save();
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+    const all = ops.concat(chrome(pageNo, total, brand));
+    for (const op of all) {
+      if (op.k === 'rect') { ctx.fillStyle = op.fill; ctx.fillRect(op.x, op.y, op.w, op.h); }
+    }
+    for (const op of all) {
+      if (op.k === 'stroke') { ctx.strokeStyle = op.color; ctx.lineWidth = op.lw; ctx.strokeRect(op.x, op.y, op.w, op.h); }
+      else if (op.k === 'line') { ctx.strokeStyle = op.color; ctx.lineWidth = op.lw; ctx.beginPath(); ctx.moveTo(op.x1, op.y1); ctx.lineTo(op.x2, op.y2); ctx.stroke(); }
+      else if (op.k === 'text') {
+        ctx.font = fontStr(op.size, op.weight);
+        ctx.fillStyle = op.color;
+        ctx.direction = op.dir;
+        ctx.textAlign = op.align;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(op.s, op.x, op.y + op.size * 0.08);
+      }
+    }
+    ctx.restore();
+  }
+
+  function chrome(pageNo, total, brand) {
+    const ops = [];
+    textOp(ops, RIGHT, 33, brand.name, 11.5, 800, COL.ink, 'right');
+    textOp(ops, RIGHT, 49, brand.subtitle, 8.2, 400, COL.teal, 'right');
+    textOp(ops, MX, 49, brand.ig, 8.6, 400, COL.ink, 'left', 'ltr');
+    ops.push({ k: 'line', x1: MX, y1: 59, x2: RIGHT, y2: 59, color: COL.gold, lw: 1.2 });
+    const fy = PAGE_H - 26;
+    ops.push({ k: 'line', x1: MX, y1: fy - 10, x2: RIGHT, y2: fy - 10, color: COL.line, lw: 0.5 });
+    const footer = `${brand.footer_inperson} ⁦${brand.clinic_ig}⁩   |   ${brand.footer_online} ⁦${brand.ig}⁩   |   صفحه ${FA.digits(pageNo)} از ${FA.digits(total)}`;
+    textOp(ops, PAGE_W / 2, fy, footer, 7, 400, COL.muted, 'center');
+    return ops;
+  }
+
+  async function ensureFonts() {
+    if (typeof document === 'undefined' || !document.fonts) return;
+    try {
+      await Promise.all(['400', '700', '800'].map((w) => document.fonts.load(`${w} 16px Vazirmatn`, 'آزمایش')));
+      await document.fonts.ready;
+    } catch (e) { /* فونت جایگزین استفاده می‌شود */ }
+  }
+
+  async function layout(model) {
+    await ensureFonts();
+    return paginate(itemsFromModel(model));
+  }
+
+  function renderPage(pages, index, brand, scale) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(PAGE_W * scale);
+    canvas.height = Math.round(PAGE_H * scale);
+    drawPage(canvas.getContext('2d'), pages[index], index + 1, pages.length, brand, scale);
+    return canvas;
+  }
+
+  const toBlob = (canvas, q) => new Promise((res) => canvas.toBlob(res, 'image/jpeg', q));
+
+  function utf16hex(s) {
+    let h = 'FEFF';
+    for (let i = 0; i < s.length; i++) h += s.charCodeAt(i).toString(16).toUpperCase().padStart(4, '0');
+    return `<${h}>`;
+  }
+
+  /** PDF با یک تصویر JPEG تمام‌صفحه برای هر صفحه */
+  function makePdf(images, meta) {
+    const enc = new TextEncoder();
+    const chunks = [];
+    let offset = 0;
+    const offsets = {};
+    const push = (d) => { const b = typeof d === 'string' ? enc.encode(d) : d; chunks.push(b); offset += b.length; };
+    const n = images.length;
+    const pageId = (i) => 4 + 3 * i, imgId = (i) => 5 + 3 * i, contId = (i) => 6 + 3 * i;
+    const total = 3 + 3 * n;
+    push('%PDF-1.4\n%âãÏÓ\n');
+    offsets[1] = offset; push('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+    offsets[2] = offset; push(`2 0 obj\n<< /Type /Pages /Kids [${images.map((_, i) => `${pageId(i)} 0 R`).join(' ')}] /Count ${n} >>\nendobj\n`);
+    offsets[3] = offset; push(`3 0 obj\n<< /Title ${utf16hex(meta.title || '')} /Author ${utf16hex(meta.author || '')} /Creator (Diet plan app) >>\nendobj\n`);
+    images.forEach((im, i) => {
+      offsets[pageId(i)] = offset;
+      push(`${pageId(i)} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /XObject << /Im${i} ${imgId(i)} 0 R >> >> /Contents ${contId(i)} 0 R >>\nendobj\n`);
+      offsets[imgId(i)] = offset;
+      push(`${imgId(i)} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`);
+      push(im.bytes);
+      push('\nendstream\nendobj\n');
+      const content = `q ${PAGE_W} 0 0 ${PAGE_H} 0 0 cm /Im${i} Do Q`;
+      offsets[contId(i)] = offset;
+      push(`${contId(i)} 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+    });
+    const xref = offset;
+    let x = `xref\n0 ${total + 1}\n0000000000 65535 f \n`;
+    for (let id = 1; id <= total; id++) x += `${String(offsets[id]).padStart(10, '0')} 00000 n \n`;
+    push(x);
+    push(`trailer\n<< /Size ${total + 1} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+    return new Blob(chunks, { type: 'application/pdf' });
+  }
+
+  async function buildPdf(model, brand, meta, opts) {
+    const o = opts || {};
+    const scale = o.scale || 2.5;
+    const pages = await layout(model);
+    const images = [];
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = renderPage(pages, i, brand, scale);
+      const blob = await toBlob(canvas, o.quality || 0.88);
+      images.push({ bytes: new Uint8Array(await blob.arrayBuffer()), w: canvas.width, h: canvas.height });
+      canvas.width = canvas.height = 0;
+      if (o.onProgress) o.onProgress(i + 1, pages.length);
+    }
+    return { blob: makePdf(images, meta), pageCount: pages.length };
+  }
+
+  async function preview(model, brand, index, width) {
+    const pages = await layout(model);
+    return { canvas: renderPage(pages, Math.min(index || 0, pages.length - 1), brand, width / PAGE_W), pageCount: pages.length };
+  }
+
+  root.PdfBackend = { buildPdf, preview, layout, makePdf, PAGE_W, PAGE_H };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- app.js ---- */
+/* رابط کاربری اپ */
+(function () {
+  'use strict';
+  const E = window.Engine, C = window.CONTENT, F = window.FA, M = window.Menu;
+  document.documentElement.dir = 'rtl';
+  document.documentElement.lang = 'fa';
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => Array.from(document.querySelectorAll(s));
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const DRAFT_KEY = 'diet-planner-draft-v1';
+  const CFG = window.APP_CONFIG || {};
+  const DOCX_URLS = (CFG.docxUrls || []).concat(['https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js', 'https://unpkg.com/docx@9.7.1/dist/index.iife.js']);
+  const STANDALONE = !(window.claude && typeof window.claude.use === 'function');
+  const SHORT = { Grains: 'نان', Protein: 'گوشت', Fats: 'چربی', Dairy: 'لبنی', Fruits: 'میوه', Vegetables: 'سبزی' };
+  const MEAL_SHORT = { 'Breakfast': 'صبحانه', 'Morning Snack': 'میان صبح', 'Lunch': 'ناهار', 'Evening Snack': 'میان عصر', 'Dinner': 'شام', 'Night Snack': 'میان شب' };
+  const PLAN_HINT = {
+    Normal: 'کربوهیدرات ۵۵٪، پروتئین ۲۰٪، چربی ۲۵٪. لبنیات، میوه و سبزی بر اساس الگوی غذایی سالم DGA.',
+    DASH: 'برای فشار خون: میوه و سبزی طبق جدول NHLBI، لبنیات و گوشت کم‌چرب، سدیم حداکثر ۲۳۰۰ میلی‌گرم در روز.',
+    Diabetic: 'کربوهیدرات ۴۵٪ و پخش‌شده بین شش وعده؛ میوه در میان‌وعده‌ها، نه در صبحانه.',
+  };
+  const DEFAULTS = () => ({
+    name: '', file: '', sex: 'f', age: '', height: '', weight: '', waist: '', abdomen: '', thigh: '', wrist: '', fat: '', steps: '',
+    activity: 'inactive', goal: 'lose', deficit: '500', surplus: '300', planType: 'Normal',
+    prefs: { Grains: 0, Protein: 0, Fats: 0, Dairy: 0, Fruits: 0, Vegetables: 0 },
+    kcal: '', mc: '', mp: '', mf: '', date: F.jalali(new Date()), weeks: '2', next: nextVisit(2), target: '',
+  });
+  const SAMPLE = () => Object.assign(DEFAULTS(), { name: 'بیمار نمونه', age: '۳۵', height: '۱۵۷', weight: '۶۷٫۵', waist: '۸۸', steps: '۴۵۰۰' });
+  const INPUTS = { 'f-name': 'name', 'f-file': 'file', 'f-age': 'age', 'f-height': 'height', 'f-weight': 'weight', 'f-waist': 'waist',
+    'f-abdomen': 'abdomen', 'f-thigh': 'thigh', 'f-wrist': 'wrist', 'f-fat': 'fat', 'f-steps': 'steps', 'f-kcal': 'kcal',
+    'f-c': 'mc', 'f-p': 'mp', 'f-f': 'mf', 'f-date': 'date', 'f-next': 'next', 'f-target': 'target' };
+
+  const state = { tab: 'patient', f: DEFAULTS(), sample: false, result: null, inputs: null, plan: null, basePlan: null,
+    menu: {}, menuEdited: {}, menuStale: {}, rx: [], scope: 'full', sel: null, dirty: false };
+
+  function nextVisit(weeks) { const d = new Date(); d.setDate(d.getDate() + 7 * +weeks); return F.jalali(d); }
+  const num = (x, dec = 1) => F.num(x, dec);
+  const latin = (s) => String(s).replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/٫/g, '.');
+
+  // ------------------------------------------------------------------ ذخیره پیش‌نویس (فقط روی همین دستگاه)
+  function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ f: state.f, sample: state.sample })); } catch (e) { /* بدون ذخیره */ } }
+  function loadDraft() { try { const s = localStorage.getItem(DRAFT_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+
+  // ------------------------------------------------------------------ ساخت اجزای فرم
+  function buildForm() {
+    $('#acts').innerHTML = Object.entries(E.ACTIVITY_LEVELS).map(([k, v]) => {
+      const [title, desc] = v.fa.split(':');
+      return `<button type="button" class="act" role="radio" data-act="${k}"><span class="dot" aria-hidden="true"></span>
+        <span><b>${title}</b>${desc ? `<small>${desc.trim()}</small>` : ''}</span><span class="pal num">×${num(v.pal, 2)}</span></button>`;
+    }).join('');
+    $('#prefs').innerHTML = E.GROUPS.map((g) => `<div class="pref"><span>${E.GROUP_FA[g]}</span>
+      <div class="seg" role="radiogroup" aria-label="${E.GROUP_FA[g]}" data-name="pref:${g}">
+      <button type="button" role="radio" data-value="-1">کمتر</button><button type="button" role="radio" data-value="0">معمولی</button><button type="button" role="radio" data-value="1">بیشتر</button></div></div>`).join('');
+  }
+
+  function segValue(name) {
+    if (name.startsWith('pref:')) return String(state.f.prefs[name.slice(5)]);
+    if (name === 'scope') return state.scope;
+    return String(state.f[name]);
+  }
+  function syncForm() {
+    for (const [id, key] of Object.entries(INPUTS)) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = state.f[key] ?? ''; }
+    $$('.seg[data-name]').forEach((seg) => {
+      const v = segValue(seg.dataset.name);
+      seg.querySelectorAll('[role="radio"]').forEach((b) => { b.setAttribute('aria-checked', String(b.dataset.value === v)); b.tabIndex = b.dataset.value === v ? 0 : -1; });
+    });
+    $$('.act').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.act === state.f.activity)));
+    $('#deficit-field').hidden = state.f.goal !== 'lose';
+    $('#surplus-field').hidden = state.f.goal !== 'gain';
+    $('#plan-hint').textContent = PLAN_HINT[state.f.planType];
+    $('#sample-note').hidden = !state.sample;
+    const mc = [state.f.mc, state.f.mp, state.f.mf].map((x) => E.toNumber(x || 'x'));
+    if (mc.some((x) => !Number.isNaN(x))) {
+      const s = mc.reduce((a, b) => a + (Number.isNaN(b) ? 0 : b), 0);
+      $('#macro-sum').textContent = `جمع درصدها: ${num(s)}٪${Math.abs(s - 100) > 1 ? ' (باید ۱۰۰ باشد)' : ''}`;
+    } else $('#macro-sum').textContent = 'اگر هر سه خالی باشند، درصدها از نوع برنامه و ترجیحات محاسبه می‌شوند.';
+  }
+
+  function onChange() {
+    if (state.result) state.dirty = true;
+    saveDraft();
+    syncForm();
+    updateBar();
+    if (state.tab === 'plan' && state.result) renderDirtyNote();
+  }
+
+  function wireForm() {
+    for (const [id, key] of Object.entries(INPUTS)) {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => { state.f[key] = el.value; clearErr(key); onChange(); });
+    }
+    document.addEventListener('click', (ev) => {
+      const b = ev.target.closest('.seg [role="radio"]');
+      if (b) {
+        const name = b.closest('.seg').dataset.name;
+        const v = b.dataset.value;
+        if (name.startsWith('pref:')) state.f.prefs[name.slice(5)] = +v;
+        else if (name === 'scope') { state.scope = v; syncForm(); renderPreview(); return; }
+        else state.f[name] = v;
+        if (name === 'weeks') state.f.next = nextVisit(v);
+        onChange();
+        return;
+      }
+      const a = ev.target.closest('.act');
+      if (a) { state.f.activity = a.dataset.act; onChange(); }
+    });
+    // پیمایش با کلید جهت در گروه‌های رادیویی
+    document.addEventListener('keydown', (ev) => {
+      const b = ev.target.closest('[role="radio"]');
+      if (!b || !['ArrowLeft', 'ArrowRight'].includes(ev.key)) return;
+      const group = Array.from(b.parentElement.querySelectorAll('[role="radio"]'));
+      const i = group.indexOf(b);
+      const next = group[(i + (ev.key === 'ArrowLeft' ? 1 : -1) + group.length) % group.length];
+      next.focus(); next.click(); ev.preventDefault();
+    });
+    $('#form').addEventListener('submit', (ev) => { ev.preventDefault(); compute(); });
+    $('#target-suggest').addEventListener('click', () => { state.f.target = $('#target-suggest').dataset.value; onChange(); });
+  }
+
+  // ------------------------------------------------------------------ اعتبارسنجی
+  function setErr(key, msg) {
+    const map = { age: ['f-age', 'e-age'], height: ['f-height', 'e-height'], weight: ['f-weight', 'e-weight'], kcal: ['f-kcal', 'e-kcal'] };
+    const [inp, err] = map[key];
+    document.getElementById(inp).setAttribute('aria-invalid', msg ? 'true' : 'false');
+    document.getElementById(err).textContent = msg || '';
+  }
+  function clearErr(key) { if (['age', 'height', 'weight', 'kcal'].includes(key)) setErr(key, ''); }
+
+  function readInputs() {
+    const f = state.f;
+    const errs = {};
+    const need = (key, label, lo, hi) => {
+      const v = E.toNumber(f[key] || '');
+      if (f[key] === '' || f[key] === undefined) { errs[key] = `${label} را وارد کنید.`; return NaN; }
+      if (Number.isNaN(v)) { errs[key] = `${label} باید عدد باشد.`; return NaN; }
+      if (v < lo || v > hi) { errs[key] = `${label} باید بین ${num(lo)} و ${num(hi)} باشد.`; return NaN; }
+      return v;
+    };
+    const opt = (key) => { const v = E.toNumber(f[key] || ''); return Number.isNaN(v) || v <= 0 ? null : v; };
+    const age = need('age', 'سن', 14, 100), height = need('height', 'قد', 120, 220), weight = need('weight', 'وزن', 30, 300);
+    let kcal = null;
+    if (f.kcal !== '') {
+      kcal = E.toNumber(f.kcal);
+      if (Number.isNaN(kcal) || kcal < 800 || kcal > 5000) { errs.kcal = 'کالری دستی باید بین ۸۰۰ و ۵۰۰۰ باشد.'; kcal = null; }
+    }
+    let macros = null;
+    const mm = [f.mc, f.mp, f.mf];
+    if (mm.some((x) => x !== '')) {
+      const v = mm.map((x) => E.toNumber(x || ''));
+      if (v.some((x) => Number.isNaN(x) || x <= 0) || Math.abs(v[0] + v[1] + v[2] - 100) > 1) errs.macros = 'درصدهای دستی: هر سه را وارد کنید و جمعشان ۱۰۰ باشد.';
+      else macros = { C: v[0], P: v[1], F: v[2] };
+    }
+    ['age', 'height', 'weight', 'kcal'].forEach((k) => setErr(k, errs[k]));
+    if (errs.macros) $('#macro-sum').textContent = errs.macros;
+    if (Object.keys(errs).length) return { ok: false, errs };
+    return { ok: true, p: { sex: f.sex, age, height, weight, waist: opt('waist'), activity: f.activity, goal: f.goal,
+      deficit: +f.deficit, surplus: +f.surplus, planType: f.planType, preferences: clone(f.prefs), calorieOverride: kcal, macros,
+      steps: opt('steps') } };
+  }
+
+  // ------------------------------------------------------------------ محاسبه
+  function compute() {
+    const r = readInputs();
+    if (!r.ok) {
+      showTab('patient');
+      if (r.errs.macros) $('#adv').open = true;
+      const first = ['age', 'height', 'weight', 'kcal'].find((k) => r.errs[k]);
+      if (first) document.getElementById({ age: 'f-age', height: 'f-height', weight: 'f-weight', kcal: 'f-kcal' }[first]).focus();
+      return;
+    }
+    const d = E.buildFullPlan(r.p);
+    state.result = d;
+    state.inputs = r.p;
+    state.basePlan = clone(d.plan);
+    state.plan = clone(d.plan);
+    state.menu = M.generateMenu(state.plan, E.MEALS, new Date());
+    state.menuEdited = {}; state.menuStale = {};
+    state.rx = M.rxTexts(r.p.age, r.p.steps);
+    state.dirty = false;
+    state.sel = null;
+    const sug = suggestTarget(d, r.p);
+    if (sug !== null && !state.f.target) { state.f.target = num(sug); saveDraft(); syncForm(); }
+    renderPlan(true);
+    showTab('plan');
+    window.scrollTo({ top: 0 });
+  }
+
+  function suggestTarget(d, p) {
+    const weeks = +state.f.weeks || 2;
+    const a = d.assessment;
+    let delta = 0;
+    if (p.goal === 'lose') delta = -Math.max(0, a.tee - d.calories) * 7 * weeks / 7700;
+    else if (p.goal === 'gain') delta = Math.max(0, d.calories - a.tee) * 7 * weeks / 7700;
+    return E.roundHalf(p.weight + delta);
+  }
+
+  // ------------------------------------------------------------------ نمایش برنامه
+  const curUnits = () => E.unitsFromPlan(state.plan);
+  function renderPlan(full) {
+    const has = !!state.result;
+    $('#plan-empty').hidden = has;
+    $('#plan-body').hidden = !has;
+    if (!has) return;
+    const d = state.result, a = d.assessment, p = state.inputs;
+    // بدن
+    $('#r-bmi').textContent = num(a.bmi);
+    const chip = $('#r-bmi-chip');
+    chip.textContent = a.bmi_label;
+    chip.className = 'chip ' + ({ normal: 'ok', under: 'warn', over: 'warn' }[a.bmi_code] || 'bad');
+    $('#r-range').innerHTML = `وزن سالم <b class="num">${num(a.normal_range[0], 0)} تا ${num(a.normal_range[1], 0)}</b> کیلوگرم · وزن ایده‌آل (دواین) <b class="num">${num(a.ideal_weight, 0)}</b>`;
+    if (a.waist) {
+      const cls = (c) => ({ ok: 'ok', risk: 'warn', high: 'bad' }[c]);
+      $('#r-waist').innerHTML = `<div class="big num">${num(p.waist)}<small style="font-size:13px;font-weight:400"> سانتی‌متر</small></div>
+        <span class="chip ${cls(a.waist.waist_code)}">${a.waist.waist_label.split(' (')[0]}</span>
+        <div class="kv">نسبت دور کمر به قد <b class="num">${num(a.waist.whtr, 2)}</b> · <span class="chip ${cls(a.waist.whtr_code)}">${a.waist.whtr_label}</span></div>
+        <div class="kv">برش ایرانی ۹۰ و ۹۵ سانتی‌متر؛ نسبت به قد ۰٫۵</div>`;
+    } else {
+      $('#r-waist').innerHTML = '<div class="kv">وارد نشده. برش ایرانی برای هر دو جنس: ۹۰ سانتی‌متر در معرض خطر و ۹۵ پرخطر.</div>';
+    }
+    // انرژی
+    const n = (val, label, cls) => `<div class="n ${cls || ''}"><b class="num">${num(val, val % 1 ? 2 : 0)}</b><small>${label}</small></div>`;
+    const op = (s) => `<span class="op">${s}</span>`;
+    let chain = n(Math.round(a.rmr), 'انرژی استراحت') + op('×') + n(a.pal, 'ضریب فعالیت') + op('=') + n(Math.round(a.tee), 'انرژی کل');
+    if (p.calorieOverride) chain += op('→') + n(d.calories, 'کالری دستی', 'goal');
+    else if (p.goal === 'lose') chain += op('−') + n(a.floor_applied ? Math.round(a.tee - d.calories) : p.deficit, a.floor_applied ? 'کسری واقعی' : 'کسری') + op('≈') + n(d.calories, 'کالری هدف', 'goal');
+    else if (p.goal === 'gain') chain += op('+') + n(p.surplus, 'اضافه') + op('≈') + n(d.calories, 'کالری هدف', 'goal');
+    else chain += op('≈') + n(d.calories, 'کالری هدف', 'goal');
+    $('#r-chain').innerHTML = chain;
+    $('#r-chain-note').textContent = 'انرژی استراحت با معادله میفلین-سنت‌جئور؛ ضریب فعالیت هم‌خوان با معادلات انرژی NASEM 2023.' +
+      (a.floor_applied ? ' کالری هدف روی حداقل توصیه‌شده تنظیم شد.' : '');
+    renderLive();
+    if (full) { renderMenuEditor(); renderRx(); }
+    renderDirtyNote();
+    renderTargetSuggest();
+    $('#plan-sample').hidden = !state.sample;
+  }
+
+  function renderLive() {
+    const d = state.result, a = d.assessment;
+    const u = curUnits();
+    const t = E.planTotals(u);
+    const pc = E.macroPercents(t);
+    const tg = d.macros_target;
+    $('#r-bar').innerHTML = `<i style="width:${pc.C}%;background:var(--carb)"></i><i style="width:${pc.P}%;background:var(--prot)"></i><i style="width:${pc.F}%;background:var(--fat)"></i>`;
+    $('#r-legend').innerHTML = [['کربوهیدرات', 'C', '--carb'], ['پروتئین', 'P', '--prot'], ['چربی', 'F', '--fat']]
+      .map(([l, k, c]) => `<span style="--c:var(${c})">${l} <b class="num">${num(pc[k], 0)}٪</b> <small class="num" style="color:var(--muted)">هدف ${num(tg[k], 0)}</small></span>`).join('');
+    $('#r-protein').innerHTML = `پروتئین <b class="num">${num(t.pro, 0)}</b> گرم، یعنی <b class="num">${num(t.pro / a.reference_weight, 2)}</b> گرم به ازای هر کیلو وزن مرجع (<span class="num">${num(a.reference_weight, 0)}</span> کیلو) · فیبر <b class="num">${num(t.fiber, 0)}</b> گرم`;
+    // جدول
+    const kc = E.mealCalories(state.plan);
+    const head = `<thead><tr><th scope="col">وعده</th>${E.GROUPS.map((g) => `<th scope="col">${SHORT[g]}</th>`).join('')}<th scope="col">کالری</th></tr></thead>`;
+    const rows = E.MEALS.map((m) => `<tr><th scope="row">${MEAL_SHORT[m]}</th>${E.GROUPS.map((g) => {
+      const v = state.plan[m][g];
+      const sel = state.sel && state.sel.meal === m && state.sel.group === g;
+      return `<td class="cell num ${v ? '' : 'zero'}" data-meal="${m}" data-group="${g}" tabindex="0" role="button" aria-selected="${sel}"
+        aria-label="${E.MEAL_FA[m]}، ${E.GROUP_FA[g]}: ${v ? num(v) : 'صفر'} واحد">${v ? num(v) : '–'}</td>`;
+    }).join('')}<td class="kc num">${num(kc[m])}</td></tr>`).join('');
+    const foot = `<tfoot><tr><th scope="row">جمع</th>${E.GROUPS.map((g) => `<td class="num">${num(u[g])}</td>`).join('')}<td class="kc num">${num(t.calorie)}</td></tr></tfoot>`;
+    $('#plan-table').innerHTML = head + `<tbody>${rows}</tbody>` + foot;
+    const diff = t.calorie - d.calories;
+    const ok = Math.abs(diff) <= 50;
+    $('#r-diff').innerHTML = `کالری برنامه <b class="num">${num(t.calorie)}</b> · هدف <b class="num">${num(d.calories, 0)}</b>
+      <span class="chip ${ok ? 'ok' : 'warn'} num">\u2066${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${num(Math.abs(diff))}\u2069</span>`;
+    const changed = JSON.stringify(state.plan) !== JSON.stringify(state.basePlan);
+    $('#btn-reset').hidden = !changed;
+    // هشدارها
+    const warns = d.warnings.slice();
+    if (!ok) warns.push(`بعد از ویرایش، کالری برنامه ${num(Math.abs(diff))} کیلوکالری ${diff > 0 ? 'بیشتر' : 'کمتر'} از هدف است.`);
+    $('#r-warns').innerHTML = warns.map((w) => `<div>${w}</div>`).join('');
+  }
+
+  function renderDirtyNote() {
+    const id = 'dirty-note';
+    let el = document.getElementById(id);
+    if (state.dirty && state.result) {
+      if (!el) {
+        el = document.createElement('div');
+        el.id = id; el.className = 'notice';
+        el.innerHTML = '<b>به‌روز نیست</b><span>اطلاعات بیمار بعد از طراحی تغییر کرده است. برای اعمال، «طراحی دوباره» را بزنید.</span>';
+        $('#plan-body').prepend(el);
+      }
+    } else if (el) el.remove();
+  }
+
+  function renderMenuEditor() {
+    $('#menu-editor').innerHTML = E.MEALS.map((m) => `<div class="menu-item field">
+      <div class="lab"><label for="menu-${m.replace(' ', '-')}">${E.MEAL_FA[m]}</label>
+      <span>${state.menuStale[m] ? '<span class="stale">با جدول هم‌خوان نیست</span> ' : ''}${state.menuEdited[m] || state.menuStale[m] ? `<button type="button" class="linkbtn" data-regen="${m}">ساخت دوباره</button>` : ''}</span></div>
+      <textarea id="menu-${m.replace(' ', '-')}" data-menu="${m}" rows="2"></textarea></div>`).join('');
+    $$('#menu-editor textarea').forEach((ta) => { ta.value = state.menu[ta.dataset.menu]; autosize(ta); });
+  }
+  function autosize(ta) { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight + 2}px`; }
+  function renderRx() {
+    $('#rx-editor').innerHTML = C.rx_labels.map((l, i) => `<div class="menu-item field"><div class="lab"><label for="rx-${i}">${l}</label></div>
+      <textarea id="rx-${i}" data-rx="${i}" rows="2"></textarea></div>`).join('');
+    $$('#rx-editor textarea').forEach((ta) => { ta.value = state.rx[+ta.dataset.rx]; autosize(ta); });
+  }
+
+  function wirePlan() {
+    $('#plan-table').addEventListener('click', (ev) => {
+      const td = ev.target.closest('td.cell');
+      if (!td) return;
+      selectCell(td.dataset.meal, td.dataset.group);
+    });
+    $('#plan-table').addEventListener('keydown', (ev) => {
+      const td = ev.target.closest('td.cell');
+      if (!td) return;
+      if (ev.key === 'Enter' || ev.key === ' ') { selectCell(td.dataset.meal, td.dataset.group); ev.preventDefault(); }
+      if (ev.key === '+' || ev.key === 'ArrowUp') { selectCell(td.dataset.meal, td.dataset.group); bump(0.5); ev.preventDefault(); }
+      if (ev.key === '-' || ev.key === 'ArrowDown') { selectCell(td.dataset.meal, td.dataset.group); bump(-0.5); ev.preventDefault(); }
+    });
+    $('#st-minus').addEventListener('click', () => bump(-0.5));
+    $('#st-plus').addEventListener('click', () => bump(0.5));
+    $('#st-close').addEventListener('click', () => { state.sel = null; renderStepper(); renderLive(); });
+    $('#btn-reset').addEventListener('click', () => {
+      state.plan = clone(state.basePlan);
+      state.menu = M.generateMenu(state.plan, E.MEALS, new Date());
+      state.menuEdited = {}; state.menuStale = {};
+      state.sel = null; renderStepper(); renderLive(); renderMenuEditor();
+    });
+    $('#menu-editor').addEventListener('input', (ev) => {
+      const ta = ev.target.closest('textarea[data-menu]');
+      if (!ta) return;
+      state.menu[ta.dataset.menu] = ta.value;
+      autosize(ta);
+      if (!state.menuEdited[ta.dataset.menu]) { state.menuEdited[ta.dataset.menu] = true; }
+    });
+    $('#menu-editor').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-regen]');
+      if (!b) return;
+      const m = b.dataset.regen;
+      state.menu[m] = M.generateMenu(state.plan, E.MEALS, new Date())[m];
+      state.menuEdited[m] = false; state.menuStale[m] = false;
+      renderMenuEditor();
+    });
+    $('#rx-editor').addEventListener('input', (ev) => {
+      const ta = ev.target.closest('textarea[data-rx]');
+      if (ta) { state.rx[+ta.dataset.rx] = ta.value; autosize(ta); }
+    });
+  }
+
+  function selectCell(meal, group) { state.sel = { meal, group }; renderStepper(); renderLive(); }
+  function bump(delta) {
+    if (!state.sel) return;
+    const { meal, group } = state.sel;
+    const v = Math.max(0, Math.min(20, E.roundHalf(state.plan[meal][group] + delta)));
+    if (v === state.plan[meal][group]) return;
+    state.plan[meal][group] = v;
+    if (state.menuEdited[meal]) state.menuStale[meal] = true;
+    else state.menu[meal] = M.generateMenu(state.plan, E.MEALS, new Date())[meal];
+    renderStepper(); renderLive(); renderMenuEditor();
+  }
+  function renderStepper() {
+    const s = state.sel;
+    $('#stepper').hidden = !s || state.tab !== 'plan';
+    if (!s) return;
+    $('#st-what').innerHTML = `<b>${E.GROUP_FA[s.group]}</b>${E.MEAL_FA[s.meal]}`;
+    $('#st-val').textContent = num(state.plan[s.meal][s.group]);
+  }
+
+  // ------------------------------------------------------------------ سند
+  function docObject() {
+    const d = state.result, a = d.assessment, f = state.f, p = state.inputs;
+    const u = curUnits(), t = E.planTotals(u), kc = E.mealCalories(state.plan);
+    const optNum = (x) => { const v = E.toNumber(x || ''); return Number.isNaN(v) || v <= 0 ? null : v; };
+    return {
+      patient: { name: f.name.trim() || null, fileNo: f.file.trim() ? F.digits(f.file.trim()) : null, date: F.digits(f.date.trim()) || null,
+        age: p.age, height: p.height, weight: p.weight, bmi: num(a.bmi), targetWeight: optNum(f.target), kcal: t.calorie,
+        waist: optNum(f.waist), abdomen: optNum(f.abdomen), thigh: optNum(f.thigh), wrist: optNum(f.wrist), bodyFat: optNum(f.fat),
+        nextVisit: F.digits(f.next.trim()) || null },
+      rows: E.MEALS.map((m, i) => ({ meal: E.MEAL_FA[m], time: C.meal_times[i], units: E.GROUPS.map((g) => state.plan[m][g]), kcal: kc[m] })),
+      total: { units: E.GROUPS.map((g) => u[g]), kcal: t.calorie },
+      howToRead: M.howToRead(state.plan, E.MEALS, E.MEAL_FA),
+      menu: E.MEALS.map((m) => [E.MEAL_FA[m], (state.menu[m] || '').trim() || '—']),
+      rx: state.rx.map((x) => (x || '').trim() || '—'),
+    };
+  }
+  const model = () => window.DocModel.buildModel(docObject(), C, { personalOnly: state.scope === 'personal' });
+  function fileName(ext) {
+    const name = (state.f.name.trim() || 'بیمار').replace(/[\\/:*?"<>|\u200c]/g, ' ').replace(/\s+/g, ' ');
+    const date = (state.f.date.trim() || F.jalali(new Date())).replace(/[\\/:]/g, '-');
+    return `برنامه رژیم - ${name} - ${date}${state.scope === 'personal' ? ' - شخصی' : ''}.${ext}`;
+  }
+
+  let previewToken = 0;
+  async function renderPreview() {
+    if (!state.result || state.tab !== 'export') return;
+    const token = ++previewToken;
+    const cv = $('#preview');
+    const w = Math.round(340 * Math.min(2, window.devicePixelRatio || 1));
+    try {
+      const { canvas, pageCount } = await window.PdfBackend.preview(model(), C.brand, 0, w);
+      if (token !== previewToken) return;
+      cv.width = canvas.width; cv.height = canvas.height;
+      cv.getContext('2d').drawImage(canvas, 0, 0);
+      $('#preview-note').textContent = `پیش‌نمایش صفحه اول از ${F.digits(pageCount)} صفحه`;
+    } catch (e) {
+      $('#preview-note').textContent = 'پیش‌نمایش ساخته نشد.';
+    }
+  }
+
+  function tsv() {
+    const d = state.result, a = d.assessment, f = state.f;
+    const u = curUnits(), t = E.planTotals(u);
+    const head = ['تاریخ', 'شماره پرونده', 'نام', 'جنس', 'سن', 'قد', 'وزن', 'BMI', 'دور کمر', 'دور شکم', 'دور ران', 'دور مچ', 'درصد چربی',
+      'فعالیت', 'هدف', 'نوع برنامه', 'کالری', ...E.GROUPS.map((g) => E.GROUP_FA[g])];
+    const v = [latin(f.date), latin(f.file), f.name, f.sex === 'm' ? 'مرد' : 'زن', state.inputs.age, state.inputs.height, state.inputs.weight,
+      a.bmi.toFixed(1), latin(f.waist), latin(f.abdomen), latin(f.thigh), latin(f.wrist), latin(f.fat),
+      E.ACTIVITY_LEVELS[f.activity].fa.split(':')[0], E.GOALS[f.goal], E.PLAN_TYPES[f.planType].fa, Math.round(t.calorie), ...E.GROUPS.map((g) => u[g])];
+    return { head: head.join('\t'), row: v.join('\t') };
+  }
+
+  // ------------------------------------------------------------------ ذخیره فایل
+  const dlPromise = (window.claude && typeof window.claude.use === 'function')
+    ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+
+  async function saveFile(name, blob) {
+    const dl = await dlPromise;
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); return { ok: true, msg: 'فایل ذخیره شد.' }; }
+      catch (e) {
+        const code = e && e.code;
+        if (code === 'declined') return { ok: false, msg: 'ذخیره لغو شد.' };
+        if (code === 'rate_limited') return { ok: false, msg: 'یک پنجره ذخیره هنوز باز است؛ چند لحظه بعد دوباره بزنید.' };
+        if (code === 'extension_not_enabled') return { ok: false, msg: 'ذخیره این نوع فایل در این نما فعال نیست.' };
+        return { ok: false, msg: `ذخیره فایل ممکن نشد (${code || 'نامشخص'}).` };
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = name;
+    document.body.appendChild(link); link.click();
+    setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 5000);
+    return { ok: true, msg: 'فایل دانلود شد.' };
+  }
+
+  function loadScript(src) {
+    return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+  }
+  async function ensureDocx() {
+    if (window.docx && window.docx.Packer) return window.docx;
+    for (const u of DOCX_URLS) {
+      try { await loadScript(u); if (window.docx && window.docx.Packer) return window.docx; } catch (e) { /* بعدی */ }
+    }
+    throw new Error('docx');
+  }
+
+  function setStatus(msg, kind) { const el = $('#status'); el.textContent = msg; el.className = 'status ' + (kind || ''); }
+  async function exportDocx() {
+    const btn = $('#btn-docx'); btn.disabled = true; setStatus('در حال ساخت فایل Word…');
+    try {
+      const docx = await ensureDocx();
+      const doc = window.DocxBackend.buildDocx(docx, model(), C, { title: C.title, description: `برنامه غذایی ${state.f.name.trim()}` });
+      const blob = await docx.Packer.toBlob(doc);
+      const r = await saveFile(fileName('docx'), blob);
+      setStatus(r.msg, r.ok ? 'ok' : 'bad');
+    } catch (e) {
+      setStatus(e && e.message === 'docx' ? 'کتابخانه ساخت Word بارگیری نشد؛ اتصال اینترنت را بررسی کنید و دوباره بزنید.' : 'ساخت فایل Word ممکن نشد.', 'bad');
+    } finally { btn.disabled = false; }
+  }
+  let pdfCache = { key: null, blob: null };
+  async function getPdf() {
+    const key = JSON.stringify([docObject(), state.scope]);
+    if (pdfCache.key === key && pdfCache.blob) return pdfCache.blob;
+    setStatus('در حال ساخت PDF…');
+    const res = await window.PdfBackend.buildPdf(model(), C.brand, { title: `برنامه غذایی ${state.f.name.trim()}`.trim(), author: C.brand.name },
+      { onProgress: (i, n) => setStatus(`در حال ساخت PDF… صفحه ${F.digits(i)} از ${F.digits(n)}`) });
+    pdfCache = { key, blob: res.blob };
+    return res.blob;
+  }
+  async function exportPdf() {
+    const btn = $('#btn-pdf'); btn.disabled = true;
+    try {
+      const r = await saveFile(fileName('pdf'), await getPdf());
+      setStatus(r.msg, r.ok ? 'ok' : 'bad');
+    } catch (e) {
+      setStatus('ساخت PDF ممکن نشد.', 'bad');
+    } finally { btn.disabled = false; }
+  }
+  function canShareFiles() {
+    if (!STANDALONE || !navigator.canShare || !navigator.share) return false;
+    try { return navigator.canShare({ files: [new File([new Blob(['%PDF-1.4'])], 'test.pdf', { type: 'application/pdf' })] }); }
+    catch (e) { return false; }
+  }
+  async function sharePdf() {
+    const btn = $('#btn-share'); btn.disabled = true;
+    try {
+      const file = new File([await getPdf()], fileName('pdf'), { type: 'application/pdf' });
+      await navigator.share({ files: [file], title: fileName('pdf') });
+      setStatus('فایل به برنامه انتخابی فرستاده شد.', 'ok');
+    } catch (e) {
+      if (e && e.name === 'AbortError') setStatus('ارسال لغو شد.');
+      else if (e && e.name === 'NotAllowedError') setStatus('PDF آماده است؛ برای ارسال یک بار دیگر بزنید.');
+      else setStatus('ارسال فایل ممکن نشد.', 'bad');
+    } finally { btn.disabled = false; }
+  }
+
+  function renderExport() {
+    const has = !!state.result;
+    $('#export-empty').hidden = has;
+    $('#export-body').hidden = !has;
+    if (!has) return;
+    const t = tsv();
+    $('#tsv').textContent = `${t.head}\n${t.row}`;
+    $('#btn-share').hidden = !canShareFiles();
+    renderPreview();
+  }
+
+  // ------------------------------------------------------------------ گام‌ها و نوار پایین
+  function showTab(tab) {
+    state.tab = tab;
+    $$('.steps [role="tab"]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+    $('#pane-patient').hidden = tab !== 'patient';
+    $('#pane-plan').hidden = tab !== 'plan';
+    $('#pane-export').hidden = tab !== 'export';
+    if (tab === 'plan') {
+      renderPlan(false);
+      requestAnimationFrame(() => $$('#menu-editor textarea, #rx-editor textarea').forEach(autosize));
+    }
+    if (tab === 'export') renderExport();
+    renderStepper();
+    updateBar();
+  }
+  function updateBar() {
+    const btn = $('#btn-main');
+    const bar = $('#bar');
+    if (state.tab === 'patient') { bar.hidden = false; btn.textContent = state.result ? 'طراحی دوباره' : 'طراحی برنامه'; }
+    else if (state.tab === 'plan') { bar.hidden = !state.result; btn.textContent = state.dirty ? 'طراحی دوباره' : 'ادامه: دریافت فایل'; }
+    else bar.hidden = true;
+  }
+
+  let newArmed = null;
+  // نصب روی گوشی (فقط در نسخه مستقل؛ مرورگر این رویداد را می‌فرستد)
+  let installEvt = null;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installEvt = e; const b = $('#btn-install'); if (b) b.hidden = false; });
+  window.addEventListener('appinstalled', () => { installEvt = null; const b = $('#btn-install'); if (b) b.hidden = true; });
+  function wireChrome() {
+    $$('.steps [role="tab"]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    $('#btn-main').addEventListener('click', () => {
+      if (state.tab === 'patient' || state.dirty) compute();
+      else if (state.tab === 'plan') { state.sel = null; showTab('export'); window.scrollTo({ top: 0 }); }
+    });
+    $('#btn-docx').addEventListener('click', exportDocx);
+    $('#btn-pdf').addEventListener('click', exportPdf);
+    $('#btn-share').addEventListener('click', sharePdf);
+    $('#btn-install').addEventListener('click', async () => {
+      if (!installEvt) return;
+      installEvt.prompt();
+      try { await installEvt.userChoice; } catch (e) { /* بی‌اثر */ }
+      installEvt = null; $('#btn-install').hidden = true;
+    });
+    $('#btn-copy').addEventListener('click', async () => {
+      const row = tsv().row;
+      try { await navigator.clipboard.writeText(row); $('#btn-copy').textContent = 'کپی شد'; }
+      catch (e) {
+        const r = document.createRange(); r.selectNodeContents($('#tsv')); const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+        $('#btn-copy').textContent = 'متن انتخاب شد؛ کپی کنید';
+      }
+      setTimeout(() => { $('#btn-copy').textContent = 'کپی ردیف'; }, 2500);
+    });
+    $('#btn-new').addEventListener('click', () => {
+      const b = $('#btn-new');
+      if (!newArmed) {
+        b.textContent = 'پاک شود؟ دوباره بزنید';
+        newArmed = setTimeout(() => { b.textContent = 'بیمار جدید'; newArmed = null; }, 3000);
+        return;
+      }
+      clearTimeout(newArmed); newArmed = null; b.textContent = 'بیمار جدید';
+      state.f = DEFAULTS(); state.sample = false; state.result = null; state.plan = null; state.dirty = false; state.sel = null;
+      ['age', 'height', 'weight', 'kcal'].forEach((k) => setErr(k, ''));
+      saveDraft(); syncForm(); showTab('patient'); renderPlan(false);
+      $('#f-name').focus();
+    });
+  }
+
+  function renderTargetSuggest() {
+    const btn = $('#target-suggest');
+    if (!state.result) { btn.hidden = true; return; }
+    const sug = suggestTarget(state.result, state.inputs);
+    btn.hidden = false;
+    btn.dataset.value = num(sug);
+    btn.textContent = `پیشنهاد: ${num(sug)} کیلوگرم`;
+  }
+
+  // ------------------------------------------------------------------ شروع
+  function start() {
+    buildForm();
+    const draft = loadDraft();
+    if (draft && draft.f) { state.f = Object.assign(DEFAULTS(), draft.f, { prefs: Object.assign(DEFAULTS().prefs, draft.f.prefs || {}) }); state.sample = !!draft.sample; }
+    else { state.f = SAMPLE(); state.sample = true; }
+    syncForm();
+    wireForm(); wirePlan(); wireChrome();
+    if (readInputs().ok) {
+      compute();
+      if (!state.sample) showTab('patient');
+    }
+    renderTargetSuggest();
+    updateBar();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+</script>
+<script>
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
