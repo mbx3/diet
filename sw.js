@@ -1,7 +1,7 @@
 /* کار آفلاین: فایل‌های اپ ذخیره می‌شوند؛ فونت‌ها بعد از اولین دریافت. نسخه با هر تغییر فایل‌ها عوض می‌شود. */
-const VERSION = 'diet-planner-402c72cbfc';
+const VERSION = 'diet-planner-c7e8ca9359';
 const FONTS = 'diet-planner-fonts';
-const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./lib/docx.iife.js", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-48.png"];
+const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./lib/docx.iife.js", "./lib/jszip.min.js", "./lib/xlsx-template.js", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-48.png"];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(VERSION).then((c) => c.addAll(PRECACHE)).then(() => self.skipWaiting()));
