@@ -260,6 +260,10 @@ body.has-tabs .app { padding-bottom: 200px; }
 .lg-rect { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .chart-stage { position: relative; margin-top: 6px; }
+.btn-sm.prime { background: var(--teal); border-color: var(--teal); color: var(--on-teal); font-weight: 700; }
+.o-fileno { min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 10px; background: var(--surface-2); color: var(--muted); font-size: 13px; }
+.o-fileno b { color: var(--ink); font-size: 15px; }
+#rec-newc .o-remind { width: 100%; margin-bottom: 8px; }
 .chart-mode { margin: 4px 0 6px; }
 .chart-mode .chart-seg button { padding: 6px 4px; font-size: 13.5px; min-height: 34px; }
 .chart-mode .chart-hint { margin: 4px 2px 0; font-size: 12px; color: var(--muted); }
@@ -486,7 +490,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "2a4b315", buildAt: 1792750997959 };</script>
+<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "36bd0f8", buildAt: 1792753131208 };</script>
 <script>
 /* ---- jdate.js ---- */
 /* تاریخ شمسی برای پرونده‌ها: خواندن قالب‌های مختلف، شکل استاندارد «yyyy/mm/dd»، شماره روز برای فاصله و مرتب‌سازی */
@@ -1417,8 +1421,12 @@ table.data th { color: var(--muted); font-weight: 600; }
     services: (r) => ({ name: txt(r.name) || 'خدمت', kind: KINDS[r.kind] ? r.kind : 'other', drug: txt(r.drug), price: money(r.price) ?? 0, dur: num(r.dur) || 15,
       visitType: txt(r.visitType), active: r.active !== false, order: num(r.order) ?? 0,
       variants: Array.isArray(r.variants) ? r.variants.map((v) => ({ id: v.id || newId(), label: txt(v.label) || '—', dose: num(v.dose), price: money(v.price) ?? 0, active: v.active !== false })) : [] }),
-    clients: (r) => ({ first: txt(r.first), last: txt(r.last), phone: txt(r.phone), fileNo: num(r.fileNo), puid: txt(r.puid), source: txt(r.source),
-      disc: normDisc(r.disc), note: txt(r.note) }),
+    clients: (r) => {
+      const age = num(r.age);
+      return { first: txt(r.first), last: txt(r.last), phone: txt(r.phone), fileNo: num(r.fileNo), puid: txt(r.puid), source: txt(r.source),
+        sex: r.sex === 'm' || r.sex === 'f' ? r.sex : '', age: age !== null && age > 0 && age < 120 ? Math.round(age) : null, ageAt: age !== null ? (JD.parse(r.ageAt) || '') : '',
+        disc: normDisc(r.disc), note: txt(r.note) };
+    },
     appts: (r) => ({ cid: txt(r.cid), date: JD.parse(r.date) || JD.today(), time: normTime(r.time), dur: num(r.dur) || 15, center: txt(r.center),
       mode: r.mode === 'آنلاین' ? 'آنلاین' : 'حضوری', svc: txt(r.svc), vid: txt(r.vid), status: STATUS[r.status] ? r.status : 'booked', note: txt(r.note) }),
     charges: (r) => {
@@ -3917,9 +3925,9 @@ Located in ./vendor/QRCode
     const cen = O.st.center && O.st.center !== 'all' ? '' : a.center;
     return `<div class="ap-item st-${a.status}" data-appt="${esc(a.id)}">
       <div class="ap-time"><b>${esc(fa(a.time || '—'))}</b><small>${fa(a.dur || '')}${a.dur ? ' دقیقه' : ''}</small></div>
-      <div class="ap-main"><div class="ap-name">${esc(Lx.clientName(c))}${c && c.fileNo ? `<small> · پرونده ${fa(c.fileNo)}</small>` : ''}</div>
+      <div class="ap-main"><div class="ap-name">${esc(Lx.clientName(c))}${c && c.fileNo && c.puid ? `<small> · پرونده ${fa(c.fileNo)}</small>` : ''}</div>
         <div class="ap-meta">${esc([svc, cen, a.mode === 'آنلاین' ? 'آنلاین' : ''].filter(Boolean).join(' · '))}${a.note ? ` · ${esc(a.note)}` : ''}</div>
-        <div class="ap-tags"><span class="chip ${STATUS_CLS[a.status]}">${LG.STATUS[a.status]}</span>${bal < 0 ? `<span class="chip bad">بدهکار ${toman(-bal, true)}</span>` : ''}${bal > 0 ? `<span class="chip ok">بستانکار ${toman(bal, true)}</span>` : ''}${a.remind ? '<span class="chip info">یادآوری شد</span>' : ''}</div></div>
+        <div class="ap-tags"><span class="chip ${STATUS_CLS[a.status]}">${LG.STATUS[a.status]}</span>${c && H.needsFile && H.needsFile(Lx, c) ? '<span class="chip warn">بی‌پرونده</span>' : ''}${bal < 0 ? `<span class="chip bad">بدهکار ${toman(-bal, true)}</span>` : ''}${bal > 0 ? `<span class="chip ok">بستانکار ${toman(bal, true)}</span>` : ''}${a.remind ? '<span class="chip info">یادآوری شد</span>' : ''}</div></div>
       <div class="ap-acts">${apptButtons(a)}</div></div>`;
   }
   function apptButtons(a) {
@@ -4018,6 +4026,8 @@ Located in ./vendor/QRCode
       <details class="o-new" ${opts && opts.openNew ? 'open' : ''} ${opts && opts.exclude ? 'hidden' : ''}><summary>+ مراجع تازه</summary><div class="grid" style="margin-top:8px">
         ${F.text('cp-first', 'نام', '', { cls: 'c3' })}${F.text('cp-last', 'نام خانوادگی', '', { cls: 'c3' })}
         ${F.text('cp-phone', 'تلفن', '', { cls: 'c6', mode: 'tel', dir: 'ltr' })}
+        ${F.seg('cp-sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], '', 'c3')}
+        <div class="field c3"><label for="cp-age">سن (اختیاری)</label><input id="cp-age" inputmode="numeric" autocomplete="off"></div>
         ${F.chips('cp-src', 'منبع آشنایی', SOURCES(), '')}
       </div><div class="row-btns"><button type="button" class="primary" data-newc>ثبت و انتخاب</button></div><div class="warns o-errs" hidden></div></details></div>`;
     document.body.appendChild(m);
@@ -4027,7 +4037,7 @@ Located in ./vendor/QRCode
       const q = norm($('#cp-q', m).value);
       const items = Lx.all('clients').filter((c) => (!opts || c.id !== opts.exclude) && (!q || norm(`${c.first}${c.last}${c.phone}${c.fileNo || ''}`).includes(q)))
         .sort((a, b) => (b.u || 0) - (a.u || 0)).slice(0, 60);
-      $('#cp-list', m).innerHTML = items.map((c) => `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}</span><span class="rec-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</span></button>`).join('')
+      $('#cp-list', m).innerHTML = items.map((c) => `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}</span><span class="rec-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</span></button>`).join('')
         || '<div class="rec-count">مراجعی پیدا نشد؛ پایین‌تر «مراجع تازه» را ثبت کنید.</div>';
     };
     draw();
@@ -4043,7 +4053,8 @@ Located in ./vendor/QRCode
         if (!first && !last) { errs(m, ['نام مراجع را بنویسید.']); return; }
         const dup = phone && Lx.all('clients').find((c) => c.phone && JD.latinDigits(c.phone).replace(/\D/g, '').slice(-10) === JD.latinDigits(phone).replace(/\D/g, '').slice(-10));
         if (dup && !window.confirm(`«${Lx.clientName(dup)}» با همین شماره ثبت شده است. باز هم مراجع تازه ساخته شود؟`)) { m.remove(); onPick(dup); return; }
-        const c = Lx.put('clients', { first, last, phone, source: segv(m, 'cp-src') }, user());
+        const age = LG.num(val(m, 'cp-age'));
+        const c = Lx.put('clients', { first, last, phone, source: segv(m, 'cp-src'), sex: segv(m, 'cp-sex'), age: age && age > 0 && age < 111 ? age : null, ageAt: age ? today() : '' }, user());
         m.remove(); onPick(c);
       }
     });
@@ -4051,14 +4062,14 @@ Located in ./vendor/QRCode
   const SOURCES = () => (window.DB && window.DB.SOURCES) || ['پیج دکتر', 'پیج کلینیک', 'معرفی آشنایان', 'گوگل و اینترنت', 'تلگرام یا واتس‌اپ', 'تابلو یا حضوری', 'سایر'];
   function clientChip(c, id) {
     const Lx = L();
-    return `<div class="field c6"><label>مراجع</label><button type="button" class="o-client" id="${id || 'f-client'}" data-cid="${esc(c ? c.id : '')}">${c ? `<b>${esc(Lx.clientName(c))}</b><small>${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>` : '<span>انتخاب مراجع…</span>'}</button></div>`;
+    return `<div class="field c6"><label>مراجع</label><button type="button" class="o-client" id="${id || 'f-client'}" data-cid="${esc(c ? c.id : '')}">${c ? `<b>${esc(Lx.clientName(c))}</b><small>${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>` : '<span>انتخاب مراجع…</span>'}</button></div>`;
   }
   function wireClientChip(box, onPick) {
     const b = $('.o-client', box);
     if (!b) return;
     b.addEventListener('click', () => clientPicker((c) => {
       b.dataset.cid = c.id;
-      b.innerHTML = `<b>${esc(L().clientName(c))}</b><small>${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>`;
+      b.innerHTML = `<b>${esc(L().clientName(c))}</b><small>${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>`;
       if (onPick) onPick(c);
     }));
   }
@@ -4389,17 +4400,20 @@ Located in ./vendor/QRCode
     const Lx = L();
     const q = st.q || '';
     const norm = (s) => JD.latinDigits(String(s || '')).replace(/[‌\s]/g, '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLowerCase();
-    const filt = st.f || 'all';
+    const fileFilter = !!(H.needsFile && Lx.meta.linked);   // فقط در اپ دکتر: مراجعانی که هنوز پرونده پزشکی ندارند
+    const filt = st.f === 'nofile' && !fileFilter ? 'all' : (st.f || 'all');
     let items = Lx.all('clients').filter((c) => !q || norm(`${c.first}${c.last}${c.phone}${c.fileNo || ''}`).includes(norm(q)));
     const bal = new Map(items.map((c) => [c.id, Lx.balance(c.id)]));
     if (filt === 'debt') items = items.filter((c) => bal.get(c.id) < 0);
     if (filt === 'credit') items = items.filter((c) => bal.get(c.id) > 0);
+    if (filt === 'nofile') items = items.filter((c) => H.needsFile(Lx, c) && (Lx.all('appts', (a) => a.cid === c.id && a.status !== 'cancel').length || Lx.clientCharges(c.id).length));
+    const filters = [['all', 'همه'], ['debt', 'بدهکاران'], ['credit', 'بستانکاران']].concat(fileFilter ? [['nofile', 'بی‌پرونده']] : []);
     items.sort((a, b) => (filt === 'debt' ? bal.get(a.id) - bal.get(b.id) : (b.u || 0) - (a.u || 0)));
     const totalDebt = [...bal.values()].filter((b) => b < 0).reduce((a, b) => a - b, 0);
     box.innerHTML = `${head()}<div class="rec-tools"><input class="search" id="o-q" type="search" placeholder="نام، تلفن یا شماره پرونده" value="${esc(q)}" autocomplete="off">
-      <div class="seg full" style="--n:3" role="radiogroup" aria-label="فیلتر" data-cf>${[['all', 'همه'], ['debt', 'بدهکاران'], ['credit', 'بستانکاران']].map(([v, l]) => `<button type="button" role="radio" data-value="${v}" aria-checked="${v === filt}">${l}</button>`).join('')}</div></div>
-      <div class="rec-count">${fa(items.length)} مراجع${totalDebt ? ` · جمع بدهی‌ها ${toman(totalDebt)}` : ''}</div>
-      <div class="rec-items">${items.slice(0, 200).map((c) => { const b = bal.get(c.id); return `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}${c.puid ? '<span class="tag inj">پرونده</span>' : ''}</span><span class="rec-delta num">${b ? `${b < 0 ? '−' : '+'}${toman(Math.abs(b), true)}` : ''}<small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : '')}</small></span><span class="rec-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source || ''].filter(Boolean).join(' · '))}</span></button>`; }).join('') || '<div class="empty">مراجعی پیدا نشد.</div>'}</div>`;
+      <div class="seg full" style="--n:${filters.length}" role="radiogroup" aria-label="فیلتر" data-cf>${filters.map(([v, l]) => `<button type="button" role="radio" data-value="${v}" aria-checked="${v === filt}">${l}</button>`).join('')}</div></div>
+      <div class="rec-count">${fa(items.length)} مراجع${totalDebt ? ` · جمع بدهی‌ها ${toman(totalDebt)}` : ''}${filt === 'nofile' ? ' · روی هر نفر بزنید و «تشکیل پرونده» را بزنید؛ فرم پرونده با اطلاعات منشی پر می‌شود.' : ''}</div>
+      <div class="rec-items">${items.slice(0, 200).map((c) => { const b = bal.get(c.id); return `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}${c.puid && (!H.hasFile || H.hasFile(c)) ? '<span class="tag inj">پرونده</span>' : ''}${H.needsFile && H.needsFile(Lx, c) ? '<span class="tag">بی‌پرونده</span>' : ''}</span><span class="rec-delta num">${b ? `${b < 0 ? '−' : '+'}${toman(Math.abs(b), true)}` : ''}<small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : '')}</small></span><span class="rec-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source || ''].filter(Boolean).join(' · '))}</span></button>`; }).join('') || '<div class="empty">مراجعی پیدا نشد.</div>'}</div>`;
     const inp = $('#o-q', box);
     inp.addEventListener('input', () => { O.st.q = inp.value; clearTimeout(inp._t); inp._t = setTimeout(() => { H.replaceState(Object.assign({}, O.st)); render(O.st, true); const i2 = $('#o-q'); if (i2) { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } }, 250); });
     box.onclick = (e) => {
@@ -4423,11 +4437,11 @@ Located in ./vendor/QRCode
     const txt = (L().meta.recallText || 'سلام {نام} عزیز، وقت بخیر. برای هماهنگی نوبت بعدی در خدمت شما هستیم.').replace(/\{نام\}/g, c.first || '');
     box.innerHTML = `${head()}<button type="button" class="backbtn" data-oback>→ مراجعان</button>
       <div class="pt-head"><h2>${esc(Lx.clientName(c))}</h2>
-        <div class="pt-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
+        <div class="pt-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.sex ? (c.sex === 'f' ? 'زن' : 'مرد') : '', c.age ? `${fa(c.age)} ساله` : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
         ${c.disc ? `<div class="pt-meta">تخفیف ثابت: ${c.disc.t === 'pct' ? `${fa(c.disc.v)}٪` : toman(c.disc.v)}${c.disc.why ? ` (${esc(c.disc.why)})` : ''}</div>` : ''}
         ${c.note ? `<div class="pt-meta">${esc(c.note)}</div>` : ''}
         <div class="pt-actions">${c.phone ? `<a class="btn-sm" href="${telHref(c.phone)}">تماس</a><a class="btn-sm" href="${smsHref(c.phone, txt)}">پیامک</a><a class="btn-sm" href="${waHref(c.phone, txt)}" target="_blank" rel="noopener">واتس‌اپ</a>` : ''}
-          <button type="button" class="btn-sm" data-cact="edit">ویرایش</button>${H.isDoctor && L().meta.linked ? `<button type="button" class="btn-sm" data-cact="file">${c.puid ? 'پرونده پزشکی' : 'ساخت پرونده پزشکی'}</button>` : ''}${isManager() ? '<button type="button" class="btn-sm" data-cact="merge">یکی کردن با تکراری</button>' : ''}</div></div>
+          <button type="button" class="btn-sm" data-cact="edit">ویرایش</button>${H.isDoctor && L().meta.linked ? `<button type="button" class="btn-sm${H.hasFile && !H.hasFile(c) ? ' prime' : ''}" data-cact="file">${H.hasFile && H.hasFile(c) ? 'پرونده پزشکی' : 'تشکیل پرونده'}</button>` : ''}${isManager() ? '<button type="button" class="btn-sm" data-cact="merge">یکی کردن با تکراری</button>' : ''}</div></div>
       <div class="kpis o-kpis"><div class="kpi"><span>مانده حساب</span><b class="money ${b < 0 ? 'neg' : ''}">${toman(Math.abs(b), true)}</b><small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : 'صاف')}</small></div>
         <div class="kpi"><span>جمع خدمات</span><b class="money">${toman(Lx.clientCharges(c.id).reduce((a, x) => a + x.amount, 0), true)}</b><small>${fa(Lx.clientCharges(c.id).length)} مورد</small></div></div>
       ${pk.length ? `<div class="pt-note">پکیج باز: ${pk.map((p) => `${esc(p.label)} — ${fa(p.left)} از ${fa(p.sessions)} جلسه مانده`).join('؛ ')}</div>` : ''}
@@ -4466,7 +4480,11 @@ Located in ./vendor/QRCode
     box.innerHTML = `${head()}${formTop(c ? 'ویرایش مراجع' : 'مراجع تازه')}
       <form class="grid" id="ofm" novalidate>
         ${F.text('f-first', 'نام', d.first, { cls: 'c3' })}${F.text('f-last', 'نام خانوادگی', d.last, { cls: 'c3' })}
-        ${F.text('f-phone', 'تلفن', d.phone, { cls: 'c3', mode: 'tel', dir: 'ltr' })}${F.text('f-file', 'شماره پرونده', d.fileNo ? fa(d.fileNo) : '', { cls: 'c3', mode: 'numeric' })}
+        ${F.text('f-phone', 'تلفن', d.phone, { cls: 'c3', mode: 'tel', dir: 'ltr' })}
+        <div class="field c3"><label>شماره پرونده</label><div class="o-fileno">${d.fileNo ? `<b>${fa(d.fileNo)}</b>` : '<span>خودکار، بعد از تشکیل پرونده</span>'}</div></div>
+        ${F.seg('sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], d.sex || '', 'c3')}
+        <div class="field c3"><label for="f-age">سن (اختیاری)</label><div class="unit-in"><input id="f-age" inputmode="numeric" autocomplete="off" value="${d.age ? esc(fa(d.age)) : ''}"><span>سال</span></div></div>
+        ${c && c.puid ? '<div class="hint c6">تغییر نام، تلفن یا منبع آشنایی در پرونده مطب هم ثبت می‌شود.</div>' : ''}
         ${F.chips('src', 'منبع آشنایی', SOURCES(), std ? src : 'سایر', `<input id="f-srcx" class="chip-other" placeholder="توضیح «سایر»" value="${esc(std ? '' : src)}">`)}
         ${F.seg('disc', 'تخفیف ثابت این مراجع', [['', 'ندارد'], ['amt', 'مبلغی'], ['pct', 'درصدی']], d.disc ? d.disc.t : '', 'c6')}
         <div class="c6" id="discwrap" ${d.disc ? '' : 'hidden'}><div class="grid"><div class="field c3"><label for="f-dv">مقدار</label><input id="f-dv" inputmode="numeric" value="${esc(d.disc ? fa(d.disc.v) : '')}"></div>${F.text('f-dwhy', 'دلیل', d.disc ? d.disc.why : '', { cls: 'c3' })}</div></div>
@@ -4476,8 +4494,12 @@ Located in ./vendor/QRCode
     const save = () => {
       const first = val(box, 'f-first'), last = val(box, 'f-last');
       if (!first && !last) { errs(box, ['نام را بنویسید.']); return; }
+      const ageTxt = val(box, 'f-age'), age = LG.num(ageTxt);
+      if (ageTxt && (age === null || age < 1 || age > 110)) { errs(box, ['سن را درست بنویسید (مثلاً ۳۴).']); return; }
       const s = segv(box, 'src'), dt = segv(box, 'disc');
-      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), fileNo: LG.num(val(box, 'f-file')), source: s === 'سایر' ? (val(box, 'f-srcx') || 'سایر') : s,
+      const ageChanged = (age ?? null) !== ((c && c.age) ?? null);
+      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), sex: segv(box, 'sex'), age, ageAt: age ? (ageChanged ? today() : (c && c.ageAt) || today()) : '',
+        source: s === 'سایر' ? (val(box, 'f-srcx') || 'سایر') : s,
         disc: dt ? { t: dt, v: LG.num(val(box, 'f-dv')) || 0, why: val(box, 'f-dwhy') } : null, note: val(box, 'f-note') }), user());
       if (H.onClientSaved) H.onClientSaved(Lx, rec);
       H.toast('ذخیره شد.');

@@ -260,6 +260,10 @@ body.has-tabs .app { padding-bottom: 200px; }
 .lg-rect { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .chart-stage { position: relative; margin-top: 6px; }
+.btn-sm.prime { background: var(--teal); border-color: var(--teal); color: var(--on-teal); font-weight: 700; }
+.o-fileno { min-height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 10px; background: var(--surface-2); color: var(--muted); font-size: 13px; }
+.o-fileno b { color: var(--ink); font-size: 15px; }
+#rec-newc .o-remind { width: 100%; margin-bottom: 8px; }
 .chart-mode { margin: 4px 0 6px; }
 .chart-mode .chart-seg button { padding: 6px 4px; font-size: 13.5px; min-height: 34px; }
 .chart-mode .chart-hint { margin: 4px 2px 0; font-size: 12px; color: var(--muted); }
@@ -658,6 +662,7 @@ table.data th { color: var(--muted); font-weight: 600; }
           <button type="button" role="radio" data-value="all">همه</button><button type="button" role="radio" data-value="inj">تزریق</button><button type="button" role="radio" data-value="diet">رژیم</button><button type="button" role="radio" data-value="recall">پیگیری</button>
         </div>
       </div>
+      <div id="rec-newc" hidden></div>
       <div class="rec-count" id="rec-count"></div>
       <div class="rec-items" id="rec-items" role="list"></div>
       <div class="empty" id="rec-empty" hidden></div>
@@ -718,7 +723,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "2a4b315", buildAt: 1792750997946 };</script>
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "36bd0f8", buildAt: 1792753131196 };</script>
 <script>
 /* ---- JSZip (مجوز MIT، متن کامل در lib/jszip-LICENSE.md) ---- */
 /*!
@@ -4149,6 +4154,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     MON_REASONS, SIDE_FX, NO_FX, SOURCES, FU_NOTES, FU_ENDS, RECALL,
     init, saveNow, snapshot, merge, differsFrom, replaceAll, clearAll, batch,
     patients, patient, patientByPid, visits, visitsOf, visit, nextPid, counts,
+    /** این پرونده روی این گوشی حذف شده است؟ (برای تشخیص پرونده حذف‌شده از پرونده‌ای که هنوز همگام نشده) */
+    isDeleted(uid) { const r = S.patients.get(uid); return !!(r && r.del); },
     savePatient, saveVisit, deletePatient, deleteVisit,
     fullName, weightOf, bmi, ageOf, programOf, baselineOf, summary, baselines, scaleOf, weightOn, baseOn, compositionOf, compositionChange,
     modeOf, isOnline, centerOf, placeOf, typeLabel, isInjection, recall,
@@ -5835,8 +5842,12 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     services: (r) => ({ name: txt(r.name) || 'خدمت', kind: KINDS[r.kind] ? r.kind : 'other', drug: txt(r.drug), price: money(r.price) ?? 0, dur: num(r.dur) || 15,
       visitType: txt(r.visitType), active: r.active !== false, order: num(r.order) ?? 0,
       variants: Array.isArray(r.variants) ? r.variants.map((v) => ({ id: v.id || newId(), label: txt(v.label) || '—', dose: num(v.dose), price: money(v.price) ?? 0, active: v.active !== false })) : [] }),
-    clients: (r) => ({ first: txt(r.first), last: txt(r.last), phone: txt(r.phone), fileNo: num(r.fileNo), puid: txt(r.puid), source: txt(r.source),
-      disc: normDisc(r.disc), note: txt(r.note) }),
+    clients: (r) => {
+      const age = num(r.age);
+      return { first: txt(r.first), last: txt(r.last), phone: txt(r.phone), fileNo: num(r.fileNo), puid: txt(r.puid), source: txt(r.source),
+        sex: r.sex === 'm' || r.sex === 'f' ? r.sex : '', age: age !== null && age > 0 && age < 120 ? Math.round(age) : null, ageAt: age !== null ? (JD.parse(r.ageAt) || '') : '',
+        disc: normDisc(r.disc), note: txt(r.note) };
+    },
     appts: (r) => ({ cid: txt(r.cid), date: JD.parse(r.date) || JD.today(), time: normTime(r.time), dur: num(r.dur) || 15, center: txt(r.center),
       mode: r.mode === 'آنلاین' ? 'آنلاین' : 'حضوری', svc: txt(r.svc), vid: txt(r.vid), status: STATUS[r.status] ? r.status : 'booked', note: txt(r.note) }),
     charges: (r) => {
@@ -8335,9 +8346,9 @@ Located in ./vendor/QRCode
     const cen = O.st.center && O.st.center !== 'all' ? '' : a.center;
     return `<div class="ap-item st-${a.status}" data-appt="${esc(a.id)}">
       <div class="ap-time"><b>${esc(fa(a.time || '—'))}</b><small>${fa(a.dur || '')}${a.dur ? ' دقیقه' : ''}</small></div>
-      <div class="ap-main"><div class="ap-name">${esc(Lx.clientName(c))}${c && c.fileNo ? `<small> · پرونده ${fa(c.fileNo)}</small>` : ''}</div>
+      <div class="ap-main"><div class="ap-name">${esc(Lx.clientName(c))}${c && c.fileNo && c.puid ? `<small> · پرونده ${fa(c.fileNo)}</small>` : ''}</div>
         <div class="ap-meta">${esc([svc, cen, a.mode === 'آنلاین' ? 'آنلاین' : ''].filter(Boolean).join(' · '))}${a.note ? ` · ${esc(a.note)}` : ''}</div>
-        <div class="ap-tags"><span class="chip ${STATUS_CLS[a.status]}">${LG.STATUS[a.status]}</span>${bal < 0 ? `<span class="chip bad">بدهکار ${toman(-bal, true)}</span>` : ''}${bal > 0 ? `<span class="chip ok">بستانکار ${toman(bal, true)}</span>` : ''}${a.remind ? '<span class="chip info">یادآوری شد</span>' : ''}</div></div>
+        <div class="ap-tags"><span class="chip ${STATUS_CLS[a.status]}">${LG.STATUS[a.status]}</span>${c && H.needsFile && H.needsFile(Lx, c) ? '<span class="chip warn">بی‌پرونده</span>' : ''}${bal < 0 ? `<span class="chip bad">بدهکار ${toman(-bal, true)}</span>` : ''}${bal > 0 ? `<span class="chip ok">بستانکار ${toman(bal, true)}</span>` : ''}${a.remind ? '<span class="chip info">یادآوری شد</span>' : ''}</div></div>
       <div class="ap-acts">${apptButtons(a)}</div></div>`;
   }
   function apptButtons(a) {
@@ -8436,6 +8447,8 @@ Located in ./vendor/QRCode
       <details class="o-new" ${opts && opts.openNew ? 'open' : ''} ${opts && opts.exclude ? 'hidden' : ''}><summary>+ مراجع تازه</summary><div class="grid" style="margin-top:8px">
         ${F.text('cp-first', 'نام', '', { cls: 'c3' })}${F.text('cp-last', 'نام خانوادگی', '', { cls: 'c3' })}
         ${F.text('cp-phone', 'تلفن', '', { cls: 'c6', mode: 'tel', dir: 'ltr' })}
+        ${F.seg('cp-sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], '', 'c3')}
+        <div class="field c3"><label for="cp-age">سن (اختیاری)</label><input id="cp-age" inputmode="numeric" autocomplete="off"></div>
         ${F.chips('cp-src', 'منبع آشنایی', SOURCES(), '')}
       </div><div class="row-btns"><button type="button" class="primary" data-newc>ثبت و انتخاب</button></div><div class="warns o-errs" hidden></div></details></div>`;
     document.body.appendChild(m);
@@ -8445,7 +8458,7 @@ Located in ./vendor/QRCode
       const q = norm($('#cp-q', m).value);
       const items = Lx.all('clients').filter((c) => (!opts || c.id !== opts.exclude) && (!q || norm(`${c.first}${c.last}${c.phone}${c.fileNo || ''}`).includes(q)))
         .sort((a, b) => (b.u || 0) - (a.u || 0)).slice(0, 60);
-      $('#cp-list', m).innerHTML = items.map((c) => `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}</span><span class="rec-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</span></button>`).join('')
+      $('#cp-list', m).innerHTML = items.map((c) => `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}</span><span class="rec-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</span></button>`).join('')
         || '<div class="rec-count">مراجعی پیدا نشد؛ پایین‌تر «مراجع تازه» را ثبت کنید.</div>';
     };
     draw();
@@ -8461,7 +8474,8 @@ Located in ./vendor/QRCode
         if (!first && !last) { errs(m, ['نام مراجع را بنویسید.']); return; }
         const dup = phone && Lx.all('clients').find((c) => c.phone && JD.latinDigits(c.phone).replace(/\D/g, '').slice(-10) === JD.latinDigits(phone).replace(/\D/g, '').slice(-10));
         if (dup && !window.confirm(`«${Lx.clientName(dup)}» با همین شماره ثبت شده است. باز هم مراجع تازه ساخته شود؟`)) { m.remove(); onPick(dup); return; }
-        const c = Lx.put('clients', { first, last, phone, source: segv(m, 'cp-src') }, user());
+        const age = LG.num(val(m, 'cp-age'));
+        const c = Lx.put('clients', { first, last, phone, source: segv(m, 'cp-src'), sex: segv(m, 'cp-sex'), age: age && age > 0 && age < 111 ? age : null, ageAt: age ? today() : '' }, user());
         m.remove(); onPick(c);
       }
     });
@@ -8469,14 +8483,14 @@ Located in ./vendor/QRCode
   const SOURCES = () => (window.DB && window.DB.SOURCES) || ['پیج دکتر', 'پیج کلینیک', 'معرفی آشنایان', 'گوگل و اینترنت', 'تلگرام یا واتس‌اپ', 'تابلو یا حضوری', 'سایر'];
   function clientChip(c, id) {
     const Lx = L();
-    return `<div class="field c6"><label>مراجع</label><button type="button" class="o-client" id="${id || 'f-client'}" data-cid="${esc(c ? c.id : '')}">${c ? `<b>${esc(Lx.clientName(c))}</b><small>${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>` : '<span>انتخاب مراجع…</span>'}</button></div>`;
+    return `<div class="field c6"><label>مراجع</label><button type="button" class="o-client" id="${id || 'f-client'}" data-cid="${esc(c ? c.id : '')}">${c ? `<b>${esc(Lx.clientName(c))}</b><small>${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>` : '<span>انتخاب مراجع…</span>'}</button></div>`;
   }
   function wireClientChip(box, onPick) {
     const b = $('.o-client', box);
     if (!b) return;
     b.addEventListener('click', () => clientPicker((c) => {
       b.dataset.cid = c.id;
-      b.innerHTML = `<b>${esc(L().clientName(c))}</b><small>${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>`;
+      b.innerHTML = `<b>${esc(L().clientName(c))}</b><small>${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>`;
       if (onPick) onPick(c);
     }));
   }
@@ -8807,17 +8821,20 @@ Located in ./vendor/QRCode
     const Lx = L();
     const q = st.q || '';
     const norm = (s) => JD.latinDigits(String(s || '')).replace(/[‌\s]/g, '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLowerCase();
-    const filt = st.f || 'all';
+    const fileFilter = !!(H.needsFile && Lx.meta.linked);   // فقط در اپ دکتر: مراجعانی که هنوز پرونده پزشکی ندارند
+    const filt = st.f === 'nofile' && !fileFilter ? 'all' : (st.f || 'all');
     let items = Lx.all('clients').filter((c) => !q || norm(`${c.first}${c.last}${c.phone}${c.fileNo || ''}`).includes(norm(q)));
     const bal = new Map(items.map((c) => [c.id, Lx.balance(c.id)]));
     if (filt === 'debt') items = items.filter((c) => bal.get(c.id) < 0);
     if (filt === 'credit') items = items.filter((c) => bal.get(c.id) > 0);
+    if (filt === 'nofile') items = items.filter((c) => H.needsFile(Lx, c) && (Lx.all('appts', (a) => a.cid === c.id && a.status !== 'cancel').length || Lx.clientCharges(c.id).length));
+    const filters = [['all', 'همه'], ['debt', 'بدهکاران'], ['credit', 'بستانکاران']].concat(fileFilter ? [['nofile', 'بی‌پرونده']] : []);
     items.sort((a, b) => (filt === 'debt' ? bal.get(a.id) - bal.get(b.id) : (b.u || 0) - (a.u || 0)));
     const totalDebt = [...bal.values()].filter((b) => b < 0).reduce((a, b) => a - b, 0);
     box.innerHTML = `${head()}<div class="rec-tools"><input class="search" id="o-q" type="search" placeholder="نام، تلفن یا شماره پرونده" value="${esc(q)}" autocomplete="off">
-      <div class="seg full" style="--n:3" role="radiogroup" aria-label="فیلتر" data-cf>${[['all', 'همه'], ['debt', 'بدهکاران'], ['credit', 'بستانکاران']].map(([v, l]) => `<button type="button" role="radio" data-value="${v}" aria-checked="${v === filt}">${l}</button>`).join('')}</div></div>
-      <div class="rec-count">${fa(items.length)} مراجع${totalDebt ? ` · جمع بدهی‌ها ${toman(totalDebt)}` : ''}</div>
-      <div class="rec-items">${items.slice(0, 200).map((c) => { const b = bal.get(c.id); return `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}${c.puid ? '<span class="tag inj">پرونده</span>' : ''}</span><span class="rec-delta num">${b ? `${b < 0 ? '−' : '+'}${toman(Math.abs(b), true)}` : ''}<small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : '')}</small></span><span class="rec-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source || ''].filter(Boolean).join(' · '))}</span></button>`; }).join('') || '<div class="empty">مراجعی پیدا نشد.</div>'}</div>`;
+      <div class="seg full" style="--n:${filters.length}" role="radiogroup" aria-label="فیلتر" data-cf>${filters.map(([v, l]) => `<button type="button" role="radio" data-value="${v}" aria-checked="${v === filt}">${l}</button>`).join('')}</div></div>
+      <div class="rec-count">${fa(items.length)} مراجع${totalDebt ? ` · جمع بدهی‌ها ${toman(totalDebt)}` : ''}${filt === 'nofile' ? ' · روی هر نفر بزنید و «تشکیل پرونده» را بزنید؛ فرم پرونده با اطلاعات منشی پر می‌شود.' : ''}</div>
+      <div class="rec-items">${items.slice(0, 200).map((c) => { const b = bal.get(c.id); return `<button type="button" class="rec-item" data-cid="${esc(c.id)}"><span class="rec-name">${esc(Lx.clientName(c))}${c.puid && (!H.hasFile || H.hasFile(c)) ? '<span class="tag inj">پرونده</span>' : ''}${H.needsFile && H.needsFile(Lx, c) ? '<span class="tag">بی‌پرونده</span>' : ''}</span><span class="rec-delta num">${b ? `${b < 0 ? '−' : '+'}${toman(Math.abs(b), true)}` : ''}<small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : '')}</small></span><span class="rec-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source || ''].filter(Boolean).join(' · '))}</span></button>`; }).join('') || '<div class="empty">مراجعی پیدا نشد.</div>'}</div>`;
     const inp = $('#o-q', box);
     inp.addEventListener('input', () => { O.st.q = inp.value; clearTimeout(inp._t); inp._t = setTimeout(() => { H.replaceState(Object.assign({}, O.st)); render(O.st, true); const i2 = $('#o-q'); if (i2) { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } }, 250); });
     box.onclick = (e) => {
@@ -8841,11 +8858,11 @@ Located in ./vendor/QRCode
     const txt = (L().meta.recallText || 'سلام {نام} عزیز، وقت بخیر. برای هماهنگی نوبت بعدی در خدمت شما هستیم.').replace(/\{نام\}/g, c.first || '');
     box.innerHTML = `${head()}<button type="button" class="backbtn" data-oback>→ مراجعان</button>
       <div class="pt-head"><h2>${esc(Lx.clientName(c))}</h2>
-        <div class="pt-meta">${esc([c.fileNo ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
+        <div class="pt-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.sex ? (c.sex === 'f' ? 'زن' : 'مرد') : '', c.age ? `${fa(c.age)} ساله` : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
         ${c.disc ? `<div class="pt-meta">تخفیف ثابت: ${c.disc.t === 'pct' ? `${fa(c.disc.v)}٪` : toman(c.disc.v)}${c.disc.why ? ` (${esc(c.disc.why)})` : ''}</div>` : ''}
         ${c.note ? `<div class="pt-meta">${esc(c.note)}</div>` : ''}
         <div class="pt-actions">${c.phone ? `<a class="btn-sm" href="${telHref(c.phone)}">تماس</a><a class="btn-sm" href="${smsHref(c.phone, txt)}">پیامک</a><a class="btn-sm" href="${waHref(c.phone, txt)}" target="_blank" rel="noopener">واتس‌اپ</a>` : ''}
-          <button type="button" class="btn-sm" data-cact="edit">ویرایش</button>${H.isDoctor && L().meta.linked ? `<button type="button" class="btn-sm" data-cact="file">${c.puid ? 'پرونده پزشکی' : 'ساخت پرونده پزشکی'}</button>` : ''}${isManager() ? '<button type="button" class="btn-sm" data-cact="merge">یکی کردن با تکراری</button>' : ''}</div></div>
+          <button type="button" class="btn-sm" data-cact="edit">ویرایش</button>${H.isDoctor && L().meta.linked ? `<button type="button" class="btn-sm${H.hasFile && !H.hasFile(c) ? ' prime' : ''}" data-cact="file">${H.hasFile && H.hasFile(c) ? 'پرونده پزشکی' : 'تشکیل پرونده'}</button>` : ''}${isManager() ? '<button type="button" class="btn-sm" data-cact="merge">یکی کردن با تکراری</button>' : ''}</div></div>
       <div class="kpis o-kpis"><div class="kpi"><span>مانده حساب</span><b class="money ${b < 0 ? 'neg' : ''}">${toman(Math.abs(b), true)}</b><small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : 'صاف')}</small></div>
         <div class="kpi"><span>جمع خدمات</span><b class="money">${toman(Lx.clientCharges(c.id).reduce((a, x) => a + x.amount, 0), true)}</b><small>${fa(Lx.clientCharges(c.id).length)} مورد</small></div></div>
       ${pk.length ? `<div class="pt-note">پکیج باز: ${pk.map((p) => `${esc(p.label)} — ${fa(p.left)} از ${fa(p.sessions)} جلسه مانده`).join('؛ ')}</div>` : ''}
@@ -8884,7 +8901,11 @@ Located in ./vendor/QRCode
     box.innerHTML = `${head()}${formTop(c ? 'ویرایش مراجع' : 'مراجع تازه')}
       <form class="grid" id="ofm" novalidate>
         ${F.text('f-first', 'نام', d.first, { cls: 'c3' })}${F.text('f-last', 'نام خانوادگی', d.last, { cls: 'c3' })}
-        ${F.text('f-phone', 'تلفن', d.phone, { cls: 'c3', mode: 'tel', dir: 'ltr' })}${F.text('f-file', 'شماره پرونده', d.fileNo ? fa(d.fileNo) : '', { cls: 'c3', mode: 'numeric' })}
+        ${F.text('f-phone', 'تلفن', d.phone, { cls: 'c3', mode: 'tel', dir: 'ltr' })}
+        <div class="field c3"><label>شماره پرونده</label><div class="o-fileno">${d.fileNo ? `<b>${fa(d.fileNo)}</b>` : '<span>خودکار، بعد از تشکیل پرونده</span>'}</div></div>
+        ${F.seg('sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], d.sex || '', 'c3')}
+        <div class="field c3"><label for="f-age">سن (اختیاری)</label><div class="unit-in"><input id="f-age" inputmode="numeric" autocomplete="off" value="${d.age ? esc(fa(d.age)) : ''}"><span>سال</span></div></div>
+        ${c && c.puid ? '<div class="hint c6">تغییر نام، تلفن یا منبع آشنایی در پرونده مطب هم ثبت می‌شود.</div>' : ''}
         ${F.chips('src', 'منبع آشنایی', SOURCES(), std ? src : 'سایر', `<input id="f-srcx" class="chip-other" placeholder="توضیح «سایر»" value="${esc(std ? '' : src)}">`)}
         ${F.seg('disc', 'تخفیف ثابت این مراجع', [['', 'ندارد'], ['amt', 'مبلغی'], ['pct', 'درصدی']], d.disc ? d.disc.t : '', 'c6')}
         <div class="c6" id="discwrap" ${d.disc ? '' : 'hidden'}><div class="grid"><div class="field c3"><label for="f-dv">مقدار</label><input id="f-dv" inputmode="numeric" value="${esc(d.disc ? fa(d.disc.v) : '')}"></div>${F.text('f-dwhy', 'دلیل', d.disc ? d.disc.why : '', { cls: 'c3' })}</div></div>
@@ -8894,8 +8915,12 @@ Located in ./vendor/QRCode
     const save = () => {
       const first = val(box, 'f-first'), last = val(box, 'f-last');
       if (!first && !last) { errs(box, ['نام را بنویسید.']); return; }
+      const ageTxt = val(box, 'f-age'), age = LG.num(ageTxt);
+      if (ageTxt && (age === null || age < 1 || age > 110)) { errs(box, ['سن را درست بنویسید (مثلاً ۳۴).']); return; }
       const s = segv(box, 'src'), dt = segv(box, 'disc');
-      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), fileNo: LG.num(val(box, 'f-file')), source: s === 'سایر' ? (val(box, 'f-srcx') || 'سایر') : s,
+      const ageChanged = (age ?? null) !== ((c && c.age) ?? null);
+      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), sex: segv(box, 'sex'), age, ageAt: age ? (ageChanged ? today() : (c && c.ageAt) || today()) : '',
+        source: s === 'سایر' ? (val(box, 'f-srcx') || 'سایر') : s,
         disc: dt ? { t: dt, v: LG.num(val(box, 'f-dv')) || 0, why: val(box, 'f-dwhy') } : null, note: val(box, 'f-note') }), user());
       if (H.onClientSaved) H.onClientSaved(Lx, rec);
       H.toast('ذخیره شد.');
@@ -10125,7 +10150,7 @@ Located in ./vendor/QRCode
     $('#rec-form').hidden = !['pform', 'vform'].includes(R.screen);
     if (R.screen === 'list') renderList();
     else if (R.screen === 'detail') renderDetail(st.puid);
-    else if (R.screen === 'pform') renderPatientForm(st.puid);
+    else if (R.screen === 'pform') renderPatientForm(st.puid, st);
     else if (R.screen === 'vform') renderVisitForm(st.puid, st.kind, st.vuid, st.fromAppt);
   }
   function listItems(q, filter) {
@@ -10151,13 +10176,14 @@ Located in ./vendor/QRCode
     return `<button type="button" class="rec-item" role="listitem" data-puid="${esc(p.uid)}"><span class="rec-name">${esc(DB.fullName(p))}${progTag(s.program)}</span>${delta}<span class="rec-meta">${esc(meta)}</span></button>`;
   }
   function renderList() {
-    if (R.filter === 'recall') { renderRecall(); return; }
+    if (R.filter === 'recall') { const nc = $('#rec-newc'); if (nc) nc.hidden = true; renderRecall(); return; }
     $('#rec-q').hidden = false;
     const items = listItems(norm(R.q), R.filter);
     const total = DB.counts();
     $('#rec-q').value = R.q;
     syncSegs();
     $('#rec-count').textContent = total.patients ? `${fa(items.length)} پرونده${items.length !== total.patients ? ` از ${fa(total.patients)}` : ''} · ${fa(total.visits)} مراجعه · برای دیدن نمودارها روی نام بیمار بزنید` : '';
+    renderNewClients();
     const MAX = 200;
     $('#rec-items').innerHTML = items.slice(0, MAX).map(itemHtml).join('') +
       (items.length > MAX ? `<div class="rec-count">${fa(items.length - MAX)} پرونده دیگر؛ برای دیدن، جستجو کنید.</div>` : '');
@@ -10170,6 +10196,18 @@ Located in ./vendor/QRCode
     } else empty.textContent = 'پرونده‌ای با این مشخصات پیدا نشد.';
     setRbar([{ label: '+ پرونده جدید', onClick: () => go({ view: 'records', screen: 'pform' }) }]);
   }
+
+  /** مراجعانی که منشی ثبت کرده و نوبت یا خدمت دارند ولی هنوز پرونده ندارند */
+  function renderNewClients() {
+    const el = $('#rec-newc');
+    if (!el) return;
+    let n = 0;
+    try { n = window.DoctorOffice && window.DoctorOffice.ready ? window.DoctorOffice.unlinkedCount() : 0; } catch (e) { n = 0; }
+    el.hidden = !n;
+    el.innerHTML = n ? `<button type="button" class="o-remind" id="rec-newc-btn">${fa(n)} مراجع از نوبت‌دهی هنوز پرونده ندارند؛ برای تشکیل پرونده با اطلاعات منشی بزنید</button>` : '';
+    if (n) $('#rec-newc-btn').onclick = () => go({ view: 'office', o: { screen: 'clients', f: 'nofile' } });
+  }
+  for (const ev of ['office-ready', 'office-change']) window.addEventListener(ev, () => { if (R.view === 'records' && R.screen === 'list' && R.filter !== 'recall') renderNewClients(); });
 
   // ------------------------------------------------------------------ فهرست پیگیری
   function recallText(p) {
@@ -10463,25 +10501,28 @@ Located in ./vendor/QRCode
   }
   const formHead = (title, backTo) => `<button type="button" class="backbtn" data-act="back">→ ${esc(backTo)}</button><div class="view-head"><h2>${esc(title)}</h2></div>`;
 
-  function renderPatientForm(puid) {
+  function renderPatientForm(puid, st) {
     const p = puid ? DB.patient(puid) : null;
+    // پرونده تازه از روی مراجعی که منشی ثبت کرده: نام، تلفن، منبع آشنایی، جنس و سن از همان ثبت می‌آید
+    const pre = !p && st && st.prefill ? st.prefill : null;
     const box = $('#rec-form');
-    const age = p ? DB.ageOf(p) : null;
-    const src = p && p.source ? p.source : '';
+    const age = p ? DB.ageOf(p) : (pre && pre.age ? pre.age : null);
+    const src = p && p.source ? p.source : (pre && pre.source ? pre.source : '');
     const srcStd = !src || DB.SOURCES.includes(src);
     const w0Guess = p && DB.toNum(p.w0) !== null && p.w0Kind !== 'clinic';
     box.innerHTML = `${formHead(p ? 'ویرایش پرونده' : 'پرونده جدید', p ? DB.fullName(p) : 'پرونده‌ها')}
+      ${pre ? `<div class="form-note">نام، تلفن${pre.source ? '، منبع آشنایی' : ''}${pre.sex ? '، جنس' : ''}${pre.age ? ' و سن' : ''} از ثبت ${esc(pre.by || 'منشی')} آمده است؛ بقیه را تکمیل کنید. شماره پرونده خودکار است و بعد از ذخیره برای منشی هم دیده می‌شود.</div>` : ''}
       <form id="pform" novalidate><div class="grid">
-        ${F.text('p-first', 'نام', p && p.first, { cls: 'c3' })}${F.text('p-last', 'نام خانوادگی', p && p.last, { cls: 'c3' })}
-        ${F.seg('pf:sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], p ? p.sex : 'f', 'c3')}
+        ${F.text('p-first', 'نام', p ? p.first : (pre && pre.first), { cls: 'c3' })}${F.text('p-last', 'نام خانوادگی', p ? p.last : (pre && pre.last), { cls: 'c3' })}
+        ${F.seg('pf:sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], p ? p.sex : ((pre && pre.sex) || 'f'), 'c3')}
         ${F.num('p-pid', 'شماره پرونده', p ? p.pid : DB.nextPid(), '', { cls: 'c3' })}
         ${F.text('p-birth', 'تاریخ تولد', p && p.birth ? JD.show(p.birth) : '', { cls: 'c3', ph: 'مثلاً ۱۳۶۷/۰۴/۱۷' })}
-        ${F.num('p-age', 'یا سن', p && !p.birth && age !== null ? age : '', 'سال', { cls: 'c3' })}
+        ${F.num('p-age', 'یا سن', (p ? !p.birth : true) && age !== null ? age : '', 'سال', { cls: 'c3' })}
         ${F.num('p-height', 'قد', p && p.height, 'سانتی‌متر')}
         ${F.num('p-w0', 'وزن اولیه مطب', p && p.w0, 'کیلوگرم', w0Guess ? { hint: 'در پرونده‌های قبلی «وزن اولیه» ثبت شده بود و وزن مطب فرض شد؛ با ذخیره، تأیید می‌شود.' } : undefined)}
         ${F.num('p-w0h', 'وزن اولیه منزل', p && p.w0Home, 'کیلوگرم')}
         ${F.num('p-fat0', 'درصد چربی اولیه', p && p.fat0 !== null && p.fat0 !== undefined ? (typeof p.fat0 === 'number' ? p.fat0 : '>50') : '', '٪')}
-        ${F.num('p-muscle0', 'درصد عضله اولیه', p && p.muscle0, '٪')}${F.text('p-phone', 'تماس', p && p.phone, { cls: 'c4 m6' })}
+        ${F.num('p-muscle0', 'درصد عضله اولیه', p && p.muscle0, '٪')}${F.text('p-phone', 'تماس', p ? p.phone : (pre && pre.phone), { cls: 'c4 m6' })}
         ${F.chips('pf:source', 'منبع آشنایی', DB.SOURCES, srcStd ? src : 'سایر', '', `<input id="p-source-x" class="chip-other" placeholder="توضیح «سایر» (اختیاری)" value="${esc(srcStd ? '' : src)}" autocomplete="off">`)}
         ${F.area('p-history', 'سابقه بیماری‌ها', p && p.history)}${F.area('p-allergies', 'آلرژی‌ها', p && p.allergies)}
         ${F.area('p-meds', 'داروها', p && p.meds)}${F.area('p-notes', 'توضیحات', p && p.notes)}
@@ -10514,7 +10555,11 @@ Located in ./vendor/QRCode
           source, phone: val('p-phone'), history: val('p-history'), allergies: val('p-allergies'), meds: val('p-meds'), notes: val('p-notes') }));
       } catch (e) { showErrs([e.message]); return; }
       toast('پرونده ذخیره شد.');
-      if (p) back(); else go({ view: 'records', screen: 'detail', puid: rec.uid }, true);
+      // پرونده‌ای که از روی مراجع منشی تشکیل شد، به همان مراجع وصل می‌شود (نوبت‌ها و حسابش هم به این پرونده می‌آید)
+      if (!p && st && st.link && window.DoctorOffice) { try { window.DoctorOffice.afterNewPatient(st.link, rec); } catch (e) { /* صندوق اختیاری است */ } }
+      if (p) back();
+      else if (st && st.then) go(Object.assign({}, st.then, { puid: rec.uid }), true);   // مثلاً فرم ویزیت همان نوبت
+      else go({ view: 'records', screen: 'detail', puid: rec.uid }, true);
     };
     $('#pform').addEventListener('submit', (e) => { e.preventDefault(); save(); });
     setRbar([{ label: 'ذخیره پرونده', onClick: save }, { label: 'انصراف', cls: 'secondary', onClick: () => back() }]);
@@ -11292,27 +11337,66 @@ Located in ./vendor/QRCode
     officeUrl: () => `${location.href.replace(/[#?].*$/, '').replace(/[^/]*$/, '')}office.html`,
     recordVisit: (L, a, c) => recordVisit(L, a, c),
     openFile: (L, c) => openFile(L, c),
+    hasFile: (c) => hasFile(c),
+    needsFile: (L, c) => L.meta.linked && !hasFile(c),
     onClientSaved: () => {},
   };
 
   // ------------------------------------------------------------------ مراجع ↔ بیمار
+  // شماره پرونده فقط از پرونده‌های مطب می‌آید (خودکار)؛ منشی آن را تایپ نمی‌کند.
+  // نام، تلفن و منبع آشنایی دوطرفه است: تغییر در پرونده به مراجع می‌رود و تغییر منشی در مراجع به پرونده
+  // (با «آخرین مقدار هماهنگ‌شده» در fileSync، تا ساعت گوشی‌ها در تصمیم اثری نداشته باشد).
+  const KEYS = ['first', 'last', 'phone', 'source'];
+  const sv = (v) => (v === null || v === undefined ? '' : String(v));
+  const fileVals = (p) => ({ first: sv(p.first), last: sv(p.last), phone: sv(p.phone), source: sv(p.source) });
+  const ph10 = (x) => JD.latinDigits(x || '').replace(/\D/g, '').slice(-10);
+  const nm = (x) => String(x || '').replace(/[\s‌]+/g, '').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+  /** نام مراجع با نام پرونده جور است؟ (اگر هر دو نام کوچک دارند، یکی باشد؛ وگرنه نام خانوادگی) */
+  function sameName(c, p) {
+    const cf = nm(c.first), pf = nm(p.first), cl = nm(c.last), pl = nm(p.last);
+    if (cf && pf) return cf === pf && (!cl || !pl || cl === pl);
+    return !!(cl && pl && cl === pl);
+  }
+  // پرونده مراجع: روی این گوشی هست، حذف شده، یا هنوز همگام نشده (مثلاً گوشی تازه پیش از دریافت پرونده‌ها؛ آن را «بی‌پرونده» حساب نمی‌کنیم)
+  const fileState = (c) => (!c || !c.puid ? 'none' : (DB.patient(c.puid) ? 'live' : (DB.isDeleted(c.puid) ? 'deleted' : 'unknown')));
+  const hasFile = (c) => ['live', 'unknown'].includes(fileState(c));
+  /** وصل کردن مراجع به پرونده؛ اگر پرونده از قبل مراجع دیگری دارد، دو مراجع یکی می‌شوند */
+  function linkClient(L, c, p) {
+    const fv = fileVals(p);
+    if (c.puid && !hasFile(c)) c = L.put('clients', Object.assign({}, c, { puid: '' }), me());   // پرونده قبلی‌اش حذف شده بود
+    const other = L.clientByPuid(p.uid);
+    if (other && other.id !== c.id && hasFile(other)) { L.mergeClients(other.id, c.id, me()); return L.get('clients', other.id); }
+    return L.put('clients', Object.assign({}, c, fv, { puid: p.uid, fileNo: p.pid, fileSync: fv }), me());
+  }
   function clientFor(L, p, create) {
     let c = L.clientByPuid(p.uid);
     if (c || !create) return c;
-    const ph = (x) => JD.latinDigits(x || '').replace(/\D/g, '').slice(-10);
-    c = L.all('clients', (x) => !x.puid && ((x.fileNo && x.fileNo === p.pid) || (p.phone && x.phone && ph(x.phone) === ph(p.phone)))).sort((a, b) => b.u - a.u)[0];
-    if (c) return L.put('clients', Object.assign({}, c, { puid: p.uid, fileNo: p.pid }), me());
-    return L.put('clients', { first: p.first, last: p.last, phone: p.phone, fileNo: p.pid, puid: p.uid, source: p.source || '' }, me());
+    // مراجعی که منشی با همین تلفن و همین نام ساخته (هم‌تلفن با نام دیگر، مثلاً مادر و دختر، جدا می‌ماند)
+    c = L.all('clients', (x) => !hasFile(x) && p.phone && x.phone && ph10(x.phone) === ph10(p.phone) && sameName(x, p)).sort((a, b) => b.u - a.u)[0];
+    if (c) return linkClient(L, c, p);
+    const fv = fileVals(p);
+    return L.put('clients', Object.assign({}, fv, { fileNo: p.pid, puid: p.uid, fileSync: fv }), me());
   }
-  /** نام، تلفن، شماره پرونده و منبع آشنایی بیماران به دفترهای متصل می‌رود (نه بیشتر) */
+  /** نام، تلفن، شماره پرونده و منبع آشنایی بیماران به دفترهای متصل می‌رود (نه بیشتر)؛ تغییر منشی در همین‌ها به پرونده برمی‌گردد */
   function syncClients() {
     for (const L of linked()) {
       L.batch(() => {
         for (const p of DB.patients()) {
           const c = L.clientByPuid(p.uid);
           if (!c) { clientFor(L, p, true); continue; }
-          const want = { first: p.first || '', last: p.last || '', phone: p.phone || '', fileNo: p.pid, source: p.source || c.source || '' };
-          if (Object.entries(want).some(([k, v]) => (c[k] ?? '') !== (v ?? ''))) L.put('clients', Object.assign({}, c, want), me());
+          const fv = fileVals(p), cv = fileVals(c), base = c.fileSync || null;
+          const cliChanged = base ? KEYS.filter((k) => cv[k] !== sv(base[k]) && cv[k] !== '') : [];
+          const fileChanged = !base || KEYS.some((k) => fv[k] !== sv(base[k]));
+          if (cliChanged.length && !fileChanged) {
+            // منشی نام یا تلفن یا منبع را عوض کرده: پرونده هم به‌روز می‌شود (پاک کردن یک فیلد از طرف منشی، پرونده را خالی نمی‌کند)
+            const patch = {};
+            for (const k of cliChanged) patch[k] = cv[k];
+            try { DB.savePatient(Object.assign({}, p, patch)); } catch (e) { continue; }
+            const nfv = Object.assign({}, fv, patch);
+            L.put('clients', Object.assign({}, c, nfv, { fileNo: p.pid, fileSync: nfv }), me());
+          } else if (!base || KEYS.some((k) => cv[k] !== fv[k]) || c.fileNo !== p.pid) {
+            L.put('clients', Object.assign({}, c, fv, { fileNo: p.pid, fileSync: fv }), me());
+          }
         }
       });
     }
@@ -11417,7 +11501,8 @@ Located in ./vendor/QRCode
     const c = clientFor(L, p, true);
     const prev = L.all('charges', (x) => x.visit === rec.uid)[0] || null;
     // نوبت همان روز «انجام شد»
-    const ap = (pendingAppt && pendingAppt.lid === L.id ? L.get('appts', pendingAppt.aid) : null)
+    const ap0 = pendingAppt && pendingAppt.lid === L.id ? L.get('appts', pendingAppt.aid) : null;
+    const ap = (ap0 && ap0.cid === c.id ? ap0 : null)   // نوبتی که ویزیت از رویش باز شد، فقط اگر مال همین بیمار باشد
       || L.all('appts', (a) => a.cid === c.id && a.date === rec.date && ['booked', 'arrived'].includes(a.status))[0] || null;
     pendingAppt = null;
     if (ap && ap.status !== 'done') L.put('appts', Object.assign({}, ap, { status: 'done' }), me());
@@ -11435,48 +11520,68 @@ Located in ./vendor/QRCode
   function afterVisitDelete(uid) {
     for (const L of linked()) for (const ch of L.all('charges', (x) => x.visit === uid)) L.voidRec('charges', ch.id, me(), 'حذف مراجعه از پرونده');
   }
-  /** پرونده پزشکیِ احتمالیِ یک مراجع (که منشی ساخته): اول شماره پرونده، بعد تلفن، بعد نام کامل */
+  /** پرونده پزشکیِ احتمالیِ مراجعی که منشی ساخته: اول تلفن (اگر چند نفر هم‌تلفن‌اند، هم‌نام)، بعد نام کامل */
   function findPatientFor(c) {
     if (!c) return null;
-    if (c.fileNo) { const p = DB.patients().find((x) => x.pid === c.fileNo); if (p) return { p, by: 'شماره پرونده' }; }
-    const ph = (x) => JD.latinDigits(x || '').replace(/\D/g, '').slice(-10);
-    const phone = ph(c.phone);
-    if (phone.length === 10) { const p = DB.patients().find((x) => ph(x.phone) === phone); if (p) return { p, by: 'تلفن' }; }
-    const nm = (x) => String(x || '').replace(/[\s‌]+/g, '').replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    const phone = ph10(c.phone);
+    if (phone.length === 10) {
+      const same = DB.patients().filter((x) => ph10(x.phone) === phone);
+      const p = same.find((x) => sameName(c, x)) || same[0];
+      if (p) return { p, by: 'تلفن' };
+    }
     if (c.first && c.last) { const full = nm(`${c.first}${c.last}`); const p = DB.patients().find((x) => nm(`${x.first}${x.last}`) === full); if (p) return { p, by: 'نام' }; }
     return null;
   }
-  /** مراجعی که پرونده پزشکی ندارد: وصل به پرونده موجود (اگر پیدا شد) یا ساخت پرونده تازه. خروجی {p, c} یا null */
-  function ensurePatient(L, c, askNew) {
-    const p0 = c && c.puid ? DB.patient(c.puid) : null;
-    if (p0) return { p: p0, c };
+  /** پرونده موجودِ مراجع (اگر وصل است، یا با تأیید دکتر به پرونده‌ای با همان تلفن یا نام وصل می‌شود) */
+  function existingFile(L, c) {
+    const fs = fileState(c);
+    if (fs === 'live') return DB.patient(c.puid);
+    if (fs === 'unknown') { window.alert(`پرونده «${L.clientName(c)}»${c.fileNo ? ` (شماره ${fa(c.fileNo)})` : ''} هنوز روی این گوشی نیست. اول پرونده‌ها را از «تنظیمات › همگام‌سازی» دریافت کنید.`); return false; }
     const hit = findPatientFor(c);
-    if (hit && window.confirm(`«${L.clientName(c)}» به پرونده‌ای وصل نیست، ولی پرونده «${DB.fullName(hit.p)}» (شماره ${fa(hit.p.pid)}) با همین ${hit.by} هست.\nهمین پرونده باشد؟`)) {
-      const linkedC = L.clientByPuid(hit.p.uid);
-      if (linkedC && linkedC.id !== c.id) { L.mergeClients(linkedC.id, c.id, me()); return { p: hit.p, c: L.get('clients', linkedC.id) }; }
-      return { p: hit.p, c: L.put('clients', Object.assign({}, c, { puid: hit.p.uid, fileNo: hit.p.pid }), me()) };
+    if (hit && window.confirm(`«${L.clientName(c)}» به پرونده‌ای وصل نیست، ولی پرونده «${DB.fullName(hit.p)}» (شماره ${fa(hit.p.pid)}${hit.p.phone ? `، ${fa(hit.p.phone)}` : ''}) با همین ${hit.by} هست.\nهمین پرونده باشد؟ (اگر نفر دیگری است، «لغو» را بزنید تا پرونده تازه تشکیل شود.)`)) {
+      linkClient(L, c, hit.p);
+      return hit.p;
     }
-    if (!window.confirm(askNew)) return null;
-    const p = DB.savePatient({ first: c.first, last: c.last, phone: c.phone, source: c.source, pid: c.fileNo && !DB.patients().some((x) => x.pid === c.fileNo) ? c.fileNo : undefined });
-    return { p, c: L.put('clients', Object.assign({}, c, { puid: p.uid, fileNo: p.pid }), me()) };
+    return null;
   }
+  /** اطلاعاتی که منشی ثبت کرده، برای پر کردن فرم پرونده تازه */
+  const prefillOf = (c) => ({ first: c.first || '', last: c.last || '', phone: c.phone || '', source: c.source || '', sex: c.sex || '', age: c.age ?? null, by: c.bn || '' });
   function recordVisit(L, a, c) {
-    const r = ensurePatient(L, c, `«${L.clientName(c)}» پرونده پزشکی ندارد. پرونده تازه با همین نام و تلفن ساخته شود؟`);
-    if (!r) return;
-    const p = r.p;
-    a = L.get('appts', a.id) || a;   // اگر مراجع تکراری یکی شد، نوبت حالا مال مراجع اصلی است
     if (a.status === 'booked') L.put('appts', Object.assign({}, a, { status: 'arrived' }), me());
-    pendingAppt = { lid: L.id, aid: a.id };
     const s = a.svc ? L.service(a.svc) : null;
     const v = s && a.vid ? L.variant(s, a.vid) : null;
     const kind = s && s.kind === 'diet' ? 'diet' : 'proc';
-    App.nav.go({ view: 'records', screen: 'vform', puid: p.uid, kind, fromAppt: { center: a.center, mode: a.mode, type: s ? s.visitType : '', date: a.date,
-      dose: v && v.dose !== null && v.dose !== undefined ? v.dose : null, drug: s && s.kind === 'inj' ? (s.drug || '') : '' } });
+    const then = { view: 'records', screen: 'vform', kind, fromAppt: { center: a.center, mode: a.mode, type: s ? s.visitType : '', date: a.date,
+      dose: v && v.dose !== null && v.dose !== undefined ? v.dose : null, drug: s && s.kind === 'inj' ? (s.drug || '') : '' } };
+    const p = existingFile(L, c);
+    if (p === false) return;
+    pendingAppt = { lid: L.id, aid: a.id };
+    if (p) { App.nav.go(Object.assign({}, then, { puid: p.uid })); return; }
+    // پرونده تازه: فرم پرونده با اطلاعات منشی باز می‌شود؛ بعد از ذخیره، فرم ویزیت همین نوبت
+    App.nav.go({ view: 'records', screen: 'pform', prefill: prefillOf(c), link: { lid: L.id, cid: c.id }, then });
   }
   function openFile(L, c) {
-    const r = ensurePatient(L, c, `برای «${L.clientName(c)}» پرونده پزشکی ساخته شود؟`);
-    if (!r) return;
-    App.nav.go({ view: 'records', screen: 'detail', puid: r.p.uid });
+    const p = existingFile(L, c);
+    if (p === false) return;
+    if (p) { App.nav.go({ view: 'records', screen: 'detail', puid: p.uid }); return; }
+    App.nav.go({ view: 'records', screen: 'pform', prefill: prefillOf(c), link: { lid: L.id, cid: c.id } });
+  }
+  /** بعد از ذخیره پرونده تازه‌ای که از روی مراجع منشی پر شد: مراجع به پرونده وصل می‌شود و شماره پرونده‌اش خودکار می‌آید */
+  function afterNewPatient(link, p) {
+    const L = link && Office.ledger(link.lid);
+    const c = L && L.get('clients', link.cid);
+    if (!c || !p) return;
+    linkClient(L, c, p);
+  }
+  /** مراجعانی که نوبت یا خدمت دارند ولی هنوز پرونده پزشکی ندارند */
+  function unlinked() {
+    const out = [];
+    for (const L of linked()) {
+      for (const c of L.all('clients', (x) => !hasFile(x))) {
+        if (L.all('appts', (a) => a.cid === c.id && a.status !== 'cancel').length || L.clientCharges(c.id).length) out.push({ L, c });
+      }
+    }
+    return out;
   }
   function bookFor(p) {
     const L = linked()[0];
@@ -11710,10 +11815,13 @@ Located in ./vendor/QRCode
     for (const e of temps) await dropLedger(e, true).catch(() => {});
     if (temps.length) await Office.reloadLedgers();
     ready = true;
+    try { window.dispatchEvent(new Event('office-ready')); } catch (e) { /* بی‌اثر */ }
+    for (const L of linked()) L.on((reason) => { if (reason === 'merge') { try { window.dispatchEvent(new Event('office-change')); } catch (e) { /* بی‌اثر */ } } });
     if (linked().length) setTimeout(syncClients, 2500);
     DB.on((reason) => { if (['patient', 'merge', 'replace', 'restore'].includes(reason)) scheduleClients(); });
   }
-  window.DoctorOffice = { start, renderSettings, billBlock, readBill, autoBill, afterVisitSave, afterVisitDelete, isBooked, bookFor, syncClients,
+  window.DoctorOffice = { start, renderSettings, billBlock, readBill, autoBill, afterVisitSave, afterVisitDelete, isBooked, bookFor, syncClients, afterNewPatient,
+    unlinkedCount: () => unlinked().length,
     show: (o) => { if (!ready) return; Office.render(o || { screen: 'today' }); }, get ready() { return ready; }, hasLinked: () => linked().length > 0 };
 })();
 
