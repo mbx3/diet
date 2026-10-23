@@ -482,7 +482,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "adf1b4d", buildAt: 1792740661180 };</script>
+<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "b7a07e6", buildAt: 1792749229490 };</script>
 <script>
 /* ---- jdate.js ---- */
 /* تاریخ شمسی برای پرونده‌ها: خواندن قالب‌های مختلف، شکل استاندارد «yyyy/mm/dd»، شماره روز برای فاصله و مرتب‌سازی */
@@ -4990,8 +4990,24 @@ Located in ./vendor/QRCode
       try {
         const o = await LS.readSetup($('#su-p').value, $('#su-c').value);
         const cfg = LS.config;
-        if (cfg.gh && cfg.gh.repo && (cfg.gh.owner !== o.gh.owner || cfg.gh.repo !== o.gh.repo) && cfg.ledgers.length && !window.confirm('این گوشی به مخزن دیگری وصل است. جایگزین شود؟')) return;
-        cfg.gh = o.gh; cfg.user = o.user;
+        const sameRepo = !!(cfg.gh && cfg.gh.owner === o.gh.owner && cfg.gh.repo === o.gh.repo);
+        if (cfg.gh && cfg.gh.repo && !sameRepo && cfg.ledgers.length) {
+          if (!window.confirm('این گوشی به مخزن دیگری وصل است. دفترهای فعلی از این گوشی برداشته و مخزن تازه جایگزین شود؟')) return;
+          for (const id of [...Office.ledgers.keys()]) await Office.forgetLocal(id);
+          cfg.ledgers = []; cfg.user = null;
+        }
+        if (!sameRepo || !cfg.gh.token) cfg.gh = o.gh;
+        else if (o.gh.token && o.gh.token !== cfg.gh.token) {
+          // کد تازه توکن دیگری دارد (مثلاً بعد از عوض شدن توکن): اگر کار می‌کند جایگزین می‌شود؛ اگر گیت‌هاب ردش کرد، توکن فعلی این گوشی می‌ماند
+          const old = cfg.gh;
+          cfg.gh = Object.assign({}, old, { token: o.gh.token });
+          st('در حال بررسی توکن…');
+          try { await LS.repoInfo(); } catch (err) { if ([401, 403, 404].includes(err.status)) cfg.gh = old; }
+        }
+        // کسی که این گوشی را دارد: اگر گوشی از قبل به نام کسی ثبت می‌کرد (مثلاً منشی‌ای که دفتر دوم هم به او داده شده)، همان می‌ماند؛
+        // اگر نام کد تازه فرق دارد، پرسیده می‌شود (مثلاً وقتی گوشی به منشی تازه داده شده)
+        if (!cfg.user || !cfg.ledgers.length) cfg.user = o.user;
+        else if (o.user && o.user.name !== cfg.user.name && window.confirm(`این گوشی تا حالا به نام «${cfg.user.name}» ثبت می‌کرد. از این به بعد به نام «${o.user.name}» ثبت شود؟`)) cfg.user = o.user;
         for (const e of o.ledgers) { const i = cfg.ledgers.findIndex((x) => x.id === e.id); if (i >= 0) cfg.ledgers[i] = e; else cfg.ledgers.push(e); }
         LS.saveCfg();
         try { history.replaceState(null, '', location.pathname); } catch (e) { /* بی‌اثر */ }
@@ -4999,7 +5015,7 @@ Located in ./vendor/QRCode
         await Office.reloadLedgers();
         await Promise.all([...Office.ledgers.values()].map((L) => LS.syncLedger(L, cfg.ledgers.find((x) => x.id === L.id)).catch((err) => { st(err.message, false); })));
         LS.startAuto(() => [...Office.ledgers.values()]);
-        toast(`خوش آمدید ${o.user.name}.`);
+        toast(`خوش آمدید ${cfg.user.name}.${Lock && !Lock.enabled ? ' برای امنیت، از «بیشتر» قفل اپ را روشن کنید.' : ''}`, 6000);
         go({ screen: 'today' }, true);
       } catch (e) { st(e.message, false); }
     };
