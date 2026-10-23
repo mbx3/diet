@@ -260,6 +260,9 @@ body.has-tabs .app { padding-bottom: 200px; }
 .lg-rect { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .chart-stage { position: relative; margin-top: 6px; }
+.chart-mode { margin: 4px 0 6px; }
+.chart-mode .chart-seg button { padding: 6px 4px; font-size: 13.5px; min-height: 34px; }
+.chart-mode .chart-hint { margin: 4px 2px 0; font-size: 12px; color: var(--muted); }
 .chart-stage canvas { display: block; max-width: 100%; touch-action: pan-y; border-radius: 4px; }
 .chart-tip { position: absolute; z-index: 3; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line);
   border-radius: 10px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12.5px; min-width: 120px; max-width: 240px; }
@@ -371,11 +374,12 @@ table.data th { color: var(--muted); font-weight: 600; }
 .o-who { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
 .o-who .o-user { margin-inline-start: auto; }
 .o-daybar { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-block: 4px 8px; }
-.o-daybar .round { width: 40px; height: 40px; font-size: 20px; }
+.o-daybar .round { width: 40px; height: 40px; font-size: 20px; display: inline-grid; place-items: center; padding: 0; }
+.o-daybar .round svg { display: block; }
 .o-daytitle { background: none; border: 0; color: var(--ink); font: inherit; cursor: pointer; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; text-align: center; }
 .o-daytitle b { font-size: 15.5px; }
-.o-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; }
-.o-week button { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 0; cursor: pointer; display: grid; justify-items: center; line-height: 1.3; color: var(--ink); min-height: 54px; }
+.o-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 8px; direction: ltr; }
+.o-week button { direction: rtl; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 4px 0; cursor: pointer; display: grid; justify-items: center; line-height: 1.3; color: var(--ink); min-height: 54px; }
 .o-week button small { font-size: 11px; color: var(--muted); }
 .o-week button b { font-size: 15px; }
 .o-week button i { font-style: normal; font-size: 11px; color: var(--teal); font-weight: 700; min-height: 14px; }
@@ -714,7 +718,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "adf1b4d", buildAt: 1792740661110 };</script>
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "2a4b315", buildAt: 1792750997946 };</script>
 <script>
 /* ---- JSZip (مجوز MIT، متن کامل در lib/jszip-LICENSE.md) ---- */
 /*!
@@ -4995,7 +4999,15 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
 
   // ------------------------------------------------------------------ نمودارهای بیمار
   const SCALE_FA = { home: 'ترازوی منزل', clinic: 'ترازوی مطب', mixed: 'وزن منزل و در نبودش مطب' };
-  function patientSpecs(p) {
+  // حالت‌های نمودار وزن و نمودار چربی/عضله (انتخاب بالای هر نمودار؛ PDF هم همان را می‌گیرد)
+  const WEIGHT_MODES = [['pref', 'ترکیبی'], ['home', 'منزل'], ['clinic', 'مطب'], ['both', 'هر دو']];
+  const WEIGHT_HINT = { pref: 'وزن منزل؛ هر جا نبود، وزن مطب', home: 'فقط ترازوی منزل', clinic: 'فقط ترازوی مطب', both: 'دو خط جدا برای منزل و مطب' };
+  const BODY_MODES = [['both', 'هر دو'], ['fat', 'چربی'], ['muscle', 'عضله']];
+  const okMode = (list, v, def) => (list.some(([k]) => k === v) ? v : def);
+  /** modes: {weight: 'pref'|'home'|'clinic'|'both', body: 'both'|'fat'|'muscle'} */
+  function patientSpecs(p, modes) {
+    const wm = okMode(WEIGHT_MODES, modes && modes.weight, 'pref');
+    const bm = okMode(BODY_MODES, modes && modes.body, 'both');
     const ser = Stats.patientSeries(p);
     const pts = ser.points;
     // همه نمودارهای بیمار یک محور زمانی مشترک دارند تا کنار هم مقایسه‌پذیر باشند
@@ -5007,22 +5019,37 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     const tipOf = (x) => [typeOf(x), x.dose !== null ? `دوز ${n1(x.dose)} میلی‌گرم` : '', x.center].filter(Boolean).join(' · ');
     const table = { head: ['تاریخ', 'نوع', 'منزل', 'مطب', 'BMI', 'چربی ٪', 'عضله ٪', 'دوز'],
       rows: pts.map((x) => [JD.show(x.date), typeOf(x), n1(x.home), n1(x.clinic), n1(x.bmi), pctTxt(x.fatRaw), n1(x.muscle), x.dose !== null ? n1(x.dose) : '—']) };
-    // وزن منزل و مطب دو سری جدا (دو ترازو با هم فرق دارند)
-    const series = [];
+    // وزن منزل و مطب (دو ترازو با هم فرق دارند)
     const homePts = pts.filter((x) => x.home !== null).map((x) => ({ x: x.day, y: x.home, tip: tipOf(x) }));
     const clinicPts = pts.filter((x) => x.clinic !== null).map((x) => ({ x: x.day, y: x.clinic, tip: tipOf(x) }));
     const bl = DB.baselines(p, DB.visitsOf(p.uid));
     const firstDay = days.length ? Math.min(...days) : null;
+    const homeBase = bl.home && bl.home.from === 'file' && firstDay !== null ? { x: firstDay, y: bl.home.w, tip: 'وزن اولیه منزل' } : null;
+    const clinicBase = bl.clinic && bl.clinic.from === 'file' && firstDay !== null ? { x: firstDay, y: bl.clinic.w, tip: bl.clinic.guessed ? 'وزن اولیه (حدس: مطب)' : 'وزن اولیه مطب' } : null;
     // وزن اولیه پرونده (اگر روز اولین مراجعه وزنی از همان ترازو نیست) به‌عنوان نقطه شروع
-    if (bl.home && bl.home.from === 'file' && firstDay !== null && !homePts.some((q) => q.x === firstDay)) homePts.unshift({ x: firstDay, y: bl.home.w, tip: 'وزن اولیه منزل' });
-    if (bl.clinic && bl.clinic.from === 'file' && firstDay !== null && !clinicPts.some((q) => q.x === firstDay)) clinicPts.unshift({ x: firstDay, y: bl.clinic.w, tip: bl.clinic.guessed ? 'وزن اولیه (حدس: مطب)' : 'وزن اولیه مطب' });
-    if (homePts.length) series.push({ name: 'وزن منزل', colorIdx: 0, endLabel: true, points: homePts });
-    if (clinicPts.length) series.push({ name: 'وزن مطب', colorIdx: 1, endLabel: true, points: clinicPts });
+    const withBase = (arr, b) => (b && !arr.some((q) => q.x === b.x) ? [b, ...arr] : arr);
+    const series = [];
+    let fallbackN = 0;
+    if (wm === 'both' || wm === 'home') { const hp = withBase(homePts, homeBase); if (hp.length) series.push({ name: 'وزن منزل', colorIdx: 0, endLabel: true, points: hp }); }
+    if (wm === 'both' || wm === 'clinic') { const cp0 = withBase(clinicPts, clinicBase); if (cp0.length) series.push({ name: 'وزن مطب', colorIdx: 1, endLabel: true, points: cp0 }); }
+    if (wm === 'pref') {
+      // هر مراجعه: وزن منزل، و اگر نبود وزن مطب
+      const pp = [];
+      for (const x of pts) {
+        if (x.home !== null) pp.push({ x: x.day, y: x.home, tip: tipOf(x) });
+        else if (x.clinic !== null) { pp.push({ x: x.day, y: x.clinic, tip: `${tipOf(x)} · وزن مطب` }); fallbackN++; }
+      }
+      const pb = withBase(pp, homeBase || clinicBase);
+      if (pb.length) series.push({ name: 'وزن', colorIdx: 0, endLabel: true, points: pb });
+    }
+    const notes = [];
+    if (ser.base.weight && pts.length) notes.push(`وزن شروع ${n1(ser.base.weight)} کیلوگرم؛ تغییر وزن با ${SCALE_FA[ser.scale]} حساب می‌شود.`);
+    if (wm === 'pref' && fallbackN && homePts.length) notes.push(`در ${fa(fallbackN)} مراجعه که وزن منزل نبود، وزن مطب گذاشته شده است.`);
     const weight = {
       type: 'line', xType: 'time', title: 'روند وزن', yLabel: 'کیلوگرم', minSpan: 4, height: 240, endFormat: (v) => n1(v), xDomain, series,
       legend: series.length > 1 ? series.map((x) => ({ name: x.name, colorIdx: x.colorIdx, kind: 'line' })) : null,
-      note: ser.base.weight && pts.length ? `وزن شروع ${n1(ser.base.weight)} کیلوگرم؛ تغییر وزن با ${SCALE_FA[ser.scale]} حساب می‌شود.` : '',
-      table, alt: 'نمودار روند وزن بیمار', emptyText: 'وزنی ثبت نشده است',
+      note: notes.join(' '), mode: wm,
+      table, alt: 'نمودار روند وزن بیمار', emptyText: wm === 'home' ? 'وزن منزل ثبت نشده است' : (wm === 'clinic' ? 'وزن مطب ثبت نشده است' : 'وزنی ثبت نشده است'),
     };
     const small = (title, key, unit, opts) => {
       const ps = pts.filter((x) => x[key] !== null && x[key] !== undefined).map((x) => ({ x: x.day, y: x[key] }));
@@ -5030,8 +5057,23 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       return Object.assign({ type: 'line', xType: 'time', title, yLabel: unit, height: 150, xDomain, series: [{ name: title, colorIdx: 0, points: ps, endLabel: true }] }, opts || {});
     };
     const bmi = small('شاخص توده بدنی', 'bmi', 'kg/m²', { minSpan: 2 });
-    const fat = small('درصد چربی', 'fat', '٪', { minSpan: 4, note: pts.some((x) => x.fatRaw === '>50') ? 'نوبت‌هایی که «بالای ۵۰» ثبت شده‌اند رسم نشده‌اند.' : '' });
+    const fatNote = pts.some((x) => x.fatRaw === '>50') ? 'نوبت‌هایی که «بالای ۵۰» ثبت شده‌اند رسم نشده‌اند.' : '';
+    const fat = small('درصد چربی', 'fat', '٪', { minSpan: 4, note: fatNote });
     const muscle = small('درصد عضله', 'muscle', '٪', { minSpan: 4 });
+    // درصد چربی و عضله روی یک نمودار (هر دو، یا فقط یکی)
+    let body = null;
+    const fatPts = pts.filter((x) => x.fat !== null).map((x) => ({ x: x.day, y: x.fat }));
+    const musPts = pts.filter((x) => x.muscle !== null).map((x) => ({ x: x.day, y: x.muscle }));
+    if (fatPts.length || musPts.length) {
+      const bs = [];
+      if (bm !== 'muscle' && fatPts.length) bs.push({ name: 'چربی', colorIdx: 1, endLabel: true, points: fatPts });
+      if (bm !== 'fat' && musPts.length) bs.push({ name: 'عضله', colorIdx: 0, endLabel: true, points: musPts });
+      const only = bs.length === 1 ? bs[0].name : '';
+      body = { type: 'line', xType: 'time', title: only ? `درصد ${only}` : 'درصد چربی و عضله', yLabel: '٪', minSpan: 4, height: 200, xDomain, series: bs, mode: bm,
+        legend: bs.length > 1 ? [{ name: 'درصد چربی', colorIdx: 1, kind: 'line' }, { name: 'درصد عضله', colorIdx: 0, kind: 'line' }] : null,
+        note: bm !== 'muscle' ? fatNote : '', alt: 'درصد چربی و عضله در هر اندازه‌گیری', both: !!(fatPts.length && musPts.length),
+        emptyText: bm === 'fat' ? 'درصد چربی ثبت نشده است' : (bm === 'muscle' ? 'درصد عضله ثبت نشده است' : 'داده‌ای برای نمایش نیست') };
+    }
     const waist = pts.filter((x) => x.waist !== null).length >= 2 ? small('دور کمر', 'waist', 'سانتی‌متر', { minSpan: 4 }) : null;
     let dose = null;
     if (ser.hasDose) {
@@ -5049,7 +5091,9 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         legend: [{ name: 'توده چربی', colorIdx: 1, kind: 'line' }, { name: 'توده بدون چربی', colorIdx: 0, kind: 'line' }],
         note: compNote(cs), alt: 'کیلوی چربی و بدون چربی در هر اندازه‌گیری' };
     }
-    return { ser, weight, bmi, fat, muscle, dose, waist, comp };
+    // آیا انتخاب حالت معنا دارد؟ (وزن از هر دو ترازو، یا هم چربی و هم عضله)
+    const choices = { weight: homePts.length > 0 && clinicPts.length > 0, body: !!(fatPts.length && musPts.length) };
+    return { ser, weight, bmi, fat, muscle, body, dose, waist, comp, choices, modes: { weight: wm, body: bm } };
   }
   /** «از ۸ کیلو کاهش وزن، ۶ کیلو چربی و ۲ کیلو بدون چربی بوده است» */
   function compNote(cs) {
@@ -5127,8 +5171,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   const centerLabel = (c) => (c === 'all' ? 'همه مراکز' : c);
 
   // ------------------------------------------------------------------ مدل PDF
-  function patientModel(p) {
-    const s = DB.summary(p), sp = patientSpecs(p);
+  function patientModel(p, modes) {
+    const s = DB.summary(p), sp = patientSpecs(p, modes);
     const sexFa = p.sex === 'm' ? 'مرد' : (p.sex === 'f' ? 'زن' : '—');
     const first = s.first ? JD.show(s.first.date) : '—', last = s.last ? JD.show(s.last.date) : '—';
     const bc = s.bmiNow ? (root.Engine ? root.Engine.bmiClass(s.bmiNow)[1] : '') : '';
@@ -5150,11 +5194,19 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     model.push({ t: 'h2', text: 'روند وزن', before: 120 });
     if (sp.weight.legend) model.push({ t: 'legend', items: sp.weight.legend });
     model.push({ t: 'chart', h: 190, spec: sp.weight });
+    const wNote = [sp.choices.weight ? `نمایش: ${WEIGHT_HINT[sp.modes.weight]}.` : '', sp.weight.note].filter(Boolean).join(' ');
+    if (wNote) model.push({ t: 'p', style: 'small-muted', text: wNote });
     if (sp.comp) {
       model.push({ t: 'h2', text: 'ترکیب بدن', before: 120 }, { t: 'legend', items: sp.comp.legend }, { t: 'chart', h: 150, spec: sp.comp });
       if (sp.comp.note) model.push({ t: 'p', style: 'small-muted', text: sp.comp.note });
     }
-    const smalls = [sp.bmi, sp.fat, sp.muscle, sp.waist, sp.dose].filter(Boolean);
+    // درصد چربی و عضله: با دو خط، نمودار تمام‌عرض با راهنما؛ با یک خط، کنار نمودارهای کوچک
+    let bodySmall = null;
+    if (sp.body && sp.body.series.length > 1) {
+      model.push({ t: 'h2', text: 'درصد چربی و عضله', before: 120 }, { t: 'legend', items: sp.body.legend }, { t: 'chart', h: 150, spec: sp.body });
+      if (sp.body.note) model.push({ t: 'p', style: 'small-muted', text: sp.body.note });
+    } else if (sp.body && sp.body.series.length === 1) bodySmall = sp.body;
+    const smalls = [sp.bmi, bodySmall, sp.waist, sp.dose].filter(Boolean);
     for (let i = 0; i < smalls.length; i += 2) model.push({ t: 'chart2', h: 112, specs: [smalls[i], smalls[i + 1] || null] });
     model.push({ t: 'h1', text: 'مراجعه‌ها', before: 160 });
     const rows = s.visits.map((v) => {
@@ -5209,14 +5261,16 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   }
 
   async function patientPdf(p, opts) {
-    const model = patientModel(p);
-    return root.PdfBackend.buildPdf(model, root.CONTENT.brand, { title: `گزارش روند درمان ${DB.fullName(p)}`, author: root.CONTENT.brand.name }, opts);
+    const o = Object.assign({}, opts || {});
+    const modes = o.modes; delete o.modes;   // حالت نمودارها همان است که در صفحه بیمار انتخاب شده
+    const model = patientModel(p, modes);
+    return root.PdfBackend.buildPdf(model, root.CONTENT.brand, { title: `گزارش روند درمان ${DB.fullName(p)}`, author: root.CONTENT.brand.name }, o);
   }
   async function clinicPdf(ov, opts) {
     return root.PdfBackend.buildPdf(clinicModel(ov), root.CONTENT.brand, { title: 'گزارش آماری مطب', author: root.CONTENT.brand.name }, opts);
   }
 
-  root.Reports = { compNote, SCALE_FA, patientSpecs, monthlySpec, comparisonSpec, retentionSpec, patientModel, clinicModel, patientPdf, clinicPdf, periodLabel, centerLabel, MIN_N };
+  root.Reports = { compNote, SCALE_FA, WEIGHT_MODES, WEIGHT_HINT, BODY_MODES, patientSpecs, monthlySpec, comparisonSpec, retentionSpec, patientModel, clinicModel, patientPdf, clinicPdf, periodLabel, centerLabel, MIN_N };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -8236,11 +8290,18 @@ Located in ./vendor/QRCode
   }
 
   // ------------------------------------------------------------------ امروز و نوبت‌ها
+  // تقویم: آینده سمت راست، گذشته سمت چپ. فلش‌ها SVG هستند تا مرورگر در متن راست‌به‌چپ جهتشان را برنگرداند.
+  const CHEV = {
+    right: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    left: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  };
+  // در چیدمان راست‌به‌چپ اولین دکمه سمت راست می‌نشیند: «بعد» اول، «قبل» آخر
+  const navBar = (attr, nextLabel, prevLabel, middle) => `<div class="o-daybar"><button type="button" class="round" ${attr}="1" aria-label="${nextLabel}" title="${nextLabel}">${CHEV.right}</button>
+      ${middle}
+      <button type="button" class="round" ${attr}="-1" aria-label="${prevLabel}" title="${prevLabel}">${CHEV.left}</button></div>`;
   function dayBar(date, extra) {
     const t = today();
-    return `<div class="o-daybar"><button type="button" class="round" data-day="-1" aria-label="روز قبل">›</button>
-      <button type="button" class="o-daytitle" data-pickday><b>${esc(dateLong(date))}</b>${date === t ? '<span class="tag inj">امروز</span>' : `<span class="tag">${esc(JD.ago(date))}</span>`}</button>
-      <button type="button" class="round" data-day="1" aria-label="روز بعد">‹</button></div>${extra || ''}`;
+    return navBar('data-day', 'روز بعد', 'روز قبل', `<button type="button" class="o-daytitle" data-pickday><b>${esc(dateLong(date))}</b>${date === t ? '<span class="tag inj">امروز</span>' : `<span class="tag">${esc(JD.ago(date))}</span>`}</button>`) + (extra || '');
   }
   function wireDayBar(box, st) {
     box.addEventListener('click', async (e) => {
@@ -8258,7 +8319,7 @@ Located in ./vendor/QRCode
   function weekStrip(date) {
     const Lx = L();
     const ws = LG.weekStart(date);
-    let h = '<div class="o-week">';
+    let h = '<div class="o-week" aria-label="روزهای هفته (آینده سمت راست)">';   // شنبه سمت چپ، جمعه سمت راست
     for (let i = 0; i < 7; i++) {
       const d = JD.fromDay(ws + i);
       const n = Lx.all('appts', (a) => a.date === d && a.status !== 'cancel').length;
@@ -8564,7 +8625,7 @@ Located in ./vendor/QRCode
   }
   function monthBar(month) {
     const [yy, mm] = month.split('/').map(Number);
-    return `<div class="o-daybar"><button type="button" class="round" data-mon="-1" aria-label="ماه قبل">›</button><span class="o-daytitle"><b>${esc(`${JD.MONTHS[mm - 1]} ${fa(yy)}`)}</b></span><button type="button" class="round" data-mon="1" aria-label="ماه بعد">‹</button></div>`;
+    return navBar('data-mon', 'ماه بعد', 'ماه قبل', `<span class="o-daytitle"><b>${esc(`${JD.MONTHS[mm - 1]} ${fa(yy)}`)}</b></span>`);
   }
   function wireMonthBar(box, st) {
     box.addEventListener('click', (e) => {
@@ -9395,7 +9456,7 @@ Located in ./vendor/QRCode
     }
     document.addEventListener('click', (ev) => {
       const b = ev.target.closest('.seg [role="radio"]');
-      if (b) {
+      if (b && b.closest('.seg').dataset.name) {   // سگمنت‌های بدون نام (مطب، حالت نمودارها) کنترل خودشان را دارند
         const name = b.closest('.seg').dataset.name;
         const v = b.dataset.value;
         if (name.startsWith('pref:')) state.f.prefs[name.slice(5)] = +v;
@@ -9979,7 +10040,7 @@ Located in ./vendor/QRCode
     bar.hidden = false;
   }
   function destroyCharts() { for (const c of R.charts) { try { c.destroy(); } catch (e) { /* بی‌اثر */ } } R.charts = []; }
-  function mountChart(el, spec) { if (!el || !spec) { if (el) el.hidden = true; return; } el.hidden = false; R.charts.push(Charts.mount(el, spec)); }
+  function mountChart(el, spec) { if (!el || !spec) { if (el) el.hidden = true; return null; } el.hidden = false; const c = Charts.mount(el, spec); R.charts.push(c); return c; }
   function askPass(title, hint, confirm) {
     return new Promise((resolve) => {
       const m = document.createElement('div');
@@ -10246,9 +10307,12 @@ Located in ./vendor/QRCode
       </div>
       ${otherLatest}${compTxt}
       <h3 class="sec-title" id="pd-charts">نمودارها</h3>
+      <div class="chart-mode" id="pd-wmode" hidden></div>
       <div id="pd-weight"></div>
       <div id="pd-comp"></div>
-      <div class="grid2"><div id="pd-bmi"></div><div id="pd-fat"></div><div id="pd-muscle"></div><div id="pd-waist"></div><div id="pd-dose"></div></div>
+      <div class="chart-mode" id="pd-bmode" hidden></div>
+      <div id="pd-body"></div>
+      <div class="grid2"><div id="pd-bmi"></div><div id="pd-waist"></div><div id="pd-dose"></div></div>
       ${med.length ? `<details class="medinfo"><summary>اطلاعات پزشکی و تماس</summary><dl>${med.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></details>` : ''}
       <h3 style="font-size:15px;margin:14px 0 8px">مراجعه‌ها (${fa(s.count)})</h3>
       <div class="visit-list">${visits.map((v) => {
@@ -10256,11 +10320,43 @@ Located in ./vendor/QRCode
         return `<button type="button" class="visit" data-vuid="${esc(v.uid)}"><span class="vd">${esc(JD.show(v.date))}</span><span class="vx">${esc(visitLine(v))}</span><span class="vw num">${w !== null ? n1(w) : ''}</span></button>`;
       }).join('') || '<div class="rec-count">هنوز مراجعه‌ای ثبت نشده است.</div>'}</div>
       <div class="row-btns" style="margin-top:18px"><button type="button" class="btn-sm danger" data-act="delete">حذف این پرونده</button></div>`;
-    const ids = ['pd-weight', 'pd-comp', 'pd-bmi', 'pd-fat', 'pd-muscle', 'pd-waist', 'pd-dose'];
+    const ids = ['pd-weight', 'pd-comp', 'pd-body', 'pd-bmi', 'pd-waist', 'pd-dose'];
+    R.pdModes = null;
     if (s.count) {
-      const sp = Reports.patientSpecs(p);
-      mountChart($('#pd-weight'), sp.weight.series.length ? sp.weight : null); mountChart($('#pd-comp'), sp.comp);
-      mountChart($('#pd-bmi'), sp.bmi); mountChart($('#pd-fat'), sp.fat); mountChart($('#pd-muscle'), sp.muscle); mountChart($('#pd-waist'), sp.waist); mountChart($('#pd-dose'), sp.dose);
+      // حالت نمودار وزن (ترکیبی/منزل/مطب/هر دو) و چربی/عضله (هر دو/چربی/عضله)؛ انتخاب روی همین گوشی می‌ماند
+      const saved = () => { const st = App.loadSettings(); return { weight: st.chartWeight || 'pref', body: st.chartBody || 'both' }; };
+      const specsFor = (want) => {
+        let sp = Reports.patientSpecs(p, want);
+        // وقتی فقط یک ترازو (یا فقط چربی یا فقط عضله) ثبت شده، انتخاب معنا ندارد و همان داده موجود نشان داده می‌شود
+        const eff = { weight: sp.choices.weight ? sp.modes.weight : 'pref', body: sp.choices.body ? sp.modes.body : 'both' };
+        if (eff.weight !== sp.modes.weight || eff.body !== sp.modes.body) sp = Reports.patientSpecs(p, eff);
+        R.pdModes = sp.modes;
+        return sp;
+      };
+      let sp = specsFor(saved());
+      const segHtml = (name, label, opts, val, hint) => `<div class="seg full chart-seg" style="--n:${opts.length}" role="radiogroup" aria-label="${esc(label)}" data-cmode="${name}">${opts.map(([k, l]) => `<button type="button" role="radio" data-value="${k}" aria-checked="${k === val}">${esc(l)}</button>`).join('')}</div>${hint ? `<div class="hint chart-hint">${esc(hint)}</div>` : ''}`;
+      const drawModes = () => {
+        const wm = $('#pd-wmode'), bmd = $('#pd-bmode');
+        wm.hidden = !sp.choices.weight; bmd.hidden = !(sp.choices.body && sp.body);
+        if (!wm.hidden) wm.innerHTML = segHtml('weight', 'حالت نمودار وزن', Reports.WEIGHT_MODES, sp.modes.weight, Reports.WEIGHT_HINT[sp.modes.weight]);
+        if (!bmd.hidden) bmd.innerHTML = segHtml('body', 'حالت نمودار چربی و عضله', Reports.BODY_MODES, sp.modes.body, '');
+      };
+      drawModes();
+      const wChart = mountChart($('#pd-weight'), sp.weight.series.length || sp.choices.weight ? sp.weight : null); mountChart($('#pd-comp'), sp.comp);
+      const bChart = mountChart($('#pd-body'), sp.body);
+      mountChart($('#pd-bmi'), sp.bmi); mountChart($('#pd-waist'), sp.waist); mountChart($('#pd-dose'), sp.dose);
+      for (const el of [$('#pd-wmode'), $('#pd-bmode')]) {
+        el.addEventListener('click', (ev) => {
+          const b = ev.target.closest('[data-cmode] [role="radio"]');
+          if (!b) return;
+          const which = b.parentElement.dataset.cmode;
+          App.saveSettings(which === 'weight' ? { chartWeight: b.dataset.value } : { chartBody: b.dataset.value });
+          sp = specsFor(saved());
+          drawModes();
+          if (which === 'weight' && wChart) wChart.update(sp.weight);
+          if (which === 'body' && bChart && sp.body) bChart.update(sp.body);
+        });
+      }
     } else for (const id of ids) $(`#${id}`).hidden = true;
     box.onclick = async (ev) => {
       const v = ev.target.closest('[data-vuid]');
@@ -10290,7 +10386,7 @@ Located in ./vendor/QRCode
     const st = $('#pd-status');
     st.textContent = 'در حال ساخت گزارش…'; st.className = 'status';
     try {
-      const res = await Reports.patientPdf(p, { onProgress: (i, n) => { st.textContent = `در حال ساخت گزارش… صفحه ${fa(i)} از ${fa(n)}`; } });
+      const res = await Reports.patientPdf(p, { modes: R.pdModes || undefined, onProgress: (i, n) => { st.textContent = `در حال ساخت گزارش… صفحه ${fa(i)} از ${fa(n)}`; } });
       const name = `گزارش روند درمان - ${DB.fullName(p).replace(/[\\/:*?"<>|‌]/g, ' ')} - ${dateTag()}.pdf`;
       if (share) {
         await navigator.share({ files: [new File([res.blob], name, { type: 'application/pdf' })], title: name });
