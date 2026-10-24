@@ -299,6 +299,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 .syncline { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-block: 6px; }
 .sdot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); display: inline-block; flex: none; }
 .sdot.ok { background: var(--ok); } .sdot.bad { background: var(--danger); } .sdot.run { background: var(--gold); }
+.sdot.off { background: transparent; box-shadow: inset 0 0 0 2px var(--warn); }
 .row-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .row-btns button { min-height: 44px; }
 .checkline { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-top: 8px; }
@@ -434,6 +435,17 @@ table.data th { color: var(--muted); font-weight: 600; }
 .o-quick { margin-top: 4px; }
 .o-quick button { min-height: 30px; padding: 2px 10px; font-size: 12.5px; }
 .o-conflict { background: var(--warn-soft); border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.o-remind.o-warnb { background: var(--warn-soft); border-inline-start: 4px solid var(--warn); font-weight: 600; }
+.o-exist { background: var(--warn-soft); border-radius: 10px; padding: 9px 12px; font-size: 13.5px; display: grid; gap: 6px; }
+.o-ex-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.o-ex-row small, .o-fix-t small { display: block; color: var(--muted); font-size: 12px; }
+.o-fix { background: var(--surface); border: 1px solid var(--line); border-inline-start: 4px solid var(--warn); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 6px; }
+.o-fix-h { font-size: 13.5px; }
+.o-fix-r { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.o-fix-r .o-fix-t { flex: 1; min-width: 0; }
+.o-fix-r.alt { opacity: .92; }
+.o-fix-n { flex: none; min-width: 34px; text-align: center; font-size: 12px; font-weight: 700; background: var(--warn-soft); color: var(--warn); border-radius: 8px; padding: 2px 6px; }
+.o-fix .row-btns { margin-top: 2px; }
 .o-total { font-size: 14px; background: var(--surface-2); border-radius: 10px; padding: 8px 12px; }
 .o-errs:empty { display: none; }
 .o-sheet { display: grid; gap: 6px; }
@@ -490,7 +502,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "36bd0f8", buildAt: 1792753131208 };</script>
+<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "c1f4f40", buildAt: 1792832522595 };</script>
 <script>
 /* ---- jdate.js ---- */
 /* تاریخ شمسی برای پرونده‌ها: خواندن قالب‌های مختلف، شکل استاندارد «yyyy/mm/dd»، شماره روز برای فاصله و مرتب‌سازی */
@@ -1448,9 +1460,33 @@ table.data th { color: var(--muted); font-weight: 600; }
     moves: (r) => ({ item: txt(r.item), date: JD.parse(r.date) || JD.today(), kind: ['buy', 'adjust', 'waste', 'use'].includes(r.kind) ? r.kind : 'adjust',
       qty: num(r.qty) || 0, cost: money(r.cost), exp: txt(r.exp), note: txt(r.note) }),
   };
-  const AUDIT = new Set(['id', 'at', 'by', 'bn', 'u', 'eb', 'ebn', 'hist', 'void', 'del', 'ok']);
+  // pu: زمانِ نسخه‌ای که این ویرایش روی آن انجام شد (برای تشخیص دو ویرایش هم‌زمان روی دو گوشی)؛ cf: نسخه‌ای که در ادغام کنار رفت
+  const AUDIT = new Set(['id', 'at', 'by', 'bn', 'u', 'pu', 'eb', 'ebn', 'hist', 'void', 'del', 'ok', 'cf']);
   const TRACK = { appts: ['date', 'time', 'status', 'svc', 'vid', 'cid', 'center'], charges: ['amount', 'unit', 'qty', 'disc', 'svc', 'vid', 'date', 'cid', 'pkg'],
     payments: ['amount', 'method', 'date', 'cid', 'kind'], expenses: ['amount', 'cat', 'date'], clients: ['first', 'last', 'phone', 'disc'], services: ['price', 'variants', 'active'] };
+  // ادغام دو نسخه از یک رکورد مالی: پیوندها (ویزیت پرونده، نوبت) هیچ‌وقت در ادغام گم نمی‌شوند؛
+  // اگر دو نفر هم‌زمان (مثلاً هر دو بی‌اینترنت) مقدار متفاوتی ثبت کرده باشند، نسخه کنار رفته در cf می‌ماند تا مدیر یکی را انتخاب کند.
+  const LINKS = { charges: ['visit', 'appt'], payments: ['appt'] };
+  const CF_FIELDS = { charges: ['amount', 'unit', 'qty', 'disc', 'svc', 'vid', 'date', 'cid', 'pkg', 'label', 'dose', 'drug'], payments: ['amount', 'method', 'kind', 'date', 'cid'] };
+  const same = (a, b) => stable({ v: a ?? null }) === stable({ v: b ?? null });
+  function reconcile(col, win, lose) {
+    if (!win || !lose || win === lose) return null;
+    const patch = {};
+    for (const f of LINKS[col] || []) if (!win[f] && lose[f]) patch[f] = lose[f];
+    const F = CF_FIELDS[col];
+    if (F && typeof win.pu === 'number' && win.pu < (lose.u || 0)) {   // نسخه برنده، نسخه دیگر را ندیده بود: دو ثبت هم‌زمان
+      const diff = F.some((f) => !same(win[f], lose[f])) || !!win.void !== !!lose.void;
+      const known = (win.cf || []).some((x) => x.u === (lose.u || 0));
+      if (diff && !known) {
+        const v = {};
+        for (const f of F) v[f] = lose[f] ?? null;
+        v.void = !!lose.void;
+        patch.cf = [...(win.cf || []), { u: lose.u || 0, t: now(), n: lose.ebn || lose.bn || '', v }].slice(-3);
+      }
+    }
+    if (!Object.keys(patch).length) return null;
+    return Object.assign({}, win, patch, { u: (win.u || 0) + 1, pu: win.u || 0 });
+  }
 
   // ------------------------------------------------------------------ تکه‌ها (برای همگام‌سازی سبک: هر هفته یک فایل)
   /** شنبه همان هفته (هفته شمسی از شنبه شروع می‌شود). ۱۹۷۰/۰۱/۰۱ پنجشنبه است → روز ۲ شنبه. */
@@ -1522,11 +1558,22 @@ table.data th { color: var(--muted); font-weight: 600; }
       if (ok) this.minCount = n; else this.emit('save-error');
       return ok;
     }
-    markDirty(key) { if (!this.sync.dirty.includes(key)) this.sync.dirty.push(key); this.rev = (this.rev || 0) + 1; (this.dirtyRev || (this.dirtyRev = {}))[key] = this.rev; }
+    /** id (اختیاری): رکوردی که روی همین گوشی ثبت یا ویرایش شد (برای شمارش «ثبت‌های منتظر ارسال») */
+    markDirty(key, id) {
+      if (!this.sync.dirty.includes(key)) this.sync.dirty.push(key);
+      if (id) { const p = this.sync.pend || (this.sync.pend = {}); const a = p[key] || (p[key] = []); if (!a.includes(id)) a.push(id); }
+      this.rev = (this.rev || 0) + 1; (this.dirtyRev || (this.dirtyRev = {}))[key] = this.rev;
+    }
     /** بعد از ارسال موفق: اگر از زمان ساخت محتوا تغییری نیامده، تکه دیگر «تغییرکرده» نیست */
-    cleanIf(key, rev) { if (((this.dirtyRev || {})[key] || 0) <= rev) this.sync.dirty = this.sync.dirty.filter((k) => k !== key); }
+    cleanIf(key, rev) { if (((this.dirtyRev || {})[key] || 0) <= rev) { this.sync.dirty = this.sync.dirty.filter((k) => k !== key); if (this.sync.pend) delete this.sync.pend[key]; } }
     revOf(key) { return (this.dirtyRev || {})[key] || 0; }
-    changed(reason, keys) { for (const k of keys || []) this.markDirty(k); this.scheduleSave(); this.emit(reason); }
+    changed(reason, keys, id) { for (const k of keys || []) this.markDirty(k, id); this.scheduleSave(); this.emit(reason); }
+    /** چند ثبتِ همین گوشی هنوز به گیت‌هاب نرسیده (ثبت‌هایی که از فایل گوشی دیگر رسیده‌اند جدا شمرده نمی‌شوند) */
+    pendingCount() {
+      const s = new Set();
+      for (const a of Object.values(this.sync.pend || {})) for (const id of a) s.add(id);
+      return s.size;
+    }
 
     // ---------------------------------------------------------------- خواندن
     get(col, id) { const r = this.c[col].get(id); return live(r) ? r : null; }
@@ -1553,20 +1600,23 @@ table.data th { color: var(--muted); font-weight: 600; }
       for (const k of Object.keys(base)) if (!(k in rec) && !AUDIT.has(k) && k.charAt(0) !== '$' && base[k] !== undefined) rec[k] = base[k];   // فیلدهای ناشناخته
       const t = now(), u = user || {};
       rec.at = old ? old.at : t; rec.by = old ? old.by : (u.id || ''); rec.bn = old ? old.bn : (u.name || '');
-      rec.u = stampAfter(old); rec.eb = u.id || ''; rec.ebn = u.name || '';
+      rec.u = stampAfter(old); rec.pu = old ? (old.u || 0) : 0; rec.eb = u.id || ''; rec.ebn = u.name || '';
       if (old && old.ok) rec.ok = old.ok;
       if (old && old.void) rec.void = old.void;
+      let edited = false;
       if (old && TRACK[col]) {
         const ch = {};
         for (const f of TRACK[col]) if (stable({ v: old[f] ?? null }) !== stable({ v: rec[f] ?? null })) ch[f] = [old[f] ?? null, rec[f] ?? null];
         const hist = (old.hist || []).slice(-HIST_KEEP + 1);
-        if (Object.keys(ch).length) { hist.push({ t, b: u.id || '', n: u.name || '', ch }); delete rec.ok; }   // ویرایش، تأیید قبلی را برمی‌دارد
+        if (Object.keys(ch).length) { hist.push({ t, b: u.id || '', n: u.name || '', ch }); delete rec.ok; edited = Object.keys(ch).some((f) => f !== 'cid'); }   // ویرایش، تأیید قبلی را برمی‌دارد
         rec.hist = hist;
       }
+      // یادداشتِ «ثبت هم‌زمان» تا وقتی کسی مقدار را درست نکرده یا صریحاً تأیید نکرده، می‌ماند
+      if (old && old.cf && data.cf !== null && !edited) rec.cf = old.cf;
       const keys = [shardKey(col, rec)];
       if (old) { const ok = shardKey(col, old); if (ok !== keys[0]) keys.push(ok); }
       this.c[col].set(id, rec);
-      this.changed(col, keys);
+      this.changed(col, keys, `${col}:${id}`);
       return rec;
     }
     /** باطل کردن (به‌جای حذف) */
@@ -1574,33 +1624,34 @@ table.data th { color: var(--muted); font-weight: 600; }
       const old = this.c[col].get(id);
       if (!old || old.void) return null;
       const u = user || {};
-      const rec = Object.assign({}, old, { void: { t: now(), b: u.id || '', n: u.name || '', why: txt(why) }, u: stampAfter(old), eb: u.id || '', ebn: u.name || '' });
+      const rec = Object.assign({}, old, { void: { t: now(), b: u.id || '', n: u.name || '', why: txt(why) }, u: stampAfter(old), pu: old.u || 0, eb: u.id || '', ebn: u.name || '' });
+      delete rec.cf;
       this.c[col].set(id, rec);
-      this.changed(col, [shardKey(col, rec)]);
+      this.changed(col, [shardKey(col, rec)], `${col}:${id}`);
       return rec;
     }
     unvoid(col, id, user) {
       const old = this.c[col].get(id);
       if (!old || !old.void) return null;
       const u = user || {};
-      const rec = Object.assign({}, old, { u: stampAfter(old), eb: u.id || '', ebn: u.name || '' });
+      const rec = Object.assign({}, old, { u: stampAfter(old), pu: old.u || 0, eb: u.id || '', ebn: u.name || '' });
       delete rec.void;
       this.c[col].set(id, rec);
-      this.changed(col, [shardKey(col, rec)]);
+      this.changed(col, [shardKey(col, rec)], `${col}:${id}`);
       return rec;
     }
     approve(col, ids, user) {
       const u = user || {};
-      const keys = new Set();
+      const done = [];
       this.batch(() => {
         for (const id of ids) {
           const old = this.c[col].get(id);
           if (!old || old.ok) continue;
-          const rec = Object.assign({}, old, { ok: { t: now(), b: u.id || '', n: u.name || '' }, u: stampAfter(old) });
-          this.c[col].set(id, rec); keys.add(shardKey(col, rec));
+          const rec = Object.assign({}, old, { ok: { t: now(), b: u.id || '', n: u.name || '' }, u: stampAfter(old), pu: old.u || 0 });
+          this.c[col].set(id, rec); done.push([shardKey(col, rec), `${col}:${id}`]);
         }
       });
-      if (keys.size) this.changed('approve', [...keys]);
+      if (done.length) { for (const [k, id] of done) this.markDirty(k, id); this.scheduleSave(); this.emit('approve'); }
     }
 
     /** یکی کردن دو مراجع تکراری: نوبت، خدمت و دریافتی‌های دومی به اولی منتقل و دومی باطل می‌شود (هیچ رکوردی حذف نمی‌شود) */
@@ -1628,28 +1679,53 @@ table.data th { color: var(--muted); font-weight: 600; }
       for (const k of COLS) { const arr = []; for (const r of this.c[k].values()) if (shardKey(k, r) === key) arr.push(r); if (arr.length) col[k] = arr; }
       return { format: `${FORMAT}-shard`, v: VERSION, ledger: this.id, shard: key, col };
     }
-    /** ادغام یک تکه از دستگاه دیگر؛ برای هر رکورد نسخه تازه‌تر می‌ماند. خروجی: تعداد تغییر و اینکه تکه محلی چیزی بیشتر دارد یا نه */
+    /** ادغام یک تکه از دستگاه دیگر؛ برای هر رکورد نسخه تازه‌تر می‌ماند. خروجی: تعداد رکوردهای تازه یا به‌روزشده */
     mergeShard(o) {
       if (!o || o.format !== `${FORMAT}-shard`) throw new Error('قالب فایل دفتر نامعتبر است.');
       if ((o.v || 1) > VERSION) this.newer = Math.max(this.newer || 0, o.v);
+      return this.mergeRecords(o.col);
+    }
+    /** ادغام کل دفتر از فایل همگام‌سازی گوشی دیگر (بدون اینترنت). هر چه تازه رسید برای ارسال به گیت‌هاب علامت می‌خورد،
+        تا اگر این گوشی زودتر از فرستنده به اینترنت رسید، داده او هم فرستاده شود. */
+    mergeDump(o) {
+      if (!o || o.format !== `${FORMAT}-dump` || o.ledger !== this.id) throw new Error('فایل مال این دفتر نیست.');
+      if (this.readonly) throw new Error('داده این دفتر روی گوشی خوانده نشد؛ برای ایمنی چیزی ادغام نمی‌شود.');
+      if ((o.v || 1) > VERSION) this.newer = Math.max(this.newer || 0, o.v);
+      return this.mergeRecords(o.col, { push: true });
+    }
+    /** همه رکوردهای دفتر (برای فایل همگام‌سازی) */
+    dumpCols() { const col = {}; for (const k of COLS) col[k] = Array.from(this.c[k].values()); return col; }
+    mergeRecords(colObj, opts) {
+      const push = !!(opts && opts.push);
       let n = 0;
       const keys = new Set();
       this.batch(() => {
-        for (const [k, arr] of Object.entries(o.col || {})) {
+        for (const [k, arr] of Object.entries(colObj || {})) {
           if (!this.c[k]) continue;
           for (const r of arr || []) {
             if (!r || !r.id) continue;
             const cur = this.c[k].get(r.id);
-            if (!cur || (r.u || 0) > (cur.u || 0) || ((r.u || 0) === (cur.u || 0) && stable(r) > stable(cur))) {
-              if (cur) { const ok = shardKey(k, cur); if (ok !== shardKey(k, r)) keys.add(ok); }
-              this.c[k].set(r.id, r); n++;
+            let out = null;
+            if (!cur) out = r;
+            else {
+              const ru = r.u || 0, cu = cur.u || 0;
+              const remoteWins = ru > cu || (ru === cu && stable(r) > stable(cur));
+              const fixed = reconcile(k, remoteWins ? r : cur, remoteWins ? cur : r);
+              if (fixed) { out = fixed; keys.add(shardKey(k, fixed)); }   // نسخه ترکیبی باید برای گوشی‌های دیگر هم فرستاده شود
+              else if (remoteWins) out = r;
             }
+            if (!out) continue;
+            if (cur) { const ok = shardKey(k, cur); if (ok !== shardKey(k, out)) keys.add(ok); }
+            if (push) keys.add(shardKey(k, out));
+            this.c[k].set(r.id, out); n++;
           }
         }
       });
       if (n) this.changed('merge', [...keys]);
       return n;
     }
+    /** شمارش رکوردها برای گزارش ادغام فایل */
+    counts() { const o = {}; for (const k of COLS) o[k] = this.c[k].size; return o; }
     /** آیا تکه محلی با نسخه دیگر فرق دارد؟ */
     shardDiffers(key, o) {
       const mine = this.shardContent(key).col;
@@ -1661,6 +1737,91 @@ table.data th { color: var(--muted); font-weight: 600; }
         for (const r of a) { const x = bm.get(r.id); if (!x || stable(x) !== stable(r)) return true; }
       }
       return false;
+    }
+
+    // ---------------------------------------------------------------- جلوگیری از ثبت تکراری
+    /** شناسه ثابت «خدمتِ یک مراجع در یک روز» برای خدمت‌هایی که از ویزیت پرونده هم ساخته می‌شوند (visitType دارند):
+        اگر دکتر در فرم ویزیت و منشی در صندوق، جدا و حتی بی‌اینترنت، همین خدمت را ثبت کنند، هر دو روی همین یک رکورد می‌نویسند و دوبار حساب نمی‌شود. */
+    dayChargeId(cid, date, svc) {
+      const s = svc ? this.c.services.get(svc) : null;
+      const d = JD.parse(date);
+      if (!s || !s.visitType || !cid || !d) return null;
+      return `dv-${cid}-${d.replace(/\//g, '')}-${svc}`;
+    }
+    /** خدمتِ زنده‌ای که برای این مراجع، این روز و همین خدمت ثبت شده (پکیج‌فروشی حساب نیست) */
+    dayCharge(cid, date, svc) {
+      const d = JD.parse(date);
+      if (!cid || !d || !svc) return null;
+      const id = this.dayChargeId(cid, d, svc);
+      const r = id ? this.get('charges', id) : null;
+      if (r && r.cid === cid && r.date === d && !r.pkgN) return r;
+      return this.all('charges', (x) => x.cid === cid && x.date === d && x.svc === svc && !x.pkgN).sort((a, b) => (a.at || 0) - (b.at || 0))[0] || null;
+    }
+    /** شناسه برای خدمت تازه: جای ثابت اگر خالی است، وگرنه null (یعنی شناسه تصادفی) */
+    newChargeId(cid, date, svc) { const id = this.dayChargeId(cid, date, svc); return id && !this.c.charges.has(id) ? id : null; }
+    /** ثبت‌های احتمالاً تکراری: دو خدمتِ یکسان برای یک مراجع در یک روز، دو خدمت از دو نفر برای یک نوبت،
+        یا دو دریافتِ هم‌مبلغ در یک روز (از دو نفر یا با چند دقیقه فاصله). «هر دو درست است» با nd علامت می‌خورد. */
+    dupes(fromDay) {
+      const out = [], seen = new Set();
+      const recent = (r) => fromDay === undefined || fromDay === null || (JD.dayOf(r.date) ?? 0) >= fromDay;
+      const okPair = (a, b) => !((a.nd || []).includes(b.id) || (b.nd || []).includes(a.id));
+      const addPairs = (col, groups, test) => {
+        for (const g of groups.values()) {
+          if (g.length < 2) continue;
+          g.sort((a, b) => (a.at || 0) - (b.at || 0));
+          for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+            const a = g[i], b = g[j], key = `${col}|${a.id}|${b.id}`;
+            if (seen.has(key) || !okPair(a, b) || (test && !test(a, b))) continue;
+            seen.add(key); out.push({ col, a, b });
+          }
+        }
+      };
+      const put = (m, k, r) => { const g = m.get(k); if (g) g.push(r); else m.set(k, [r]); };
+      const bySvc = new Map(), byAppt = new Map(), byDay = new Map(), pays = new Map();
+      const who = (r) => r.by || r.bn;
+      for (const r of this.all('charges', (x) => !x.pkgN && recent(x))) {
+        put(bySvc, `${r.cid}|${r.date}|${r.svc || `l:${r.label}:${r.amount}`}`, r);
+        if (r.appt) put(byAppt, r.appt, r);
+        const s = r.svc ? this.c.services.get(r.svc) : null;
+        if (s && s.visitType) put(byDay, `${r.cid}|${r.date}`, r);   // دو خدمتِ ویزیت برای یک مراجع در یک روز، از دو نفر
+      }
+      addPairs('charges', bySvc);
+      addPairs('charges', byAppt, (a, b) => who(a) !== who(b));
+      addPairs('charges', byDay, (a, b) => who(a) !== who(b));
+      for (const r of this.all('payments', recent)) put(pays, `${r.cid}|${r.date}|${r.amount}|${r.kind}`, r);
+      addPairs('payments', pays, (a, b) => who(a) !== who(b) || Math.abs((a.at || 0) - (b.at || 0)) < 10 * 60000);
+      return out.sort((x, y) => (JD.dayOf(y.a.date) - JD.dayOf(x.a.date)));
+    }
+    /** رکوردهای مالی که دو نفر هم‌زمان با مقدار متفاوت ثبت کرده‌اند و هنوز کسی بررسی نکرده */
+    conflicts(fromDay) {
+      const out = [];
+      for (const col of ['charges', 'payments']) for (const r of this.c[col].values()) {
+        if (!r.cf || !r.cf.length || r.del) continue;
+        if (fromDay !== undefined && fromDay !== null && (JD.dayOf(r.date) ?? 0) < fromDay) continue;
+        out.push({ col, r });
+      }
+      return out.sort((x, y) => (JD.dayOf(y.r.date) - JD.dayOf(x.r.date)));
+    }
+    /** حل یک ثبت هم‌زمان: idx = شماره نسخه کنار رفته‌ای که درست است؛ بدون idx یعنی همین نسخه فعلی درست است */
+    resolveConflict(col, id, idx, user) {
+      const r = this.c[col].get(id);
+      if (!r || !r.cf) return null;
+      const alt = idx === undefined || idx === null ? null : r.cf[idx];
+      if (!alt) return this.put(col, Object.assign({}, r, { cf: null }), user);
+      const v = alt.v || {};
+      let cur = r;
+      if (!v.void && cur.void) cur = this.unvoid(col, id, user) || cur;
+      const fields = {};
+      for (const f of CF_FIELDS[col] || []) if (f !== 'amount' || col !== 'charges') if (v[f] !== undefined) fields[f] = v[f];
+      cur = this.put(col, Object.assign({}, cur, fields, { cf: null }), user);
+      if (v.void && !cur.void) cur = this.voidRec(col, id, user, `نسخه ${alt.n || 'دیگر'} انتخاب شد`) || cur;
+      return cur;
+    }
+    /** «هر دو درست است»: این دو ثبت دیگر تکراری حساب نمی‌شوند */
+    notDuplicate(col, aId, bId, user) {
+      const a = this.get(col, aId);
+      if (!a) return null;
+      return this.put(col, Object.assign({}, a, { nd: [...new Set([...(a.nd || []), bId])] }), user);
     }
 
     // ---------------------------------------------------------------- محاسبه‌ها
@@ -1830,17 +1991,43 @@ table.data th { color: var(--muted); font-weight: 600; }
   function useKey(k) { KEY = k; loadCfg(); }
 
   // ------------------------------------------------------------------ API گیت‌هاب
+  // هر درخواست سقف زمانی دارد تا با اینترنت ضعیف یا قطع، همگام‌سازی گیر نکند؛ کار روی گوشی ادامه دارد و بعداً خودکار دوباره تلاش می‌شود.
+  // TIMEOUT: تا رسیدن پاسخ (اتصال و ارسال)؛ IDLE: هنگام دریافت، اگر این مدت هیچ داده‌ای نرسید (دریافت کند ولی پیوسته قطع نمی‌شود).
+  let TIMEOUT = 20000, IDLE = 20000;
+  const offlineErr = () => err('offline', 'اینترنت در دسترس نیست یا خیلی کند است؛ ثبت‌ها روی همین گوشی محفوظ است و با برگشتن اینترنت خودکار فرستاده می‌شود.');
+  async function fetchText(url, init, ms) {
+    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    let timer = ctl ? setTimeout(() => ctl.abort(), ms) : 0;
+    try {
+      const res = await fetch(url, Object.assign({}, init, { signal: ctl ? ctl.signal : undefined }));
+      let text;
+      if (res.body && typeof res.body.getReader === 'function') {
+        const reader = res.body.getReader(), parts = [];
+        let size = 0;
+        const arm = () => { clearTimeout(timer); timer = ctl ? setTimeout(() => ctl.abort(), IDLE) : 0; };
+        arm();
+        for (;;) { const { done, value } = await reader.read(); if (done) break; parts.push(value); size += value.length; arm(); }
+        const all = new Uint8Array(size);
+        let at = 0;
+        for (const p of parts) { all.set(p, at); at += p.length; }
+        text = td.decode(all);
+      } else text = await res.text();
+      return { res, text };
+    } finally { clearTimeout(timer); }
+  }
   async function gh(method, path, body, headers) {
     const c = cfg.gh;
     if (!c || !c.token) throw err('config', 'اتصال گیت‌هاب دفترها تنظیم نشده است.');
-    let res;
+    if (root.navigator && root.navigator.onLine === false) throw offlineErr();
+    let res, text;
     try {
-      res = await fetch(`${API}${path}`, { method, cache: 'no-store',
+      ({ res, text } = await fetchText(`${API}${path}`, { method, cache: 'no-store',
         headers: Object.assign({ Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, body ? { 'Content-Type': 'application/json' } : {}, headers || {}),
-        body: body ? JSON.stringify(body) : undefined });
-    } catch (e) { throw err('network', 'اتصال به گیت‌هاب برقرار نشد؛ کار روی گوشی ادامه دارد و بعداً هماهنگ می‌شود.'); }
-    if (res.ok || res.status === 304) return res;
-    let msg = ''; try { msg = (await res.json()).message || ''; } catch (e) { /* بدون متن */ }
+        body: body ? JSON.stringify(body) : undefined }, TIMEOUT));
+    } catch (e) { throw offlineErr(); }
+    const out = { ok: res.ok, status: res.status, headers: res.headers, text: async () => text, json: async () => JSON.parse(text || 'null') };
+    if (res.ok || res.status === 304) return out;
+    let msg = ''; try { msg = (JSON.parse(text) || {}).message || ''; } catch (e) { /* بدون متن */ }
     if (res.status === 401) throw err('auth', 'توکن گیت‌هاب نامعتبر یا منقضی است؛ از گوشی دکتر کد راه‌اندازی تازه بگیرید.', { status: 401 });
     if (res.status === 403 && /rate limit/i.test(msg)) throw err('rate', 'گیت‌هاب موقتاً درخواست‌ها را محدود کرده؛ چند دقیقه بعد خودکار ادامه می‌دهد.', { status: 403 });
     if (res.status === 403) throw err('perm', 'توکن اجازه نوشتن در مخزن دفترها را ندارد (Contents: Read and write لازم است).', { status: 403 });
@@ -1962,10 +2149,14 @@ table.data th { color: var(--muted); font-weight: 600; }
       }
       L.sync.at = Date.now();
       await L.saveNow();
-      setStatus(L.id, { state: 'ok', at: Date.now(), error: null, pulled, pushed });
+      setStatus(L.id, { state: 'ok', at: Date.now(), error: null, code: null, pulled, pushed });
       return { pulled, pushed };
-    })().catch((e) => { setStatus(L.id, { state: 'error', at: Date.now(), error: e.message, code: e.code }); throw e; })
-      .finally(() => running.delete(L.id));
+    })().catch((e) => {
+      // نبودِ اینترنت خطا نیست: وضعیت «بدون اینترنت» نشان داده می‌شود و بعداً خودکار دوباره تلاش می‌شود
+      const off = e.code === 'offline';
+      setStatus(L.id, { state: off ? 'offline' : 'error', at: Date.now(), error: e.message, code: e.code });
+      throw e;
+    }).finally(() => running.delete(L.id));
     running.set(L.id, p);
     return p;
   }
@@ -1974,7 +2165,12 @@ table.data th { color: var(--muted); font-weight: 600; }
   let auto = null;
   const watched = new Set(), timers = new Map();
   let ledgersFn = () => [];
-  function runOne(L) { const e = cfg.ledgers.find((x) => x.id === L.id); if (!e || !cfg.gh || !cfg.gh.token || navigator.onLine === false) return Promise.resolve(); return syncLedger(L, e).catch(() => {}); }
+  function runOne(L) {
+    const e = cfg.ledgers.find((x) => x.id === L.id);
+    if (!e || !cfg.gh || !cfg.gh.token) return Promise.resolve();
+    if (navigator.onLine === false) { setStatus(L.id, { state: 'offline', code: 'offline', error: offlineErr().message }); return Promise.resolve(); }
+    return syncLedger(L, e).catch(() => {});
+  }
   function runAll() { return Promise.all(ledgersFn().map(runOne)); }
   /** هر تغییر در دفتر، چند ثانیه بعد فرستاده می‌شود */
   function watch(L) {
@@ -1993,7 +2189,35 @@ table.data th { color: var(--muted); font-weight: 600; }
     setInterval(() => { if (document.visibilityState === 'visible') runAll(); }, 60000);   // هر دقیقه وقتی اپ باز است
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') runAll(); });
     root.addEventListener('online', runAll);
+    root.addEventListener('offline', () => { for (const L of ledgersFn()) if (!running.has(L.id)) setStatus(L.id, { state: 'offline', code: 'offline', error: offlineErr().message }); });
     setTimeout(runAll, 800);
+  }
+
+  // ------------------------------------------------------------------ تبادل با فایل (وقتی اینترنت نیست)
+  // کل دفتر در یک فایل، رمزشده با رمز همان دفتر (با نمک تازه برای هر فایل). فقط گوشی‌ای که همین دفتر را دارد بازش می‌کند.
+  // گوشی گیرنده رکوردها را ادغام می‌کند (برای هر رکورد نسخه تازه‌تر می‌ماند) و هر چه تازه رسیده را برای ارسال به گیت‌هاب علامت می‌زند،
+  // تا هر گوشی که زودتر به اینترنت رسید، داده همه را بفرستد.
+  const FILE_FORMAT = 'clinic-ledger-file';
+  async function exportFile(L, entry, by) {
+    if (!entry || !entry.pass) throw err('nopass', 'رمز این دفتر روی این گوشی نیست.');
+    const salt = rand(16);
+    const key = await derive(entry.pass, salt, ITER);
+    const body = { format: `${Ledgers.FORMAT}-dump`, v: Ledgers.VERSION, ledger: L.id, name: L.meta.name, at: Date.now(), by: by || null, col: L.dumpCols() };
+    const enc = await seal(body, key);
+    return JSON.stringify({ format: FILE_FORMAT, v: 1, ledger: L.id, kdf: { name: 'PBKDF2', hash: 'SHA-256', iter: ITER, salt: b64(salt) }, enc });
+  }
+  async function readFile(text) {
+    let o = null;
+    try { o = JSON.parse(String(text || '').replace(/^﻿/, '')); } catch (e) { o = null; }
+    if (!o || o.format !== FILE_FORMAT || !o.enc || !o.kdf || !o.kdf.salt) throw err('format', 'این فایل، فایل همگام‌سازی دفتر نیست.');
+    const entry = (cfg.ledgers || []).find((e) => e.id === o.ledger);
+    if (!entry) throw err('noledger', 'این فایل مال دفتری است که روی این گوشی نیست.');
+    const iter = Math.max(100000, Math.min(2000000, Number(o.kdf.iter) || ITER));
+    const key = await derive(entry.pass, unb64(o.kdf.salt), iter);
+    let body;
+    try { body = await open(o.enc, key); } catch (e) { if (e.code === 'pass') throw err('pass', `فایل با رمز دفتر «${entry.name}» باز نشد.`); throw e; }
+    if (!body || body.format !== `${Ledgers.FORMAT}-dump` || body.ledger !== entry.id || !body.col) throw err('format', 'محتوای فایل با این دفتر جور نیست.');
+    return { entry, body };
   }
 
   // ------------------------------------------------------------------ کد راه‌اندازی (برای گوشی منشی)
@@ -2042,9 +2266,9 @@ table.data th { color: var(--muted); font-weight: 600; }
     get configured() { return !!(cfg && cfg.gh && cfg.gh.token && cfg.gh.owner && cfg.gh.repo); },
     repoInfo, getTree, createLedgerKey, keyFor, syncLedger, startAuto, makeSetup, readSetup, newPass, newLedgerId,
     get status() { return status; }, on(fn) { listeners.add(fn); return () => listeners.delete(fn); },
-    runAll, watch,
+    runAll, watch, exportFile, readFile,
     forgetKey(id) { keys.delete(id); },
-    _seal: seal, _open: open, _derive: derive,
+    _seal: seal, _open: open, _derive: derive, _setTimeout(ms) { TIMEOUT = ms; IDLE = ms; },
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 
@@ -3667,7 +3891,7 @@ Located in ./vendor/QRCode
   function softRefresh() {
     // داده تازه از گوشی دیگر رسید: فقط صفحه‌های فهرستی دوباره ساخته می‌شوند (فرم‌های باز دست نمی‌خورند)
     if (softTimer) return;
-    softTimer = setTimeout(() => { softTimer = 0; if (H.visible() && ['today', 'cash', 'clients', 'client', 'reminders', 'review', 'expenses', 'stock', 'report'].includes(O.st.screen)) render(O.st, true); }, 300);
+    softTimer = setTimeout(() => { softTimer = 0; if (H.visible() && ['today', 'cash', 'clients', 'client', 'reminders', 'review', 'expenses', 'stock', 'report', 'fix'].includes(O.st.screen)) render(O.st, true); }, 300);
   }
   /** پاک کردن داده یک دفتر از حافظه این گوشی (بعد از برداشتن دفتر از گوشی؛ داده در گیت‌هاب و گوشی‌های دیگر می‌ماند) */
   async function forgetLocal(id) {
@@ -3686,14 +3910,22 @@ Located in ./vendor/QRCode
     const sub = H.subnav ? `<div class="seg full o-sub" style="--n:4" role="tablist" aria-label="بخش‌های مطب">${[['today', 'امروز'], ['cash', 'صندوق'], ['clients', 'مراجعان'], ['more', 'بیشتر']].map(([k, l]) => `<button type="button" role="tab" data-sub="${k}" aria-selected="${O.st.screen === k}">${l}</button>`).join('')}</div>` : '';
     return `<div class="o-head">${sw}${sub}<div class="o-who"><span class="sdot" id="o-dot"></span><span id="o-sync"></span><span class="o-user">${esc(user().name)}${isManager() ? ' · مدیر دفتر' : ''}</span></div></div>`;
   }
+  /** «۳ ثبت منتظر ارسال» یا خالی */
+  function waitText(Lx) {
+    if (!Lx) return '';
+    const n = Lx.pendingCount();
+    return n ? `${fa(n)} ثبت منتظر ارسال` : (Lx.sync.dirty.length ? 'تغییرها منتظر ارسال' : '');
+  }
   function syncDot() {
     const d = $('#o-dot'), t = $('#o-sync');
     if (!d) return;
     const s = LS.status[O.lid] || {};
-    d.className = `sdot ${s.state === 'ok' ? 'ok' : s.state === 'error' ? 'bad' : s.state === 'running' ? 'run' : ''}`;
     const Lx = L();
-    const pend = Lx && Lx.sync.dirty.length;
-    t.textContent = s.state === 'error' ? 'همگام نشد' : s.state === 'running' ? 'در حال همگام‌سازی' : (pend ? 'ارسال‌نشده' : (s.at ? `همگام ${clock(s.at)}` : ''));
+    const wait = waitText(Lx), dirty = Lx ? Lx.sync.dirty.length : 0;
+    d.className = `sdot ${s.state === 'running' ? 'run' : s.state === 'offline' ? 'off' : s.state === 'error' ? 'bad' : (s.state === 'ok' && !dirty ? 'ok' : '')}`;
+    // بی‌اینترنت خطا نیست: کار روی گوشی ادامه دارد و فقط گفته می‌شود چند ثبت منتظر ارسال است
+    t.textContent = s.state === 'running' ? 'در حال همگام‌سازی…' : s.state === 'offline' ? `بدون اینترنت${wait ? ` · ${wait}` : ''}`
+      : s.state === 'error' ? 'همگام نشد' : (wait || (s.at ? `همگام ${clock(s.at)}` : ''));
     t.title = s.error || '';
   }
   const clock = (ms) => { const d = new Date(ms); return fa(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); };
@@ -3835,6 +4067,25 @@ Located in ./vendor/QRCode
     };
     return m;
   }
+  function pickFile(accept) {
+    return new Promise((resolve) => {
+      const inp = document.createElement('input');
+      inp.type = 'file'; if (accept) inp.accept = accept; inp.style.display = 'none';
+      let done = false;
+      const fin = (f) => { if (done) return; done = true; inp.remove(); resolve(f); };
+      inp.addEventListener('change', () => fin(inp.files && inp.files[0] ? inp.files[0] : null));
+      inp.addEventListener('cancel', () => fin(null));
+      document.body.appendChild(inp); inp.click();
+    });
+  }
+  async function saveBlob(name, blob) {
+    if (H.saveFile) return H.saveFile(name, blob);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 5000);
+    return { ok: true, msg: 'فایل در پوشه دانلودهای گوشی ذخیره شد.' };
+  }
   function dateField(id, label, d, cls) {
     return `<div class="field ${cls || 'c3'}"><label for="${id}">${label}</label><input id="${id}" value="${esc(JD.show(d || today()))}" autocomplete="off" inputmode="numeric">
       <div class="chips o-quick" data-datefor="${id}"><button type="button" data-d="0">امروز</button><button type="button" data-d="1">فردا</button><button type="button" data-d="7">هفته بعد</button></div></div>`;
@@ -3930,12 +4181,15 @@ Located in ./vendor/QRCode
         <div class="ap-tags"><span class="chip ${STATUS_CLS[a.status]}">${LG.STATUS[a.status]}</span>${c && H.needsFile && H.needsFile(Lx, c) ? '<span class="chip warn">بی‌پرونده</span>' : ''}${bal < 0 ? `<span class="chip bad">بدهکار ${toman(-bal, true)}</span>` : ''}${bal > 0 ? `<span class="chip ok">بستانکار ${toman(bal, true)}</span>` : ''}${a.remind ? '<span class="chip info">یادآوری شد</span>' : ''}</div></div>
       <div class="ap-acts">${apptButtons(a)}</div></div>`;
   }
+  /** برای این نوبت (یا همین مراجع در همین روز) خدمتی ثبت شده؟ مثلاً دکتر در فرم ویزیت. آن‌وقت منشی فقط دریافت را ثبت می‌کند. */
+  function apptCharged(a) { return L().all('charges', (x) => !x.pkgN && (x.appt === a.id || (x.cid === a.cid && x.date === a.date))).length > 0; }
   function apptButtons(a) {
     const b = (act, label, cls) => `<button type="button" class="btn-sm ${cls || ''}" data-aact="${act}">${label}</button>`;
     const doc = H.isDoctor && L().meta.linked ? b('visit', 'ثبت ویزیت', 'pri') : '';
+    const charged = ['arrived', 'done'].includes(a.status) && apptCharged(a);
     if (a.status === 'booked') return `${b('arrive', 'حاضر', 'pri')}${doc}${b('more', '⋯')}`;
-    if (a.status === 'arrived') return `${doc}${b('bill', 'خدمت و دریافت', H.isDoctor ? '' : 'pri')}${b('done', 'انجام شد')}${b('more', '⋯')}`;
-    if (a.status === 'done') return `${b('bill', 'دریافت')}${b('next', 'نوبت بعدی')}${b('more', '⋯')}`;
+    if (a.status === 'arrived') return `${doc}${b('bill', charged ? 'دریافت' : 'خدمت و دریافت', H.isDoctor ? '' : 'pri')}${b('done', 'انجام شد')}${b('more', '⋯')}`;
+    if (a.status === 'done') return `${b('bill', charged ? 'دریافت' : 'خدمت و دریافت')}${b('next', 'نوبت بعدی')}${b('more', '⋯')}`;
     return b('more', '⋯');
   }
   function remindText(a) {
@@ -3954,7 +4208,12 @@ Located in ./vendor/QRCode
     if (act === 'arrive') { set('arrived'); H.toast('حاضر شد.'); render(O.st, true); return; }
     if (act === 'done') { set('done'); render(O.st, true); offerNext(a); return; }
     if (act === 'visit') { if (H.recordVisit) H.recordVisit(Lx, a, c); return; }
-    if (act === 'bill') { go({ screen: 'charge', cid: a.cid, appt: a.id, svc: a.svc, vid: a.vid, center: a.center, date: a.date }); return; }
+    if (act === 'bill') {
+      // خدمت این نوبت را دکتر (یا کس دیگری) ثبت کرده: فقط دریافت، تا مراجع دوبار بدهکار نشود
+      if (apptCharged(a)) go({ screen: 'pay', cid: a.cid, appt: a.id, center: a.center });
+      else go({ screen: 'charge', cid: a.cid, appt: a.id, svc: a.svc, vid: a.vid, center: a.center, date: a.date });
+      return;
+    }
     if (act === 'next') { go({ screen: 'appt', cid: a.cid, date: JD.addDays(a.date, 7), time: a.time, svc: a.svc, vid: a.vid, center: a.center }); return; }
     if (act === 'more') {
       const items = [{ label: 'ویرایش نوبت', value: 'edit' }];
@@ -3993,6 +4252,7 @@ Located in ./vendor/QRCode
     const rem = reminderCounts();
     box.innerHTML = `${head()}${dayBar(date, weekStrip(date))}
       ${cs.length > 1 ? `<div class="seg full" style="--n:${cs.length + 1}" role="radiogroup" aria-label="مرکز" data-centerseg>${[['all', 'همه'], ...cs.map((c) => [c, c])].map(([v, l]) => `<button type="button" role="radio" data-value="${esc(v)}" aria-checked="${v === center}">${esc(l)}</button>`).join('')}</div>` : ''}
+      ${date === today() ? fixBanner() : ''}
       ${rem.total && date === today() ? `<button type="button" class="o-remind" data-goto="reminders">یادآوری‌ها: ${[rem.tomorrow ? `${fa(rem.tomorrow)} نوبت فردا` : '', rem.late ? `${fa(rem.late)} عقب‌افتاده` : '', rem.lost ? `${fa(rem.lost)} قطع درمان` : ''].filter(Boolean).join('، ')} ›</button>` : ''}
       <div class="kpis o-kpis">
         <div class="kpi"><span>نوبت</span><b>${fa(active.length)}</b><small>${fa(list.filter((a) => a.status === 'done').length)} انجام‌شده</small></div>
@@ -4005,7 +4265,8 @@ Located in ./vendor/QRCode
     box.onclick = (e) => {
       const seg = e.target.closest('[data-centerseg] [role="radio"]');
       if (seg) { go(Object.assign({}, st, { center: seg.dataset.value }), true); return; }
-      if (e.target.closest('[data-goto="reminders"]')) { go({ screen: 'reminders' }); return; }
+      const g = e.target.closest('[data-goto]');
+      if (g) { go({ screen: g.dataset.goto }); return; }
       const b = e.target.closest('[data-aact]');
       if (b) { apptAction(b.closest('[data-appt]').dataset.appt, b.dataset.aact); return; }
       const row = e.target.closest('.ap-main');
@@ -4177,7 +4438,8 @@ Located in ./vendor/QRCode
         <div class="kpi"><span>دریافتی منهای مخارج</span><b class="money">${toman(t.net, true)}</b><small>تومان</small></div>
       </div>
       ${Object.keys(t.byMethod).length ? `<div class="o-methods">${Object.entries(t.byMethod).map(([m, v]) => `<span><b>${esc(m)}</b> ${toman(v)}</span>`).join('')}</div>` : ''}
-      ${unpaid.size ? `<h3 class="sec-title">پرداخت‌نشده</h3><div class="rec-items">${[...unpaid.entries()].map(([cid, due]) => `<button type="button" class="rec-item" data-paycid="${esc(cid)}"><span class="rec-name">${esc(Lx.clientName(Lx.get('clients', cid)))}</span><span class="rec-delta num">${toman(due, true)}<small>تومان</small></span><span class="rec-meta">برای ثبت دریافت بزنید</span></button>`).join('')}</div>` : ''}
+      ${fixBanner()}
+      ${unpaid.size ?`<h3 class="sec-title">پرداخت‌نشده</h3><div class="rec-items">${[...unpaid.entries()].map(([cid, due]) => `<button type="button" class="rec-item" data-paycid="${esc(cid)}"><span class="rec-name">${esc(Lx.clientName(Lx.get('clients', cid)))}</span><span class="rec-delta num">${toman(due, true)}<small>تومان</small></span><span class="rec-meta">برای ثبت دریافت بزنید</span></button>`).join('')}</div>` : ''}
       ${isManager() ? `<div class="row-btns"><button type="button" class="btn-sm" data-review>بررسی و تأیید ثبت‌ها</button></div>` : ''}
       <h3 class="sec-title">ثبت‌ها</h3>
       <div class="o-rows">${rows.map(rowHtml).join('') || '<div class="empty">در این بازه ثبتی نیست.</div>'}</div>
@@ -4191,6 +4453,7 @@ Located in ./vendor/QRCode
       const pc = e.target.closest('[data-paycid]');
       if (pc) { go({ screen: 'pay', cid: pc.dataset.paycid }); return; }
       if (e.target.closest('[data-review]')) { go({ screen: 'review', date }); return; }
+      if (e.target.closest('[data-goto="fix"]')) { go({ screen: 'fix' }); return; }
       const r = e.target.closest('[data-row]');
       if (r) { const [k, id] = r.dataset.row.split(':'); go({ screen: k === 'ch' ? 'charge' : (k === 'pay' ? 'pay' : 'expense'), [k === 'ch' ? 'chid' : (k === 'pay' ? 'pid' : 'eid')]: id }); }
     };
@@ -4244,6 +4507,7 @@ Located in ./vendor/QRCode
         ${clientChip(c)}
         ${dateField('c-date', 'تاریخ', d.date)}
         ${cs.length ? F.seg('center', 'مرکز', cs, d.center || cs[0], 'c3') : ''}
+        ${!ch ? '<div class="c6 o-exist" id="c-exist" hidden></div>' : ''}
         ${svcChips(d.svc, d.vid)}
         <div class="c6" id="pkgwrap">${pkgHtml(pk, d)}</div>
         <div class="field c2 m3"><label for="c-qty">تعداد</label><input id="c-qty" inputmode="numeric" value="${esc(fa(d.qty || 1))}"></div>
@@ -4279,11 +4543,35 @@ Located in ./vendor/QRCode
       total();
     });
     wireDates(box);
+    // خدمت‌هایی که برای همین مراجع در همین روز ثبت شده (مثلاً دکتر در فرم ویزیت): تا مراجع دوبار بدهکار نشود
+    const existing = () => {
+      if (ch) return [];
+      const cid = $('.o-client', box).dataset.cid, date = JD.parse(val(box, 'c-date'));
+      if (!cid || !date) return [];
+      return Lx.all('charges', (x) => x.cid === cid && x.date === date && !x.pkgN);
+    };
+    const showExisting = () => {
+      const el = $('#c-exist', box);
+      if (!el) return;
+      const list = existing();
+      el.hidden = !list.length;
+      el.innerHTML = !list.length ? '' : `<b>برای این مراجع در همین روز ثبت شده:</b>
+        ${list.map((x) => `<div class="o-ex-row"><span>${esc(x.label || Lx.labelOf(x.svc, x.vid) || 'خدمت')} · ${toman(x.amount)}<small>ثبت: ${esc(x.bn || '—')}${x.visit ? ' · از ویزیت پرونده' : ''}</small></span><button type="button" class="linkbtn" data-opench="${esc(x.id)}">باز کردن</button></div>`).join('')}
+        <div class="hint">اگر همین خدمت است، دوباره ثبت نکنید تا مراجع دوبار بدهکار نشود؛ فقط دریافت را ثبت کنید.</div>
+        <div class="row-btns"><button type="button" class="btn-sm prime" data-onlypay>فقط ثبت دریافت</button></div>`;
+    };
+    box.addEventListener('click', (e) => {
+      const o = e.target.closest('[data-opench]');
+      if (o) { go({ screen: 'charge', chid: o.dataset.opench }, true); return; }
+      if (e.target.closest('[data-onlypay]')) go({ screen: 'pay', cid: $('.o-client', box).dataset.cid, appt: d.appt || '', center: segv(box, 'center') }, true);
+    });
+    $('#c-date', box).addEventListener('input', showExisting);
+    showExisting();
     wireClientChip(box, (cc) => {
       c = cc;
       if (!ch && cc.disc && !segv(box, 'disc')) { $$('[data-oseg="disc"] [role="radio"]', box).forEach((b) => b.setAttribute('aria-checked', String(b.dataset.value === cc.disc.t))); $('#c-dv', box).value = fa(cc.disc.v); $('#c-dwhy', box).value = cc.disc.why || 'تخفیف ثابت مراجع'; $('#discwrap', box).hidden = false; }
       $('#pkgwrap', box).innerHTML = pkgHtml(segv(box, 'svc') ? Lx.openPackage(cc.id, segv(box, 'svc')) : null, d);
-      total();
+      total(); showExisting();
     });
     box.addEventListener('input', total); box.addEventListener('change', total);
     total();
@@ -4309,10 +4597,20 @@ Located in ./vendor/QRCode
       const usePkg = $('#c-usepkg', box) && $('#c-usepkg', box).checked ? $('#c-usepkg', box).value : '';
       const pkgN = LG.num(val(box, 'c-pkgn'));
       const s = Lx.service(svc), v = s ? Lx.variant(s, segv(box, 'vid')) : null;
-      const rec = Lx.put('charges', Object.assign({}, ch || {}, { cid, date, svc, vid: segv(box, 'vid'), label: Lx.labelOf(svc, segv(box, 'vid')), qty: LG.num(val(box, 'c-qty')) || 1, unit,
+      let id = null, appt = d.appt || '', sep = '';
+      if (!ch && !pkgN) {
+        // همین خدمت امروز برای همین مراجع ثبت شده (مثلاً دکتر در فرم ویزیت)؟ دوباره ساخته نمی‌شود، مگر اینکه واقعاً خدمت دوم باشد
+        const twin = svc ? Lx.dayCharge(cid, date, svc) : null;
+        if (twin && !window.confirm(`«${Lx.labelOf(svc, segv(box, 'vid'))}» برای این مراجع در همین روز ثبت شده (ثبت: ${twin.bn || '—'}، ${toman(twin.amount)}).\nاگر خدمت دوم و جداگانه است «تأیید» را بزنید؛ اگر همان است «لغو» را بزنید و فقط دریافت را ثبت کنید.`)) return;
+        // شناسه ثابتِ «این مراجع، این روز، این خدمت»: اگر دکتر هم بی‌اینترنت همین را ثبت کرده باشد، بعد از همگام‌سازی یک ثبت می‌ماند نه دو تا
+        if (!twin) id = Lx.newChargeId(cid, date, svc);
+        if (twin) { appt = ''; sep = twin.id; }   // کاربر گفت خدمت دوم است: این دو تکراری حساب نمی‌شوند
+        else if (!appt) { const ap = Lx.all('appts', (a) => a.cid === cid && a.date === date && !['cancel', 'noshow'].includes(a.status)).sort((a, b) => (a.time || '').localeCompare(b.time || ''))[0]; if (ap) appt = ap.id; }
+      }
+      const rec = Lx.put('charges', Object.assign({}, ch || {}, id ? { id } : {}, { cid, date, svc, vid: segv(box, 'vid'), label: Lx.labelOf(svc, segv(box, 'vid')), qty: LG.num(val(box, 'c-qty')) || 1, unit,
         disc: dt ? { t: dt, v: LG.num(val(box, 'c-dv')) || 0, why: val(box, 'c-dwhy') } : null, center: segv(box, 'center'), note: val(box, 'c-note'),
-        pkg: usePkg, pkgN: ch ? ch.pkgN : (pkgN || null), appt: d.appt || '', drug: s && s.kind === 'inj' ? s.drug : (ch ? ch.drug : ''), dose: v ? v.dose : (ch ? ch.dose : null),
-        auto: ch ? false : false }), user());
+        pkg: usePkg, pkgN: ch ? ch.pkgN : (pkgN || null), appt: ch ? (ch.appt || '') : appt, drug: s && s.kind === 'inj' ? s.drug : (ch ? ch.drug : ''), dose: v ? v.dose : (ch ? ch.dose : null),
+        auto: ch ? !!ch.auto : false }, sep ? { nd: [sep] } : {}), user());
       // نوبت مربوط «انجام شد» می‌شود
       if (!ch && rec.appt) { const ap = Lx.get('appts', rec.appt); if (ap && ap.status !== 'done') Lx.put('appts', Object.assign({}, ap, { status: 'done' }), user()); }
       H.toast(ch ? 'به‌روز شد.' : 'خدمت ثبت شد.');
@@ -4358,8 +4656,9 @@ Located in ./vendor/QRCode
     const balTxt = (cc) => { if (!cc) return ''; const b = Lx.balance(cc.id); return b < 0 ? `بدهی فعلی: ${toman(-b)}` : (b > 0 ? `بستانکار: ${toman(b)}` : 'حساب صاف است'); };
     box.innerHTML = `${head()}${formTop(p ? 'ویرایش دریافت' : 'ثبت دریافت')}
       ${p && p.void ? `<div class="health"><div class="health-item warn">این دریافت باطل شده است${p.void.why ? `: ${esc(p.void.why)}` : ''}.</div></div>` : ''}
+      ${!p && c ? fixBanner(c.id) : ''}
       <form class="grid" id="ofm" novalidate>
-        ${clientChip(c)}<div class="form-note c6" id="p-bal">${esc(balTxt(c))}</div>
+        ${clientChip(c)}<div class="form-note c6"><span id="p-bal">${esc(balTxt(c))}</span>${!p ? ' <button type="button" class="linkbtn" data-addch>+ ثبت خدمت</button>' : ''}</div>
         ${dateField('p-date', 'تاریخ', d.date)}
         ${F.money('p-amt', 'مبلغ', d.amount)}
         ${F.chips('method', 'روش پرداخت', LG.METHODS, d.method)}
@@ -4371,6 +4670,10 @@ Located in ./vendor/QRCode
     wireForm(box); wireDates(box);
     wireClientChip(box, (cc) => { c = cc; $('#p-bal', box).textContent = balTxt(cc); if (!p) { const dd = due(cc.id); $('#p-amt', box).value = dd ? fa(dd.toLocaleString('en-US').replace(/,/g, '٬')) : ''; $('#p-amt', box).dispatchEvent(new Event('input', { bubbles: true })); } });
     $('#p-amt', box).dispatchEvent(new Event('input', { bubbles: true }));
+    box.addEventListener('click', (e) => {
+      if (e.target.closest('[data-addch]')) { const cid = $('.o-client', box).dataset.cid; go({ screen: 'charge', cid, appt: d.appt || '', center: segv(box, 'center') }, true); }
+      if (e.target.closest('[data-goto="fix"]')) go({ screen: 'fix' });
+    });
     const voidBtn = $('[data-void]', box);
     if (voidBtn) voidBtn.addEventListener('click', async () => {
       if (p.void) { Lx.unvoid('payments', p.id, user()); render(O.st); return; }
@@ -4388,7 +4691,15 @@ Located in ./vendor/QRCode
       if (!amount || amount <= 0) E.push('مبلغ را بنویسید.');
       errs(box, E);
       if (E.length) return;
-      Lx.put('payments', Object.assign({}, p || {}, { cid, date, amount, method: segv(box, 'method') || 'نقد', kind: segv(box, 'kind') || 'pay', center: segv(box, 'center'), appt: d.appt || '', note: val(box, 'p-note') }), user());
+      const kind = segv(box, 'kind') || 'pay';
+      let sep = '';
+      if (!p) {
+        // همین دریافت را کسی (مثلاً روی گوشی دیگر) ثبت کرده؟
+        const twin = Lx.all('payments', (x) => x.cid === cid && x.date === date && x.amount === amount && x.kind === kind)[0];
+        if (twin && !window.confirm(`دریافت ${toman(amount)} در همین روز برای این مراجع ثبت شده (ثبت: ${twin.bn || '—'}، ${twin.method}).\nاگر پرداخت جداگانه است «تأیید» را بزنید؛ اگر همان است «لغو».`)) return;
+        if (twin) sep = twin.id;
+      }
+      Lx.put('payments', Object.assign({}, p || {}, { cid, date, amount, method: segv(box, 'method') || 'نقد', kind, center: segv(box, 'center'), appt: d.appt || '', note: val(box, 'p-note') }, sep ? { nd: [sep] } : {}), user());
       H.toast(p ? 'به‌روز شد.' : 'دریافت ثبت شد.');
       back();
     };
@@ -4442,6 +4753,7 @@ Located in ./vendor/QRCode
         ${c.note ? `<div class="pt-meta">${esc(c.note)}</div>` : ''}
         <div class="pt-actions">${c.phone ? `<a class="btn-sm" href="${telHref(c.phone)}">تماس</a><a class="btn-sm" href="${smsHref(c.phone, txt)}">پیامک</a><a class="btn-sm" href="${waHref(c.phone, txt)}" target="_blank" rel="noopener">واتس‌اپ</a>` : ''}
           <button type="button" class="btn-sm" data-cact="edit">ویرایش</button>${H.isDoctor && L().meta.linked ? `<button type="button" class="btn-sm${H.hasFile && !H.hasFile(c) ? ' prime' : ''}" data-cact="file">${H.hasFile && H.hasFile(c) ? 'پرونده پزشکی' : 'تشکیل پرونده'}</button>` : ''}${isManager() ? '<button type="button" class="btn-sm" data-cact="merge">یکی کردن با تکراری</button>' : ''}</div></div>
+      ${fixBanner(c.id)}
       <div class="kpis o-kpis"><div class="kpi"><span>مانده حساب</span><b class="money ${b < 0 ? 'neg' : ''}">${toman(Math.abs(b), true)}</b><small>${b < 0 ? 'بدهکار' : (b > 0 ? 'بستانکار' : 'صاف')}</small></div>
         <div class="kpi"><span>جمع خدمات</span><b class="money">${toman(Lx.clientCharges(c.id).reduce((a, x) => a + x.amount, 0), true)}</b><small>${fa(Lx.clientCharges(c.id).length)} مورد</small></div></div>
       ${pk.length ? `<div class="pt-note">پکیج باز: ${pk.map((p) => `${esc(p.label)} — ${fa(p.left)} از ${fa(p.sessions)} جلسه مانده`).join('؛ ')}</div>` : ''}
@@ -4454,6 +4766,7 @@ Located in ./vendor/QRCode
       if (ap) { apptAction(ap.closest('[data-appt]').dataset.appt, ap.dataset.aact); return; }
       const r = e.target.closest('[data-row]');
       if (r) { const [k, id] = r.dataset.row.split(':'); go({ screen: k === 'ch' ? 'charge' : 'pay', [k === 'ch' ? 'chid' : 'pid']: id }); return; }
+      if (e.target.closest('[data-goto="fix"]')) { go({ screen: 'fix' }); return; }
       const a = e.target.closest('[data-cact]');
       if (!a) return;
       if (a.dataset.cact === 'edit') go({ screen: 'cform', cid: c.id });
@@ -4520,25 +4833,86 @@ Located in ./vendor/QRCode
       ['services', 'تعرفه خدمات', isManager() ? 'مبلغ پیش‌فرض هر خدمت و دوز' : 'فهرست خدمات و مبالغ'],
     ];
     if (isManager()) items.push(['report', 'گزارش ماهانه', 'درآمد، مخارج، سود، بدهی‌ها، منبع آشنایی'], ['review', 'بررسی روزانه', 'ثبت‌های هر نفر و تأیید آن‌ها'], ['lset', 'تنظیمات دفتر', 'نام، مرکزها و متن پیام‌ها']);
+    const lastOk = Lx.sync.at || (s.state === 'ok' ? s.at : 0);   // فقط همگام‌سازی موفق
+    const n = Lx.pendingCount();
+    const line = s.state === 'running' ? 'در حال همگام‌سازی…' : s.state === 'offline' ? `بدون اینترنت${lastOk ? ` · آخرین همگام‌سازی موفق ${timeOf(lastOk)}` : ''}`
+      : s.state === 'error' ? s.error : (lastOk ? `آخرین همگام‌سازی ${timeOf(lastOk)}` : 'هنوز همگام نشده');
     box.innerHTML = `${head()}<div class="o-menu">${items.map(([k, t, d]) => `<button type="button" class="rec-item" data-goto="${k}"><span class="rec-name">${t}</span><span class="rec-meta">${esc(d)}</span></button>`).join('')}</div>
       <section class="block"><h2>همگام‌سازی این دفتر</h2>
-        <div class="syncline"><i class="sdot ${s.state === 'ok' ? 'ok' : s.state === 'error' ? 'bad' : ''}"></i><span>${esc(s.state === 'error' ? s.error : (s.at ? `آخرین همگام‌سازی ${timeOf(s.at)}` : 'هنوز همگام نشده'))}</span></div>
-        <div class="form-note">${Lx.sync.dirty.length ? `${fa(Lx.sync.dirty.length)} بخش هنوز فرستاده نشده؛ با اینترنت خودکار فرستاده می‌شود.` : 'همه تغییرهای این گوشی فرستاده شده است.'} هر دقیقه (وقتی اپ باز است) تغییرهای گوشی‌های دیگر هم گرفته می‌شود.</div>
-        <div class="row-btns"><button type="button" class="secondary" data-syncnow>همگام‌سازی الان</button></div><div class="status" id="o-syncst" role="status"></div></section>
+        <div class="syncline"><i class="sdot ${s.state === 'running' ? 'run' : s.state === 'offline' ? 'off' : s.state === 'error' ? 'bad' : (s.state === 'ok' ? 'ok' : '')}"></i><span>${esc(line)}</span></div>
+        <div class="form-note">${n ? `${fa(n)} ثبت این گوشی هنوز فرستاده نشده؛ روی همین گوشی محفوظ است و با برگشتن اینترنت خودکار فرستاده می‌شود.` : (Lx.sync.dirty.length ? 'تغییرهایی هنوز فرستاده نشده؛ با برگشتن اینترنت خودکار فرستاده می‌شود.' : 'همه ثبت‌های این گوشی فرستاده شده است.')} هر دقیقه (وقتی اپ باز است) تغییرهای گوشی‌های دیگر هم گرفته می‌شود.</div>
+        <div class="row-btns"><button type="button" class="secondary" data-syncnow>همگام‌سازی الان</button></div><div class="status" id="o-syncst" role="status"></div>
+        <h3 class="sec-title">بدون اینترنت: تبادل با فایل</h3>
+        <div class="form-note">وقتی اینترنت قطع یا خیلی ضعیف است، فایل این دفتر را با بلوتوث، Quick Share یا هر پیام‌رسانی (حتی پیام‌رسان داخلی) به گوشی دیگر بفرستید و آن‌جا «دریافت فایل» را بزنید. فایل با رمز همین دفتر قفل است و فقط گوشی‌هایی که همین دفتر را دارند بازش می‌کنند. بهتر است فایل همه به گوشی دکتر برسد و بعد فایل گوشی دکتر برای همه فرستاده شود. با برگشتن اینترنت، همه چیز خودکار یکی می‌شود و چیزی دوبار حساب نمی‌شود.</div>
+        <div class="row-btns"><button type="button" class="secondary" data-fileout>ساخت فایل برای ارسال</button><button type="button" class="secondary" data-filein>دریافت فایل</button></div>
+        <div id="o-filebox"></div><div class="status" id="o-filest" role="status" aria-live="polite"></div></section>
       ${H.moreHtml ? H.moreHtml() : ''}`;
+    let out = null;
+    const fst = (m, ok) => { const el = $('#o-filest', box); el.textContent = m; el.className = `status ${ok === undefined ? '' : (ok ? 'ok' : 'bad')}`; };
     box.onclick = async (e) => {
       const b = e.target.closest('[data-goto]');
       if (b) { go({ screen: b.dataset.goto }); return; }
       if (e.target.closest('[data-syncnow]')) {
         const el = $('#o-syncst'); el.textContent = 'در حال همگام‌سازی…'; el.className = 'status';
         try { const r = await LS.syncLedger(Lx, entryOf()); el.textContent = `انجام شد؛ ${fa(r.pulled)} تغییر رسید و ${fa(r.pushed)} بخش فرستاده شد.`; el.className = 'status ok'; }
-        catch (err) { el.textContent = err.message; el.className = 'status bad'; }
+        catch (err) { el.textContent = err.message; el.className = `status ${err.code === 'offline' ? '' : 'bad'}`; }
         syncDot();
+      }
+      if (e.target.closest('[data-fileout]')) {
+        // ساخت فایل (رمزگذاری چند ثانیه طول می‌کشد) و بعد دکمه ارسال جدا، چون مرورگر «ارسال» را فقط درست بعد از لمس اجازه می‌دهد
+        const fb = $('#o-filebox', box); fb.innerHTML = '';
+        fst('در حال ساخت فایل رمزدار…');
+        try {
+          const text = await LS.exportFile(Lx, entryOf(), user().name);
+          const name = syncFileName(Lx);
+          // نوع «متن» تا اشتراک‌گذاری اندروید (بلوتوث، Quick Share، پیام‌رسان‌ها) فایل را بپذیرد؛ JSON را Chrome اندروید برای ارسال قبول نمی‌کند
+          const blob = new Blob([text], { type: 'text/plain' });
+          const file = typeof File === 'function' ? new File([blob], name, { type: 'text/plain' }) : null;
+          let canShare = false;
+          try { canShare = !!(file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })); } catch (err) { canShare = false; }
+          out = { blob, file, name };
+          fb.innerHTML = `<div class="row-btns">${canShare ? '<button type="button" class="primary" data-fshare>ارسال فایل</button>' : ''}<button type="button" class="${canShare ? 'secondary' : 'primary'}" data-fsave>ذخیره در گوشی</button></div>`;
+          fst(`فایل آماده است (${fa(Math.max(1, Math.round(blob.size / 1024)))} کیلوبایت، ${fa(Lx.all('clients').length)} مراجع). ${canShare ? '«ارسال فایل» را بزنید و بلوتوث، Quick Share یا پیام‌رسان را انتخاب کنید.' : '«ذخیره در گوشی» را بزنید و فایل را از پوشه دانلودها بفرستید.'}`, true);
+        } catch (err) { fst(err.message, false); }
+        return;
+      }
+      if (e.target.closest('[data-fshare]') && out) {
+        try { await navigator.share({ files: [out.file], title: out.name }); fst('فایل فرستاده شد. در گوشی دیگر «دریافت فایل» را بزنید.', true); }
+        catch (err) { if (err && err.name === 'AbortError') fst('ارسال لغو شد.'); else { const r = await saveBlob(out.name, out.blob); fst(r.msg, r.ok); } }
+        return;
+      }
+      if (e.target.closest('[data-fsave]') && out) { const r = await saveBlob(out.name, out.blob); fst(r.msg, r.ok); return; }
+      if (e.target.closest('[data-filein]')) {
+        const f = await pickFile();
+        if (!f) return;
+        fst('در حال باز کردن فایل…');
+        try {
+          const r = await importSyncFile(await f.text());
+          fst(r.msg, true);
+        } catch (err) { fst(err.message, false); }
+        return;
       }
       if (H.wireMore) H.wireMore(e);
     };
     H.setRbar(null);
   };
+  function syncFileName(Lx) {
+    const d = new Date();
+    const clean = (s) => String(s || '').replace(/[\\/:*?"<>|\u200c\u200f\u200e]+/g, ' ').replace(/\s+/g, ' ').trim();   // نیم‌فاصله در نام فایل به «_» تبدیل می‌شد
+    return `${clean(`دفتر ${Lx.meta.name} - ${today().replace(/\//g, '-')} ${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')} - ${user().name}`)}.txt`;
+  }
+  /** دریافت فایل همگام‌سازی گوشی دیگر: باز کردن با رمز دفتر، ادغام، ذخیره و (اگر اینترنت هست) ارسال */
+  async function importSyncFile(text) {
+    const { entry, body } = await LS.readFile(text);
+    const T = O.ledgers.get(entry.id);
+    if (!T) throw new Error('این دفتر روی این گوشی باز نیست.');
+    const n = T.mergeDump(body);
+    await T.saveNow();
+    LS.runAll();
+    const from = [body.by ? `از «${body.by}»` : '', body.at ? `ساخته‌شده ${timeOf(body.at)}` : ''].filter(Boolean).join('، ');
+    const where = entry.id !== O.lid ? ` در دفتر «${entry.name}»` : '';
+    return { n, msg: n ? `${fa(n)} ثبت تازه یا به‌روز${where} ادغام شد${from ? ` (${from})` : ''}. با برگشتن اینترنت برای همه فرستاده می‌شود.` : `همه ثبت‌های این فایل${from ? ` (${from})` : ''} از قبل روی این گوشی بود${where}.` };
+  }
 
   // ------------------------------------------------------------------ مخارج
   SCREENS.expenses = (box, st) => {
@@ -4809,6 +5183,64 @@ Located in ./vendor/QRCode
     H.setRbar(null);
   };
 
+  // ------------------------------------------------------------------ ثبت تکراری یا هم‌زمان
+  // وقتی دو نفر (مثلاً دکتر در فرم ویزیت و منشی در صندوق) یک خدمت یا دریافت را جدا ثبت کنند، به‌خصوص بی‌اینترنت.
+  const FIX_DAYS = 60;
+  function fixData(cid) {
+    const Lx = L();
+    const from = JD.dayOf(today()) - FIX_DAYS;
+    let dp = [], cf = [];
+    try { dp = Lx.dupes(from); cf = Lx.conflicts(from); } catch (e) { /* بررسی اختیاری است */ }
+    if (cid) { dp = dp.filter((x) => x.a.cid === cid || x.b.cid === cid); cf = cf.filter((x) => x.r.cid === cid); }
+    return { dp, cf, n: dp.length + cf.length };
+  }
+  function fixBanner(cid) {
+    const n = fixData(cid).n;
+    return n ? `<button type="button" class="o-remind o-warnb" data-goto="fix">⚠ ${fa(n)} ثبت تکراری یا هم‌زمان${cid ? ' در حساب این مراجع' : ''}؛ برای بررسی بزنید ›</button>` : '';
+  }
+  function recDesc(col, x) {
+    const Lx = L();
+    if (col === 'charges') {
+      const off = x.disc && x.disc.v ? (x.disc.t === 'pct' ? `تخفیف ${fa(x.disc.v)}٪` : `تخفیف ${toman(x.disc.v, true)}`) : '';
+      return [x.label || Lx.labelOf(x.svc, x.vid) || 'خدمت', toman(x.amount), off, x.pkg ? 'از پکیج' : '', x.void ? 'باطل' : ''].filter(Boolean).join(' · ');
+    }
+    return [x.kind === 'dep' ? 'بیعانه' : x.kind === 'ref' ? 'بازپرداخت' : 'دریافت', toman(x.amount), x.method, x.void ? 'باطل' : ''].filter(Boolean).join(' · ');
+  }
+  SCREENS.fix = (box) => {
+    const Lx = L();
+    const { dp, cf } = fixData();
+    // اول ثبتی که بهتر است بماند: خدمتِ وصل به ویزیت پرونده، وگرنه قدیمی‌تر
+    const pairs = dp.map(({ col, a, b }) => (col === 'charges' && b.visit && !a.visit ? [b, a, col] : [a, b, col]));
+    const row = (col, x, n) => `<div class="o-fix-r"><span class="o-fix-n">${n}</span><span class="o-fix-t">${esc(recDesc(col, x))}<small>ثبت: ${esc(x.bn || '—')} · ${esc(timeOf(x.at))}${x.visit ? ' · از ویزیت پرونده' : ''}</small></span></div>`;
+    const dupCard = ([k, t, col], i) => `<div class="o-fix" data-dup="${i}"><div class="o-fix-h"><b>${col === 'charges' ? 'خدمت' : 'دریافت'}</b> · ${esc(Lx.clientName(Lx.get('clients', k.cid)))} · ${esc(JD.show(k.date))}</div>
+      ${row(col, k, '۱')}${row(col, t, '۲')}
+      <div class="row-btns"><button type="button" class="btn-sm prime" data-fx="void2">«۲» تکراری است</button><button type="button" class="btn-sm" data-fx="void1">«۱» تکراری است</button><button type="button" class="btn-sm" data-fx="both">هر دو درست است</button></div></div>`;
+    const cfCard = ({ col, r }) => `<div class="o-fix" data-cf="${col}:${esc(r.id)}"><div class="o-fix-h"><b>${col === 'charges' ? 'خدمت' : 'دریافت'}</b> · ${esc(Lx.clientName(Lx.get('clients', r.cid)))} · ${esc(JD.show(r.date))}</div>
+      <div class="o-fix-r"><span class="o-fix-n">فعلی</span><span class="o-fix-t">${esc(recDesc(col, r))}<small>${esc(r.ebn || r.bn || '—')} · ${esc(timeOf(r.u))}</small></span><button type="button" class="btn-sm prime" data-cfx="keep">این درست است</button></div>
+      ${r.cf.map((x, i) => `<div class="o-fix-r alt"><span class="o-fix-n">دیگر</span><span class="o-fix-t">${esc(recDesc(col, x.v || {}))}<small>${esc(x.n || '—')} · ${esc(timeOf(x.u))}</small></span><button type="button" class="btn-sm" data-cfx="${i}">این درست است</button></div>`).join('')}</div>`;
+    box.innerHTML = `${head()}${formTop('ثبت‌های تکراری یا هم‌زمان')}
+      <div class="form-note">وقتی دو نفر یک خدمت یا دریافت را جدا ثبت کنند (مثلاً دکتر در فرم ویزیت و منشی در صندوق، به‌خصوص وقتی اینترنت نبوده)، این‌جا می‌آید تا مراجع دوبار بدهکار نشود. با یک لمس درستش کنید؛ هیچ ثبتی پاک نمی‌شود و همه چیز در تاریخچه می‌ماند.</div>
+      ${pairs.length ? `<h3 class="sec-title">احتمال ثبت تکراری (${fa(pairs.length)})</h3>${pairs.map(dupCard).join('')}` : ''}
+      ${cf.length ? `<h3 class="sec-title">ثبت هم‌زمان با مقدار متفاوت (${fa(cf.length)})</h3><div class="form-note">دو نفر هم‌زمان یک ثبت را با مقدار متفاوت نوشته‌اند؛ نسخه‌ای که درست است را انتخاب کنید.</div>${cf.map(cfCard).join('')}` : ''}
+      ${!pairs.length && !cf.length ? '<div class="empty">ثبت تکراری یا هم‌زمانی نیست.</div>' : ''}`;
+    box.onclick = (e) => {
+      const fx = e.target.closest('[data-fx]');
+      if (fx) {
+        const [k, t, col] = pairs[+fx.closest('[data-dup]').dataset.dup];
+        if (fx.dataset.fx === 'both') Lx.notDuplicate(col, k.id, t.id, user());
+        else { const [drop, keep] = fx.dataset.fx === 'void2' ? [t, k] : [k, t]; Lx.voidRec(col, drop.id, user(), `ثبت تکراری (همان ثبتِ ${keep.bn || '—'})`); }
+        H.toast('درست شد.'); render(O.st, true); return;
+      }
+      const cx = e.target.closest('[data-cfx]');
+      if (cx) {
+        const [col, id] = cx.closest('[data-cf]').dataset.cf.split(':');
+        Lx.resolveConflict(col, id, cx.dataset.cfx === 'keep' ? null : +cx.dataset.cfx, user());
+        H.toast('درست شد.'); render(O.st, true);
+      }
+    };
+    H.setRbar(null);
+  };
+
   // ------------------------------------------------------------------ بررسی روزانه (مدیر دفتر)
   SCREENS.review = (box, st) => {
     const Lx = L();
@@ -4831,10 +5263,11 @@ Located in ./vendor/QRCode
       return `<label class="o-rev${r.void ? ' is-void' : ''}"><input type="checkbox" data-rv="${col}:${esc(r.id)}" ${r.ok ? 'disabled checked' : (col === 'appts' ? '' : 'checked')}>
         <span><b>${lbl}</b> ${esc(c ? Lx.clientName(c) : '')} · ${esc(what)}${r.void ? ` · <b>باطل</b>${r.void.why ? `: ${esc(r.void.why)}` : ''}` : ''}${edits ? `<small>ویرایش امروز: ${esc(edits)}</small>` : ''}${r.ok ? `<small>تأیید ${esc(r.ok.n)}</small>` : ''}</span></label>`;
     };
-    box.innerHTML = `${head()}${formTop('بررسی روزانه', 'بیشتر')}${dayBar(date)}
+    box.innerHTML = `${head()}${formTop('بررسی روزانه', 'بیشتر')}${dayBar(date)}${fixBanner()}
       <div class="form-note">ثبت‌ها و ویرایش‌های این روز به تفکیک هر نفر. موارد درست را تأیید کنید؛ هر ثبتی که بعداً ویرایش شود، دوباره برای بررسی می‌آید.</div>
       ${[...groups.entries()].map(([who, arr]) => `<section class="block"><h2>${esc(who)} <small>${fa(arr.length)} مورد</small></h2>${arr.map(line).join('')}</section>`).join('') || '<div class="empty">در این روز ثبتی نیست.</div>'}`;
     wireDayBar(box, st);
+    box.addEventListener('click', (e) => { if (e.target.closest('[data-goto="fix"]')) go({ screen: 'fix' }); });
     H.setRbar(groups.size ? [{ label: 'تأیید موارد انتخاب‌شده', onClick: () => {
       const byCol = {};
       $$('[data-rv]:checked:not(:disabled)', box).forEach((x) => { const [col, id] = x.dataset.rv.split(':'); (byCol[col] || (byCol[col] = [])).push(id); });
@@ -4938,7 +5371,7 @@ Located in ./vendor/QRCode
   window.Office = {
     init, render, reloadLedgers, forgetLocal, go, setLedger, toman, user, isManager, entryOf, clientPicker, inviteDialog, showPass, passHtml, modal,
     get ledgers() { return O.ledgers; }, get lid() { return O.lid; }, get state() { return O.st; },
-    ledger(id) { return O.ledgers.get(id) || null; }, reminderData,
+    ledger(id) { return O.ledgers.get(id) || null; }, reminderData, importSyncFile, fixData,
   };
 })();
 
@@ -4975,7 +5408,7 @@ Located in ./vendor/QRCode
     $('#tabbar').hidden = !configured;
     document.body.classList.toggle('has-tabs', !!configured);
     if (!configured) { setRbar(null); renderSetup(); return; }
-    const tab = TABS.includes(st.screen) ? st.screen : (['appt', 'reminders'].includes(st.screen) ? 'today' : (['charge', 'pay', 'review'].includes(st.screen) ? 'cash' : (['client', 'cform'].includes(st.screen) ? 'clients' : 'more')));
+    const tab = TABS.includes(st.screen) ? st.screen : (['appt', 'reminders'].includes(st.screen) ? 'today' : (['charge', 'pay', 'review', 'fix'].includes(st.screen) ? 'cash' : (['client', 'cform'].includes(st.screen) ? 'clients' : 'more')));
     $$('#tabbar [data-tab]').forEach((b) => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
     Office.render(st);
   }
