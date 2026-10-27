@@ -1,6 +1,6 @@
 /* کار آفلاین: فایل‌های اپ ذخیره می‌شوند؛ فونت‌ها بعد از اولین دریافت. نسخه با هر تغییر فایل‌ها عوض می‌شود. */
-const VERSION = 'diet-planner-db770ca29b';
-const BUILD = 'c1f4f40';
+const VERSION = 'diet-planner-7595614330';
+const BUILD = 'c4e2c3f';
 const FONTS = 'diet-planner-fonts';
 const PREFIX = VERSION.replace(/-[0-9a-f]+$/, '-');
 const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./lib/docx.iife.js", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-48.png"];
