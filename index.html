@@ -735,7 +735,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "c1f4f40", buildAt: 1792832522581 };</script>
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "c4e2c3f", buildAt: 1793111014225 };</script>
 <script>
 /* ---- JSZip (مجوز MIT، متن کامل در lib/jszip-LICENSE.md) ---- */
 /*!
@@ -3584,6 +3584,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   async function saveNow() {
     clearTimeout(saveTimer); saveTimer = null;
     if (S.readonly) return false;
+    await absorbOther();   // کار پنجره دیگرِ همین اپ روی همین گوشی پاک نشود
     const n = total();
     if (n < S.minCount && !S.allowShrink) {
       S.guard = { at: now(), had: S.minCount, now: n };
@@ -3591,9 +3592,35 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       return false;
     }
     S.meta.savedAt = now();
-    const ok = await Store.set('db', snapshot(true));
-    if (ok) { S.minCount = n; S.allowShrink = false; S.saveError = null; } else { S.saveError = now(); tell('save-error'); }
+    const snap = snapshot(true);
+    snap.savedAt = Math.max(snap.savedAt, seenSavedAt + 1);
+    snap.meta.inst = INST;
+    const ok = await Store.set('db', snap);
+    if (ok) {
+      S.minCount = n; S.allowShrink = false; S.saveError = null; seenSavedAt = snap.savedAt;
+      try { if (bc) bc.postMessage({ inst: INST, savedAt: snap.savedAt }); } catch (e) { /* بی‌اثر */ }
+    } else { S.saveError = now(); tell('save-error'); }
     return ok;
+  }
+
+  // ------------------------------------------------------------------ چند پنجره هم‌زمان روی یک گوشی
+  // اگر اپ هم‌زمان در دو جا باز باشد (مثلاً اپ نصب‌شده و یک زبانه مرورگر)، هر پنجره پیش از نوشتن، و هر بار که دوباره دیده می‌شود،
+  // آنچه پنجره دیگر از آخرین بار ذخیره کرده را ادغام می‌کند؛ وگرنه ذخیره پنجره کهنه‌تر، پرونده‌های ثبت‌شده در پنجره دیگر را از حافظه گوشی پاک می‌کرد.
+  const INST = newId();
+  let seenSavedAt = 0;   // آخرین ذخیره‌ای (از هر پنجره) که این پنجره دیده یا نوشته
+  let bc = null;
+  async function absorbOther() {
+    if (!S.loaded || S.readonly || S.allowShrink) return 0;
+    let cur;
+    try { cur = await Store.get('db'); } catch (e) { return 0; }
+    // ذخیره بدون نشان پنجره هم از پنجره دیگری است (نسخه قبلی اپ که هنوز در زبانه دیگری باز مانده)
+    if (!validSnapshot(cur) || (cur.meta && cur.meta.inst === INST) || (cur.savedAt || 0) <= seenSavedAt) return 0;
+    seenSavedAt = cur.savedAt || 0;
+    let n = 0;
+    batch(() => { n = mergeNow(cur).changed; });
+    const ls = cur.meta && cur.meta.sync && cur.meta.sync.lastSync;
+    if (ls && !(S.meta.sync && S.meta.sync.lastSync >= ls)) S.meta.sync = Object.assign({}, S.meta.sync || {}, { lastSync: ls });
+    return n;
   }
   function changed(reason) { scheduleSave(); emit(reason); }
 
@@ -3680,6 +3707,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
           } else await dailyBackup(saved);
         } catch (e) { /* پشتیبان نشد؛ داده اصلی دست نمی‌خورد */ }
         loadSnapshot(saved);
+        seenSavedAt = saved.savedAt || 0;
         if (S.loadedV > VERSION) S.newer = S.loadedV;
       } else {
         // داده هست ولی خوانده نمی‌شود: به هیچ عنوان رویش نوشته نمی‌شود
@@ -3694,8 +3722,19 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     }
     if (root.addEventListener) {
       root.addEventListener('pagehide', () => { if (saveTimer) saveNow(); });
-      if (root.document) root.document.addEventListener('visibilitychange', () => { if (root.document.visibilityState === 'hidden' && saveTimer) saveNow(); });
+      if (root.document) {
+        root.document.addEventListener('visibilitychange', () => {
+          if (root.document.visibilityState === 'hidden' && saveTimer) saveNow();
+          if (root.document.visibilityState === 'visible') absorbOther().catch(() => {});
+        });
+      }
     }
+    try {
+      if (root.BroadcastChannel && root.document) {
+        bc = new root.BroadcastChannel('diet-planner-db');
+        bc.onmessage = (e) => { if (e.data && e.data.inst !== INST) absorbOther().catch(() => {}); };
+      }
+    } catch (e) { bc = null; }
   }
   function loadSnapshot(o) {
     vIndex = null;
@@ -5871,6 +5910,9 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   }
   function stable(o) { return JSON.stringify(o, Object.keys(o).sort()); }
   const live = (r) => r && !r.void && !r.del;
+  /** نام و تلفنِ یکسان برای تشخیص مراجع تکراری (فاصله، نیم‌فاصله و ی/ک عربی فرقی نمی‌کند؛ تلفن: ده رقم آخر) */
+  const nameKey = (c) => JD.latinDigits(`${(c && c.first) || ''}${(c && c.last) || ''}`).replace(/[\s\u200c\u200e\u200f\u0640]+/g, '').replace(/[يى]/g, 'ی').replace(/ك/g, 'ک').replace(/[\u064B-\u0652]/g, '').toLowerCase();
+  const phoneKey = (ph) => JD.latinDigits(String(ph || '')).replace(/\D/g, '').slice(-10);
   // زمان ویرایش همیشه بعد از نسخه قبلی همان رکورد است، حتی اگر ساعت این گوشی عقب باشد (وگرنه در همگام‌سازی، ویرایش تازه گم می‌شد)
   const stampAfter = (old) => Math.max(now(), ((old && old.u) || 0) + 1);
 
@@ -5917,8 +5959,9 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     moves: (r) => ({ item: txt(r.item), date: JD.parse(r.date) || JD.today(), kind: ['buy', 'adjust', 'waste', 'use'].includes(r.kind) ? r.kind : 'adjust',
       qty: num(r.qty) || 0, cost: money(r.cost), exp: txt(r.exp), note: txt(r.note) }),
   };
-  // pu: زمانِ نسخه‌ای که این ویرایش روی آن انجام شد (برای تشخیص دو ویرایش هم‌زمان روی دو گوشی)؛ cf: نسخه‌ای که در ادغام کنار رفت
-  const AUDIT = new Set(['id', 'at', 'by', 'bn', 'u', 'pu', 'eb', 'ebn', 'hist', 'void', 'del', 'ok', 'cf']);
+  // pu: زمانِ نسخه‌ای که این ویرایش روی آن انجام شد (برای تشخیص دو ویرایش هم‌زمان روی دو گوشی)؛ cf: نسخه‌ای که در ادغام کنار رفت.
+  // pk: همان u وقتی این نسخه اپ رکورد را نوشته (نسخه‌های قدیمی‌تر اپ pu را دست‌نخورده کپی می‌کنند؛ آن‌وقت pk با u جور نیست و به pu اعتماد نمی‌شود)
+  const AUDIT = new Set(['id', 'at', 'by', 'bn', 'u', 'pu', 'pk', 'eb', 'ebn', 'hist', 'void', 'del', 'ok', 'cf']);
   const TRACK = { appts: ['date', 'time', 'status', 'svc', 'vid', 'cid', 'center'], charges: ['amount', 'unit', 'qty', 'disc', 'svc', 'vid', 'date', 'cid', 'pkg'],
     payments: ['amount', 'method', 'date', 'cid', 'kind'], expenses: ['amount', 'cat', 'date'], clients: ['first', 'last', 'phone', 'disc'], services: ['price', 'variants', 'active'] };
   // ادغام دو نسخه از یک رکورد مالی: پیوندها (ویزیت پرونده، نوبت) هیچ‌وقت در ادغام گم نمی‌شوند؛
@@ -5926,12 +5969,21 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   const LINKS = { charges: ['visit', 'appt'], payments: ['appt'] };
   const CF_FIELDS = { charges: ['amount', 'unit', 'qty', 'disc', 'svc', 'vid', 'date', 'cid', 'pkg', 'label', 'dose', 'drug'], payments: ['amount', 'method', 'kind', 'date', 'cid'] };
   const same = (a, b) => stable({ v: a ?? null }) === stable({ v: b ?? null });
+  const empty = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
+  /** نسخه برنده، نسخه دیگر را ندیده بود (دو ثبت هم‌زمان روی دو گوشی، یا ساختِ دوباره روی گوشی‌ای که هنوز همگام نشده بود) */
+  const blind = (win, lose) => typeof win.pu === 'number' && win.pk === win.u && win.pu < (lose.u || 0);
   function reconcile(col, win, lose) {
     if (!win || !lose || win === lose) return null;
     const patch = {};
     for (const f of LINKS[col] || []) if (!win[f] && lose[f]) patch[f] = lose[f];
+    if (col === 'clients') {
+      // مراجعی که با دیگری یکی شده، یکی‌شده می‌ماند (ویرایش هم‌زمان روی گوشی دیگر آن را برنمی‌گرداند)
+      if (lose.void && lose.void.into && !win.void) patch.void = lose.void;
+      // ساخت یا ویرایشِ بی‌خبر از نسخه دیگر: چیزی که فقط در نسخه دیگر هست (تخفیف، جنس، سن، یادداشت…) گم نمی‌شود
+      if (blind(win, lose)) for (const k of Object.keys(lose)) if (!AUDIT.has(k) && k !== 'void' && empty(win[k]) && !empty(lose[k])) patch[k] = lose[k];
+    }
     const F = CF_FIELDS[col];
-    if (F && typeof win.pu === 'number' && win.pu < (lose.u || 0)) {   // نسخه برنده، نسخه دیگر را ندیده بود: دو ثبت هم‌زمان
+    if (F && blind(win, lose)) {   // دو ثبت هم‌زمان
       const diff = F.some((f) => !same(win[f], lose[f])) || !!win.void !== !!lose.void;
       const known = (win.cf || []).some((x) => x.u === (lose.u || 0));
       if (diff && !known) {
@@ -5942,7 +5994,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       }
     }
     if (!Object.keys(patch).length) return null;
-    return Object.assign({}, win, patch, { u: (win.u || 0) + 1, pu: win.u || 0 });
+    const u = (win.u || 0) + 1;
+    return Object.assign({}, win, patch, { u, pu: win.u || 0, pk: u });
   }
 
   // ------------------------------------------------------------------ تکه‌ها (برای همگام‌سازی سبک: هر هفته یک فایل)
@@ -5956,23 +6009,34 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   }
 
   // ------------------------------------------------------------------ ذخیره روی گوشی (IndexedDB)
+  // اگر حافظه گوشی (IndexedDB) باز نشود، دفتر «خوانده نشد» و فقط‌خواندنی می‌شود؛ نه اینکه خالی فرض شود
+  // (دفترِ خالیِ ساختگی باعث می‌شد اپ دکتر برای همه بیماران مراجع تازه بسازد و تکراری‌ها زیاد شوند).
+  // بدون IndexedDB اصلاً (مثلاً آزمون در Node) حافظه موقت استفاده می‌شود.
   function makeStore(dbName) {
     let db = null;
     const mem = new Map();
+    const subs = new Set();
+    let bc = null;
+    // پنجره‌های دیگرِ همین اپ روی همین گوشی (مثلاً اپ نصب‌شده و یک زبانه مرورگر) از ذخیره هم خبر می‌گیرند
+    try { if (root.BroadcastChannel && root.document) { bc = new root.BroadcastChannel(`clinic-ledgers:${dbName}`); bc.onmessage = (e) => { for (const fn of subs) { try { fn(e.data); } catch (x) { /* بی‌اثر */ } } }; } } catch (e) { bc = null; }
     function open() {
-      if (db || !root.indexedDB) return Promise.resolve(db);
-      return new Promise((res) => {
+      if (db) return Promise.resolve(db);
+      if (!root.indexedDB) return Promise.resolve(null);
+      return new Promise((res, rej) => {
         let rq;
-        try { rq = root.indexedDB.open(dbName, 1); } catch (e) { res(null); return; }
+        try { rq = root.indexedDB.open(dbName, 1); } catch (e) { rej(e); return; }
         rq.onupgradeneeded = () => { if (!rq.result.objectStoreNames.contains('kv')) rq.result.createObjectStore('kv'); };
         rq.onsuccess = () => { db = rq.result; db.onversionchange = () => { try { db.close(); } catch (e) { /* بی‌اثر */ } db = null; }; res(db); };
-        rq.onerror = () => res(null); rq.onblocked = () => res(null);
+        rq.onerror = () => rej(rq.error || new Error('open')); rq.onblocked = () => rej(new Error('blocked'));
       });
     }
+    const opened = async () => { try { return { d: await open() }; } catch (e) { return null; } };
     return {
-      async get(k) { const d = await open(); if (!d) return mem.get(k); return new Promise((res, rej) => { const rq = d.transaction('kv', 'readonly').objectStore('kv').get(k); rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); }); },
-      async set(k, v) { const d = await open(); if (!d) { mem.set(k, v); return true; } return new Promise((res) => { let tx; try { tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); } catch (e) { res(false); return; } tx.oncomplete = () => res(true); tx.onerror = () => res(false); tx.onabort = () => res(false); }); },
-      async del(k) { const d = await open(); if (!d) { mem.delete(k); return true; } return new Promise((res) => { const tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); tx.oncomplete = () => res(true); tx.onerror = () => res(false); }); },
+      async get(k) { const d = await open(); if (!d) return mem.get(k); return new Promise((res, rej) => { let rq; try { rq = d.transaction('kv', 'readonly').objectStore('kv').get(k); } catch (e) { rej(e); return; } rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error); }); },
+      async set(k, v) { const o = await opened(); if (!o) return false; const d = o.d; if (!d) { mem.set(k, v); return true; } return new Promise((res) => { let tx; try { tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').put(v, k); } catch (e) { res(false); return; } tx.oncomplete = () => res(true); tx.onerror = () => res(false); tx.onabort = () => res(false); }); },
+      async del(k) { const o = await opened(); if (!o) return false; const d = o.d; if (!d) { mem.delete(k); return true; } return new Promise((res) => { let tx; try { tx = d.transaction('kv', 'readwrite'); tx.objectStore('kv').delete(k); } catch (e) { res(false); return; } tx.oncomplete = () => res(true); tx.onerror = () => res(false); }); },
+      announce(m) { try { if (bc) bc.postMessage(m); } catch (e) { /* بی‌اثر */ } },
+      onAnnounce(fn) { subs.add(fn); return () => subs.delete(fn); },
       get persistentOk() { return !!db; },
     };
   }
@@ -5984,6 +6048,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       for (const k of COLS) this.c[k] = new Map();
       this.sync = { shas: {}, dirty: [], at: 0 };
       this.listeners = new Set(); this.timer = null; this.loaded = false; this.minCount = 0; this.readonly = false; this.batching = 0; this.pending = null;
+      this.inst = newId(); this.seenSavedAt = 0;   // این پنجره، و آخرین ذخیره‌ای که از هر پنجره دیده
+      if (store && store.onAnnounce) this.unsub = store.onAnnounce((m) => { if (m && m.id === this.id && m.inst !== this.inst && this.loaded && !this.readonly) this.absorbOther(); });
     }
     on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
     emit(reason) { if (this.batching) { this.pending = reason; return; } for (const fn of this.listeners) { try { fn(reason); } catch (e) { /* بی‌اثر */ } } }
@@ -5996,6 +6062,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         if ((o.v || 1) > VERSION) this.newer = o.v;
         for (const k of COLS) for (const r of (o.col[k] || [])) if (r && r.id) this.c[k].set(r.id, r);
         if (o.sync) this.sync = Object.assign({ shas: {}, dirty: [], at: 0 }, o.sync);
+        this.seenSavedAt = o.savedAt || 0;
       } else if (o !== undefined && o !== null) { this.readonly = true; this.loadError = 'format'; this.rawBad = o; }
       this.minCount = this.total();
       this.loaded = true;
@@ -6003,16 +6070,36 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     snapshot() {
       const col = {};
       for (const k of COLS) col[k] = Array.from(this.c[k].values());
-      return { format: FORMAT, v: VERSION, id: this.id, savedAt: now(), col, sync: this.sync };
+      return { format: FORMAT, v: VERSION, id: this.id, savedAt: Math.max(now(), (this.seenSavedAt || 0) + 1), inst: this.inst, col, sync: this.sync };
     }
     scheduleSave() { clearTimeout(this.timer); this.timer = setTimeout(() => this.saveNow(), 250); }
+    /** اگر پنجره دیگری از همین اپ روی همین گوشی بعد از آخرین بار این دفتر را ذخیره کرده، اول همان ادغام می‌شود
+        (وگرنه ذخیره این پنجره کار آن را از حافظه گوشی پاک می‌کرد). خروجی: تعداد رکوردهای تازه */
+    async absorbOther() {
+      if (!this.loaded || this.readonly) return 0;
+      let cur;
+      try { cur = await this.store.get(`ledger:${this.id}`); } catch (e) { return 0; }
+      // ذخیره بدون نشان پنجره هم از پنجره دیگری است (نسخه قبلی اپ که هنوز در زبانه دیگری باز مانده)
+      if (!cur || cur.format !== FORMAT || !cur.col || cur.inst === this.inst || (cur.savedAt || 0) <= (this.seenSavedAt || 0)) return 0;
+      this.seenSavedAt = cur.savedAt || 0;
+      const n = this.mergeRecords(cur.col);
+      // آنچه آن پنجره هنوز به گیت‌هاب نفرستاده، این‌جا هم منتظر ارسال می‌ماند
+      const cs = cur.sync || {};
+      for (const k of cs.dirty || []) this.markDirty(k);
+      for (const [k, ids] of Object.entries(cs.pend || {})) for (const id of ids || []) this.markDirty(k, id);
+      if ((cs.at || 0) > (this.sync.at || 0)) this.sync.at = cs.at;
+      return n;
+    }
     async saveNow() {
       clearTimeout(this.timer); this.timer = null;
       if (this.readonly) return false;
+      await this.absorbOther();
+      if (this.readonly) return false;
       const n = this.total();
       if (n < this.minCount) { this.guard = { had: this.minCount, now: n }; this.emit('guard'); return false; }   // هیچ‌وقت رکوردی گم نشود
-      const ok = await this.store.set(`ledger:${this.id}`, this.snapshot());
-      if (ok) this.minCount = n; else this.emit('save-error');
+      const snap = this.snapshot();
+      const ok = await this.store.set(`ledger:${this.id}`, snap);
+      if (ok) { this.minCount = n; this.seenSavedAt = snap.savedAt; if (this.store.announce) this.store.announce({ id: this.id, inst: this.inst, savedAt: snap.savedAt }); } else this.emit('save-error');
       return ok;
     }
     /** id (اختیاری): رکوردی که روی همین گوشی ثبت یا ویرایش شد (برای شمارش «ثبت‌های منتظر ارسال») */
@@ -6043,7 +6130,12 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     priceOf(svcId, vid) { const s = this.service(svcId); if (!s) return 0; const v = this.variant(s, vid); return v ? v.price : s.price; }
     labelOf(svcId, vid) { const s = this.service(svcId); if (!s) return ''; const v = this.variant(s, vid); return v ? `${s.name} ${v.label}` : s.name; }
     clientName(c) { return c ? ([c.first, c.last].filter(Boolean).join(' ') || (c.fileNo ? `پرونده ${JD.faDigits(c.fileNo)}` : 'بی‌نام')) : '—'; }
-    clientByPuid(puid) { return puid ? this.all('clients', (c) => c.puid === puid)[0] || null : null; }
+    /** مراجعِ پرونده پزشکی (اگر هنوز تکراری هست، همانی که در یکی کردن می‌ماند: شناسه کوچک‌تر) */
+    clientByPuid(puid) {
+      if (!puid) return null;
+      const a = this.all('clients', (c) => c.puid === puid);
+      return a.length > 1 ? a.sort((x, y) => (x.id < y.id ? -1 : 1))[0] : (a[0] || null);
+    }
     userName(id) { const u = this.c.users.get(id); return u ? u.name : ''; }
 
     // ---------------------------------------------------------------- نوشتن با ثبت چه‌کسی/کی
@@ -6057,7 +6149,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       for (const k of Object.keys(base)) if (!(k in rec) && !AUDIT.has(k) && k.charAt(0) !== '$' && base[k] !== undefined) rec[k] = base[k];   // فیلدهای ناشناخته
       const t = now(), u = user || {};
       rec.at = old ? old.at : t; rec.by = old ? old.by : (u.id || ''); rec.bn = old ? old.bn : (u.name || '');
-      rec.u = stampAfter(old); rec.pu = old ? (old.u || 0) : 0; rec.eb = u.id || ''; rec.ebn = u.name || '';
+      rec.u = stampAfter(old); rec.pu = old ? (old.u || 0) : 0; rec.pk = rec.u; rec.eb = u.id || ''; rec.ebn = u.name || '';
       if (old && old.ok) rec.ok = old.ok;
       if (old && old.void) rec.void = old.void;
       let edited = false;
@@ -6065,7 +6157,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         const ch = {};
         for (const f of TRACK[col]) if (stable({ v: old[f] ?? null }) !== stable({ v: rec[f] ?? null })) ch[f] = [old[f] ?? null, rec[f] ?? null];
         const hist = (old.hist || []).slice(-HIST_KEEP + 1);
-        if (Object.keys(ch).length) { hist.push({ t, b: u.id || '', n: u.name || '', ch }); delete rec.ok; edited = Object.keys(ch).some((f) => f !== 'cid'); }   // ویرایش، تأیید قبلی را برمی‌دارد
+        // ویرایش، تأیید قبلی را برمی‌دارد (جز جابه‌جایی خودکار به مراجعِ یکی‌شده)
+        if (Object.keys(ch).length) { hist.push({ t, b: u.id || '', n: u.name || '', ch }); if (!data.$keepOk) delete rec.ok; edited = Object.keys(ch).some((f) => f !== 'cid'); }
         rec.hist = hist;
       }
       // یادداشتِ «ثبت هم‌زمان» تا وقتی کسی مقدار را درست نکرده یا صریحاً تأیید نکرده، می‌ماند
@@ -6077,11 +6170,12 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       return rec;
     }
     /** باطل کردن (به‌جای حذف) */
-    voidRec(col, id, user, why) {
+    voidRec(col, id, user, why, extra) {
       const old = this.c[col].get(id);
       if (!old || old.void) return null;
       const u = user || {};
-      const rec = Object.assign({}, old, { void: { t: now(), b: u.id || '', n: u.name || '', why: txt(why) }, u: stampAfter(old), pu: old.u || 0, eb: u.id || '', ebn: u.name || '' });
+      const t = stampAfter(old);
+      const rec = Object.assign({}, old, { void: Object.assign({ t: now(), b: u.id || '', n: u.name || '', why: txt(why) }, extra || {}), u: t, pu: old.u || 0, pk: t, eb: u.id || '', ebn: u.name || '' });
       delete rec.cf;
       this.c[col].set(id, rec);
       this.changed(col, [shardKey(col, rec)], `${col}:${id}`);
@@ -6091,7 +6185,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       const old = this.c[col].get(id);
       if (!old || !old.void) return null;
       const u = user || {};
-      const rec = Object.assign({}, old, { u: stampAfter(old), pu: old.u || 0, eb: u.id || '', ebn: u.name || '' });
+      const t = stampAfter(old);
+      const rec = Object.assign({}, old, { u: t, pu: old.u || 0, pk: t, eb: u.id || '', ebn: u.name || '' });
       delete rec.void;
       this.c[col].set(id, rec);
       this.changed(col, [shardKey(col, rec)], `${col}:${id}`);
@@ -6104,28 +6199,115 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         for (const id of ids) {
           const old = this.c[col].get(id);
           if (!old || old.ok) continue;
-          const rec = Object.assign({}, old, { ok: { t: now(), b: u.id || '', n: u.name || '' }, u: stampAfter(old), pu: old.u || 0 });
+          const t = stampAfter(old);
+          const rec = Object.assign({}, old, { ok: { t: now(), b: u.id || '', n: u.name || '' }, u: t, pu: old.u || 0, pk: t });
           this.c[col].set(id, rec); done.push([shardKey(col, rec), `${col}:${id}`]);
         }
       });
       if (done.length) { for (const [k, id] of done) this.markDirty(k, id); this.scheduleSave(); this.emit('approve'); }
     }
 
-    /** یکی کردن دو مراجع تکراری: نوبت، خدمت و دریافتی‌های دومی به اولی منتقل و دومی باطل می‌شود (هیچ رکوردی حذف نمی‌شود) */
-    mergeClients(keepId, dropId, user) {
+    /** یکی کردن دو مراجع تکراری: نوبت، خدمت و دریافتی‌های دومی به اولی منتقل و دومی «یکی‌شده» باطل می‌شود (هیچ رکوردی حذف نمی‌شود).
+        اطلاعاتی که فقط در دومی هست (تلفن، جنس، سن، تخفیف، یادداشت…) به اولی می‌آید؛ اگر فقط دومی به پرونده پزشکی وصل است،
+        اولی هم با نام و تلفنِ همان پرونده وصل می‌شود (تا پرونده بی‌دلیل تغییر نکند). opts: auto (یکی کردن خودکار)، refs (فهرست آماده ثبت‌ها) */
+    mergeClients(keepId, dropId, user, opts) {
+      const o = opts || {};
       const keep = this.get('clients', keepId), drop = this.get('clients', dropId);
       if (!keep || !drop || keepId === dropId) return 0;
       if (keep.puid && drop.puid && keep.puid !== drop.puid) throw new Error('این دو مراجع دو پرونده پزشکی جدا دارند و یکی نمی‌شوند.');
       let n = 0;
       this.batch(() => {
-        for (const col of ['appts', 'charges', 'payments']) for (const r of this.all(col, (x) => x.cid === dropId)) { this.put(col, Object.assign({}, r, { cid: keepId }), user); n++; }
+        for (const col of ['appts', 'charges', 'payments']) {
+          const list = o.refs ? (o.refs[col].get(dropId) || []) : this.all(col, (x) => x.cid === dropId);
+          for (const r0 of list) {
+            const r = this.get(col, r0.id);
+            if (!r || r.cid !== dropId) continue;
+            this.put(col, Object.assign({}, r, { cid: keepId, $keepOk: !!o.auto }), user); n++;
+          }
+        }
         const fill = {};
-        for (const k of ['first', 'last', 'phone', 'source', 'note', 'puid']) if (!keep[k] && drop[k]) fill[k] = drop[k];
-        if (!keep.fileNo && drop.fileNo) fill.fileNo = drop.fileNo;
-        if (!keep.disc && drop.disc) fill.disc = drop.disc;
+        if (!keep.puid && drop.puid) for (const k of ['puid', 'fileNo', 'fileSync', 'first', 'last', 'phone', 'source']) if (!empty(drop[k])) fill[k] = drop[k];
+        for (const k of Object.keys(drop)) if (!AUDIT.has(k) && k !== 'nd' && k.charAt(0) !== '$' && !(k in fill) && empty(keep[k]) && !empty(drop[k])) fill[k] = drop[k];
         if (Object.keys(fill).length) this.put('clients', Object.assign({}, keep, fill), user);
-        this.voidRec('clients', dropId, user, `یکی شد با «${this.clientName(keep)}»`);
+        this.voidRec('clients', dropId, user, o.auto ? `تکراری؛ خودکار یکی شد با «${this.clientName(keep)}»` : `یکی شد با «${this.clientName(keep)}»`, { into: keepId });
       });
+      return n;
+    }
+    /** شناسه مراجعِ پرونده پزشکی: همان شناسه پرونده، تا اگر دو گوشی هر کدام برای یک بیمار مراجع بسازند، یک رکورد شود نه دو تا.
+        (اگر این شناسه قبلاً استفاده و یکی شده، null یعنی شناسه تازه) */
+    newClientId(puid) { return puid && !this.c.clients.has(puid) ? puid : null; }
+    /** مراجعان تکراری را خودکار یکی می‌کند؛ روی همه گوشی‌ها یک تصمیم گرفته می‌شود (شناسه کوچک‌تر می‌ماند):
+        ۱) چند مراجع برای یک پرونده پزشکی؛ ۲) نام و تلفنِ دقیقاً یکسان (اگر دو پرونده پزشکی جدا نباشند).
+        بعد ثبت‌هایی که هنوز به مراجعِ یکی‌شده اشاره می‌کنند (مثلاً از گوشی‌ای که دیرتر همگام شد) منتقل، و نوبت‌های کاملاً تکراری یکی می‌شوند. */
+    dedupeClients(user) {
+      const res = { merged: 0, moved: 0, appts: 0 };
+      if (this.readonly || !this.loaded) return res;
+      const byId = (a, b) => (a.id < b.id ? -1 : (a.id > b.id ? 1 : 0));
+      const refs = () => {
+        const m = {};
+        for (const col of ['appts', 'charges', 'payments']) { m[col] = new Map(); for (const r of this.all(col)) { const g = m[col].get(r.cid); if (g) g.push(r); else m[col].set(r.cid, [r]); } }
+        return m;
+      };
+      const group = (fn) => { const m = new Map(); for (const c of this.all('clients')) { const k = fn(c); if (!k) continue; const g = m.get(k); if (g) g.push(c); else m.set(k, [c]); } return [...m.values()].filter((g) => g.length > 1); };
+      this.batch(() => {
+        const mergeGroup = (g, R) => {
+          g.sort(byId);
+          const keep = g[0];
+          for (const d of g.slice(1)) {
+            if (!this.get('clients', d.id) || !this.get('clients', keep.id)) continue;
+            try { res.moved += this.mergeClients(keep.id, d.id, user, { auto: true, refs: R }); res.merged++; } catch (e) { /* دو پرونده پزشکی جدا: یکی نمی‌شود */ }
+          }
+        };
+        let R = refs();
+        for (const g of group((c) => c.puid || '')) mergeGroup(g, R);
+        R = refs();
+        for (const g of group((c) => { const n = nameKey(c), p = phoneKey(c.phone); return n.length >= 2 && p.length === 10 ? `${n}|${p}` : ''; })) {
+          if (new Set(g.map((c) => c.puid).filter(Boolean)).size > 1) continue;
+          mergeGroup(g, R);
+        }
+        res.moved += this.repairRefs(user);
+        res.appts += this.dedupeAppts(user);
+      });
+      return res;
+    }
+    /** ثبت‌هایی که به مراجعِ یکی‌شده اشاره می‌کنند، به مراجعِ نهایی منتقل می‌شوند */
+    repairRefs(user) {
+      let n = 0;
+      const target = (cid) => {
+        let c = this.raw('clients', cid), hop = 0;
+        while (c && c.void && c.void.into && hop++ < 20) c = this.raw('clients', c.void.into);
+        return c && live(c) && c.id !== cid ? c.id : null;
+      };
+      this.batch(() => {
+        for (const col of ['appts', 'charges', 'payments']) for (const r of this.all(col)) {
+          const c = r.cid ? this.raw('clients', r.cid) : null;
+          if (!c || !c.void || !c.void.into) continue;
+          const to = target(r.cid);
+          if (to) { this.put(col, Object.assign({}, r, { cid: to, $keepOk: true }), user); n++; }
+        }
+      });
+      return n;
+    }
+    /** نوبت‌های کاملاً تکراری (یک مراجع، یک روز، یک ساعت، یک خدمت) یکی می‌شوند؛ وضعیت جلوتر (مثلاً «انجام شد») می‌ماند */
+    dedupeAppts(user) {
+      const rank = { noshow: 1, booked: 2, arrived: 3, done: 4 };
+      const m = new Map();
+      for (const a of this.all('appts', (x) => x.status !== 'cancel')) { const k = `${a.cid}|${a.date}|${a.time}|${a.svc}|${a.vid}`; const g = m.get(k); if (g) g.push(a); else m.set(k, [a]); }
+      let n = 0;
+      for (const g of m.values()) {
+        if (g.length < 2) continue;
+        g.sort((a, b) => (a.id < b.id ? -1 : 1));
+        const keep = g[0];
+        const best = g.reduce((x, a) => ((rank[a.status] || 0) > (rank[x.status] || 0) ? a : x), keep);
+        const extra = {};
+        if (best.status !== keep.status) extra.status = best.status;
+        for (const f of ['note', 'center', 'remind']) if (empty(keep[f])) { const d = g.find((a) => !empty(a[f])); if (d) extra[f] = d[f]; }
+        if (Object.keys(extra).length) this.put('appts', Object.assign({}, keep, extra, { $keepOk: true }), user);
+        for (const d of g.slice(1)) {
+          for (const col of ['charges', 'payments']) for (const r of this.all(col, (x) => x.appt === d.id)) this.put(col, Object.assign({}, r, { appt: keep.id, $keepOk: true }), user);
+          this.voidRec('appts', d.id, user, 'نوبت تکراری؛ خودکار یکی شد', { into: keep.id }); n++;
+        }
+      }
       return n;
     }
 
@@ -6387,7 +6569,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     }
   }
 
-  const Ledgers = { FORMAT, VERSION, COLS, BASE_COLS, DATED, METHODS, EXP_CATS, STATUS, KINDS, Ledger, makeStore, shardKey, weekStart, newId, num, money, txt, normTime, stable, live };
+  const Ledgers = { FORMAT, VERSION, COLS, BASE_COLS, DATED, METHODS, EXP_CATS, STATUS, KINDS, Ledger, makeStore, shardKey, weekStart, newId, num, money, txt, normTime, stable, live, nameKey, phoneKey };
   root.Ledgers = Ledgers;
   if (typeof module !== 'undefined' && module.exports) module.exports = Ledgers;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -8330,7 +8512,23 @@ Located in ./vendor/QRCode
     await reloadLedgers();
     LS.startAuto(() => [...O.ledgers.values()]);
     LS.on((id) => { if (id === O.lid) syncDot(); });
+    // تکراری‌های قدیمی همین حالا یکی می‌شوند (و بعد از هر همگام‌سازی، اگر از گوشی دیگری تکراری رسید)
+    for (const Lx of O.ledgers.values()) dedupe(Lx);
+    // پنجره دیگری از همین اپ روی همین گوشی (مثلاً یک زبانه مرورگر) چیزی ذخیره کرده؟ وقتی این پنجره دوباره دیده شد، اول همان ادغام می‌شود
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') for (const Lx of O.ledgers.values()) Lx.absorbOther().catch(() => {}); });
   }
+  /** یکی کردن خودکار مراجعان تکراری (و ثبت‌هایی که هنوز به مراجعِ یکی‌شده اشاره می‌کنند) */
+  const AUTO = { id: 'auto', name: 'یکی کردن خودکار' };
+  const dedupeTimers = new Map();
+  function dedupe(Lx) {
+    if (!Lx || Lx.readonly || !Lx.loaded) return null;
+    let r;
+    try { r = Lx.dedupeClients(AUTO); } catch (e) { return null; }
+    if (r.merged) H.toast(`${fa(r.merged)} مراجع تکراری خودکار یکی شد؛ نوبت‌ها، خدمت‌ها و دریافتی‌هایشان زیر یک نفر جمع شد و چیزی پاک نشد.`, 8000);
+    if ((r.merged || r.moved || r.appts) && Lx.id === O.lid) softRefresh();
+    return r;
+  }
+  function scheduleDedupe(Lx) { clearTimeout(dedupeTimers.get(Lx.id)); dedupeTimers.set(Lx.id, setTimeout(() => dedupe(Lx), 1500)); }
   async function reloadLedgers() {
     const want = (LS.config.ledgers || []).map((e) => e.id);
     for (const id of [...O.ledgers.keys()]) if (!want.includes(id)) O.ledgers.delete(id);
@@ -8338,7 +8536,10 @@ Located in ./vendor/QRCode
       if (O.ledgers.has(e.id)) continue;
       const Lx = new LG.Ledger(e.id, O.store);
       await Lx.load();
-      Lx.on((reason) => { if (Lx.id === O.lid && reason === 'merge') softRefresh(); if (reason === 'guard' || reason === 'save-error') H.toast(reason === 'guard' ? 'اپ جلوی یک ذخیره ناقص را گرفت؛ اپ را ببندید و دوباره باز کنید.' : 'ذخیره در حافظه گوشی انجام نشد.', 9000); });
+      Lx.on((reason) => {
+        if (reason === 'merge') { if (Lx.id === O.lid) softRefresh(); scheduleDedupe(Lx); }
+        if (reason === 'guard' || reason === 'save-error') H.toast(reason === 'guard' ? 'اپ جلوی یک ذخیره ناقص را گرفت؛ اپ را ببندید و دوباره باز کنید.' : 'ذخیره در حافظه گوشی انجام نشد.', 9000);
+      });
       O.ledgers.set(e.id, Lx);
       LS.watch(Lx);
     }
@@ -8572,7 +8773,15 @@ Located in ./vendor/QRCode
     destroyCharts();
     if (!O.ledgers.size) { renderEmpty(box); return; }
     const Lx = L();
-    if (Lx && Lx.readonly) { box.innerHTML = `${head()}<div class="health"><div class="health-item bad">داده این دفتر روی این گوشی خوانده نشد. برای اینکه چیزی خراب نشود، دفتر فقط‌خواندنی است. با پشتیبانی تماس بگیرید.</div></div>`; wireHead(box); H.setRbar(null); return; }
+    if (Lx && Lx.readonly) {
+      // معمولاً حافظه گوشی لحظه‌ای باز نشده؛ با «دوباره امتحان کنید» یا بستن و باز کردن اپ درست می‌شود. تا آن موقع چیزی نوشته یا ساخته نمی‌شود.
+      box.innerHTML = `${head()}<div class="health"><div class="health-item bad">داده این دفتر روی این گوشی خوانده نشد. برای اینکه چیزی خراب یا تکراری نشود، دفتر فعلاً فقط‌خواندنی است. «دوباره امتحان کنید» را بزنید یا اپ را کامل ببندید و دوباره باز کنید.</div></div>
+        ${Lx.loadError === 'read' ? '<div class="row-btns"><button type="button" class="primary" data-reload>دوباره امتحان کنید</button></div>' : ''}`;
+      wireHead(box); H.setRbar(null);
+      const rb = $('[data-reload]', box);
+      if (rb) rb.addEventListener('click', async () => { O.ledgers.delete(Lx.id); await reloadLedgers(); const L2 = O.ledgers.get(Lx.id); if (L2 && !L2.readonly) { dedupe(L2); LS.runAll(); } render(O.st); });
+      return;
+    }
     const scr = SCREENS[O.st.screen] || SCREENS.today;
     const y = soft ? window.scrollY : 0;
     scr(box, O.st);
@@ -8769,8 +8978,12 @@ Located in ./vendor/QRCode
       if (e.target.closest('[data-newc]')) {
         const first = val(m, 'cp-first'), last = val(m, 'cp-last'), phone = val(m, 'cp-phone');
         if (!first && !last) { errs(m, ['نام مراجع را بنویسید.']); return; }
-        const dup = phone && Lx.all('clients').find((c) => c.phone && JD.latinDigits(c.phone).replace(/\D/g, '').slice(-10) === JD.latinDigits(phone).replace(/\D/g, '').slice(-10));
-        if (dup && !window.confirm(`«${Lx.clientName(dup)}» با همین شماره ثبت شده است. باز هم مراجع تازه ساخته شود؟`)) { m.remove(); onPick(dup); return; }
+        // همان آدم با همین نام و تلفن (یا همین نام، اگر تلفن نداده) از قبل هست: همان انتخاب می‌شود، مراجع تکراری ساخته نمی‌شود
+        const tw = twinOf(Lx, first, last, phone);
+        if (tw && tw.exact) { m.remove(); H.toast(`«${Lx.clientName(tw.exact)}» از قبل ثبت شده بود؛ همان انتخاب شد.`); onPick(tw.exact); return; }
+        const other = tw && (tw.phoneOnly || tw.nameOnly);
+        if (other && !window.confirm(tw.phoneOnly ? `${nameAndPhone(Lx, other)} با همین شماره ثبت شده است. «${[first, last].filter(Boolean).join(' ')}» نفر دیگری است (مثلاً هم‌خانواده)؟\n(لغو = همان ${nameAndPhone(Lx, other)} انتخاب شود)`
+          : `${nameAndPhone(Lx, other)} با همین نام ثبت شده است. این نفر دیگری است؟\n(لغو = همان ${nameAndPhone(Lx, other)} انتخاب شود)`)) { m.remove(); onPick(other); return; }
         const age = LG.num(val(m, 'cp-age'));
         const c = Lx.put('clients', { first, last, phone, source: segv(m, 'cp-src'), sex: segv(m, 'cp-sex'), age: age && age > 0 && age < 111 ? age : null, ageAt: age ? today() : '' }, user());
         m.remove(); onPick(c);
@@ -8778,6 +8991,20 @@ Located in ./vendor/QRCode
     });
   }
   const SOURCES = () => (window.DB && window.DB.SOURCES) || ['پیج دکتر', 'پیج کلینیک', 'معرفی آشنایان', 'گوگل و اینترنت', 'تلگرام یا واتس‌اپ', 'تابلو یا حضوری', 'سایر'];
+  /** مراجع موجود برای جلوگیری از ساختن مراجع تکراری:
+      exact = همین نام و همین تلفن (قطعاً همان آدم)؛ phoneOnly = همین تلفن با نام دیگر (شاید هم‌خانواده)؛ nameOnly = همین نام وقتی تلفنی داده نشده */
+  function twinOf(Lx, first, last, phone, exceptId) {
+    const p = LG.phoneKey(phone), n = LG.nameKey({ first, last });
+    const all = Lx.all('clients', (c) => c.id !== exceptId);
+    if (p.length === 10) {
+      const same = all.filter((c) => LG.phoneKey(c.phone) === p);
+      const exact = same.find((c) => LG.nameKey(c) === n);
+      return exact ? { exact } : (same.length ? { phoneOnly: same[0] } : null);
+    }
+    const byName = n.length >= 2 ? all.find((c) => LG.nameKey(c) === n) : null;
+    return byName ? { nameOnly: byName } : null;
+  }
+  const nameAndPhone = (Lx, c) => `«${Lx.clientName(c)}»${c.phone ? ` (${fa(c.phone)})` : ''}`;
   function clientChip(c, id) {
     const Lx = L();
     return `<div class="field c6"><label>مراجع</label><button type="button" class="o-client" id="${id || 'f-client'}" data-cid="${esc(c ? c.id : '')}">${c ? `<b>${esc(Lx.clientName(c))}</b><small>${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : ''].filter(Boolean).join(' · '))}</small>` : '<span>انتخاب مراجع…</span>'}</button></div>`;
@@ -9231,8 +9458,9 @@ Located in ./vendor/QRCode
       if (a.dataset.cact === 'merge') {
         clientPicker((o) => {
           if (!o || o.id === c.id) return;
-          const [keep, drop] = !c.puid && o.puid ? [o, c] : [c, o];
-          if (!window.confirm(`«${Lx.clientName(drop)}» با «${Lx.clientName(keep)}» یکی شود؟\nنوبت‌ها، خدمت‌ها و دریافتی‌های «${Lx.clientName(drop)}» به «${Lx.clientName(keep)}» منتقل می‌شود و خودش باطل می‌شود (پاک نمی‌شود).`)) return;
+          // شناسه کوچک‌تر می‌ماند (مثل یکی کردن خودکار روی همه گوشی‌ها)؛ پیوند پرونده و اطلاعات دیگری به او منتقل می‌شود
+          const [keep, drop] = c.id < o.id ? [c, o] : [o, c];
+          if (!window.confirm(`«${Lx.clientName(c)}» و «${Lx.clientName(o)}» یکی شوند؟\nنوبت‌ها، خدمت‌ها و دریافتی‌های هر دو زیر یک نفر جمع می‌شود و پیوند پرونده پزشکی می‌ماند. چیزی پاک نمی‌شود.`)) return;
           try { const n = Lx.mergeClients(keep.id, drop.id, user()); H.toast(`یکی شد؛ ${fa(n)} ثبت منتقل شد.`); go({ screen: 'client', cid: keep.id }, true); }
           catch (err) { H.toast(err.message, 7000); }
         }, { title: 'مراجع تکراری را انتخاب کنید', exclude: c.id });
@@ -9264,6 +9492,14 @@ Located in ./vendor/QRCode
     const save = () => {
       const first = val(box, 'f-first'), last = val(box, 'f-last');
       if (!first && !last) { errs(box, ['نام را بنویسید.']); return; }
+      if (!c) {
+        // همین آدم از قبل ثبت شده؟ (همان نام و تلفن، یا همان نام بدون تلفن): همان باز می‌شود و مراجع تکراری ساخته نمی‌شود
+        const tw = twinOf(Lx, first, last, val(box, 'f-phone'));
+        if (tw && tw.exact) { H.toast(`«${Lx.clientName(tw.exact)}» از قبل ثبت شده بود؛ همان باز شد و مراجع تکراری ساخته نشد.`, 5000); go({ screen: 'client', cid: tw.exact.id }, true); return; }
+        const other = tw && (tw.phoneOnly || tw.nameOnly);
+        if (other && !window.confirm(tw.phoneOnly ? `${nameAndPhone(Lx, other)} با همین شماره ثبت شده است. «${[first, last].filter(Boolean).join(' ')}» نفر دیگری است (مثلاً هم‌خانواده)؟\n(لغو = همان ${nameAndPhone(Lx, other)} باز شود)`
+          : `${nameAndPhone(Lx, other)} با همین نام ثبت شده است. این نفر دیگری است؟\n(لغو = همان ${nameAndPhone(Lx, other)} باز شود)`)) { go({ screen: 'client', cid: other.id }, true); return; }
+      }
       const ageTxt = val(box, 'f-age'), age = LG.num(ageTxt);
       if (ageTxt && (age === null || age < 1 || age > 110)) { errs(box, ['سن را درست بنویسید (مثلاً ۳۴).']); return; }
       const s = segv(box, 'src'), dt = segv(box, 'disc');
@@ -9668,6 +9904,7 @@ Located in ./vendor/QRCode
     const { dp, cf } = fixData();
     // اول ثبتی که بهتر است بماند: خدمتِ وصل به ویزیت پرونده، وگرنه قدیمی‌تر
     const pairs = dp.map(({ col, a, b }) => (col === 'charges' && b.visit && !a.visit ? [b, a, col] : [a, b, col]));
+    const same = pairs.filter(([k, t, col]) => col === 'charges' && k.cid === t.cid && k.date === t.date && k.svc === t.svc && (k.vid || '') === (t.vid || '') && k.amount === t.amount && !!k.pkg === !!t.pkg);
     const row = (col, x, n) => `<div class="o-fix-r"><span class="o-fix-n">${n}</span><span class="o-fix-t">${esc(recDesc(col, x))}<small>ثبت: ${esc(x.bn || '—')} · ${esc(timeOf(x.at))}${x.visit ? ' · از ویزیت پرونده' : ''}</small></span></div>`;
     const dupCard = ([k, t, col], i) => `<div class="o-fix" data-dup="${i}"><div class="o-fix-h"><b>${col === 'charges' ? 'خدمت' : 'دریافت'}</b> · ${esc(Lx.clientName(Lx.get('clients', k.cid)))} · ${esc(JD.show(k.date))}</div>
       ${row(col, k, '۱')}${row(col, t, '۲')}
@@ -9677,10 +9914,19 @@ Located in ./vendor/QRCode
       ${r.cf.map((x, i) => `<div class="o-fix-r alt"><span class="o-fix-n">دیگر</span><span class="o-fix-t">${esc(recDesc(col, x.v || {}))}<small>${esc(x.n || '—')} · ${esc(timeOf(x.u))}</small></span><button type="button" class="btn-sm" data-cfx="${i}">این درست است</button></div>`).join('')}</div>`;
     box.innerHTML = `${head()}${formTop('ثبت‌های تکراری یا هم‌زمان')}
       <div class="form-note">وقتی دو نفر یک خدمت یا دریافت را جدا ثبت کنند (مثلاً دکتر در فرم ویزیت و منشی در صندوق، به‌خصوص وقتی اینترنت نبوده)، این‌جا می‌آید تا مراجع دوبار بدهکار نشود. با یک لمس درستش کنید؛ هیچ ثبتی پاک نمی‌شود و همه چیز در تاریخچه می‌ماند.</div>
-      ${pairs.length ? `<h3 class="sec-title">احتمال ثبت تکراری (${fa(pairs.length)})</h3>${pairs.map(dupCard).join('')}` : ''}
+      ${pairs.length ? `<h3 class="sec-title">احتمال ثبت تکراری (${fa(pairs.length)})</h3>
+        ${same.length > 1 ? `<div class="form-note">${fa(same.length)} جفتِ خدمتِ کاملاً یکسان (همان مراجع، همان روز، همان خدمت و مبلغ) هست؛ معمولاً یک خدمت که دو بار ثبت شده. با یک لمس، در هر جفت «۲» باطل می‌شود (آن‌که به ویزیت پرونده وصل است یا زودتر ثبت شده می‌ماند).</div>
+          <div class="row-btns"><button type="button" class="primary" data-fxall>درست کردن همه ${fa(same.length)} مورد یکسان</button></div>` : ''}
+        ${pairs.map(dupCard).join('')}` : ''}
       ${cf.length ? `<h3 class="sec-title">ثبت هم‌زمان با مقدار متفاوت (${fa(cf.length)})</h3><div class="form-note">دو نفر هم‌زمان یک ثبت را با مقدار متفاوت نوشته‌اند؛ نسخه‌ای که درست است را انتخاب کنید.</div>${cf.map(cfCard).join('')}` : ''}
       ${!pairs.length && !cf.length ? '<div class="empty">ثبت تکراری یا هم‌زمانی نیست.</div>' : ''}`;
     box.onclick = (e) => {
+      if (e.target.closest('[data-fxall]')) {
+        if (!window.confirm(`در ${fa(same.length)} جفتِ خدمتِ کاملاً یکسان، «۲» باطل شود؟ چیزی پاک نمی‌شود و در تاریخچه می‌ماند.`)) return;
+        let nv = 0;
+        Lx.batch(() => { for (const [k, t] of same) if (Lx.get('charges', t.id) && Lx.get('charges', k.id)) { Lx.voidRec('charges', t.id, user(), `ثبت تکراری (همان ثبتِ ${k.bn || '—'})`); nv++; } });
+        H.toast(`${fa(nv)} خدمت تکراری باطل شد.`); render(O.st, true); return;
+      }
       const fx = e.target.closest('[data-fx]');
       if (fx) {
         const [k, t, col] = pairs[+fx.closest('[data-dup]').dataset.dup];
@@ -9828,7 +10074,7 @@ Located in ./vendor/QRCode
   window.Office = {
     init, render, reloadLedgers, forgetLocal, go, setLedger, toman, user, isManager, entryOf, clientPicker, inviteDialog, showPass, passHtml, modal,
     get ledgers() { return O.ledgers; }, get lid() { return O.lid; }, get state() { return O.st; },
-    ledger(id) { return O.ledgers.get(id) || null; }, reminderData, importSyncFile, fixData,
+    ledger(id) { return O.ledgers.get(id) || null; }, reminderData, importSyncFile, fixData, dedupe, twinOf,
   };
 })();
 
@@ -10969,12 +11215,20 @@ Located in ./vendor/QRCode
     if (errs.length) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
   const formHead = (title, backTo) => `<button type="button" class="backbtn" data-act="back">→ ${esc(backTo)}</button><div class="view-head"><h2>${esc(title)}</h2></div>`;
+  /** ظرف تازه برای هر بار باز شدن فرم پرونده یا مراجعه. اگر همان ظرف قبلی استفاده شود، شنونده‌های لمس روی هم جمع می‌شوند
+      و با دو شنونده هر لمس تیک را دو بار عوض می‌کند، یعنی انگار تیک نمی‌خورد (هر بار دوم که فرم باز می‌شد). */
+  function freshFormBox() {
+    const box = document.createElement('div');
+    box.className = 'rec-form-in';
+    $('#rec-form').replaceChildren(box);
+    return box;
+  }
 
   function renderPatientForm(puid, st) {
     const p = puid ? DB.patient(puid) : null;
     // پرونده تازه از روی مراجعی که منشی ثبت کرده: نام، تلفن، منبع آشنایی، جنس و سن از همان ثبت می‌آید
     const pre = !p && st && st.prefill ? st.prefill : null;
-    const box = $('#rec-form');
+    const box = freshFormBox();
     const age = p ? DB.ageOf(p) : (pre && pre.age ? pre.age : null);
     const src = p && p.source ? p.source : (pre && pre.source ? pre.source : '');
     const srcStd = !src || DB.SOURCES.includes(src);
@@ -11077,7 +11331,7 @@ Located in ./vendor/QRCode
     };
     if (!v && kind === 'proc') d.session = sessionFor('تزریق دارو');
     const lastSite = lastSame && lastSame.site;
-    const box = $('#rec-form');
+    const box = freshFormBox();
     const centers = [...new Set([...DB.PLACES, d.center].filter(Boolean))];
     const sitesOpts = [...new Set([...DB.SITES, d.site].filter(Boolean))];
     const doseIsStd = d.dose === null || d.dose === undefined || DB.DOSES.includes(+d.dose);
@@ -11831,12 +12085,17 @@ Located in ./vendor/QRCode
   // پرونده مراجع: روی این گوشی هست، حذف شده، یا هنوز همگام نشده (مثلاً گوشی تازه پیش از دریافت پرونده‌ها؛ آن را «بی‌پرونده» حساب نمی‌کنیم)
   const fileState = (c) => (!c || !c.puid ? 'none' : (DB.patient(c.puid) ? 'live' : (DB.isDeleted(c.puid) ? 'deleted' : 'unknown')));
   const hasFile = (c) => ['live', 'unknown'].includes(fileState(c));
-  /** وصل کردن مراجع به پرونده؛ اگر پرونده از قبل مراجع دیگری دارد، دو مراجع یکی می‌شوند */
+  /** وصل کردن مراجع به پرونده؛ اگر پرونده از قبل مراجع دیگری دارد، دو مراجع یکی می‌شوند
+      (مثل یکی کردن خودکار: شناسه کوچک‌تر می‌ماند تا همه گوشی‌ها یک تصمیم بگیرند) */
   function linkClient(L, c, p) {
     const fv = fileVals(p);
     if (c.puid && !hasFile(c)) c = L.put('clients', Object.assign({}, c, { puid: '' }), me());   // پرونده قبلی‌اش حذف شده بود
     const other = L.clientByPuid(p.uid);
-    if (other && other.id !== c.id && hasFile(other)) { L.mergeClients(other.id, c.id, me()); return L.get('clients', other.id); }
+    if (other && other.id !== c.id && hasFile(other)) {
+      const [keep, drop] = other.id < c.id ? [other, c] : [c, other];
+      L.mergeClients(keep.id, drop.id, me());
+      c = L.get('clients', keep.id);
+    }
     return L.put('clients', Object.assign({}, c, fv, { puid: p.uid, fileNo: p.pid, fileSync: fv }), me());
   }
   function clientFor(L, p, create) {
@@ -11846,11 +12105,17 @@ Located in ./vendor/QRCode
     c = L.all('clients', (x) => !hasFile(x) && p.phone && x.phone && ph10(x.phone) === ph10(p.phone) && sameName(x, p)).sort((a, b) => b.u - a.u)[0];
     if (c) return linkClient(L, c, p);
     const fv = fileVals(p);
-    return L.put('clients', Object.assign({}, fv, { fileNo: p.pid, puid: p.uid, fileSync: fv }), me());
+    // شناسه مراجع = شناسه پرونده: اگر گوشی یا پنجره دیگری هم برای همین بیمار مراجع ساخته باشد، یک رکورد می‌شوند نه دو تا
+    const id = L.newClientId(p.uid);
+    return L.put('clients', Object.assign(id ? { id } : {}, fv, { fileNo: p.pid, puid: p.uid, fileSync: fv }), me());
   }
+  /** دفتری که هنوز هیچ‌وقت از گیت‌هاب گرفته نشده و مراجعی ندارد (مثلاً گوشی تازه): تا اولین همگام‌سازی برایش مراجع ساخته نمی‌شود،
+      وگرنه پیش از رسیدن مراجعان موجود، برای همه بیماران مراجع تکراری ساخته می‌شد. دفتری که همین گوشی ساخته (fresh) مستثناست. */
+  const canCreate = (L) => !L.readonly && !L.guard && L.loaded && (L.fresh || L.sync.at || L.all('clients').length > 0);
   /** نام، تلفن، شماره پرونده و منبع آشنایی بیماران به دفترهای متصل می‌رود (نه بیشتر)؛ تغییر منشی در همین‌ها به پرونده برمی‌گردد */
   function syncClients() {
     for (const L of linked()) {
+      if (!canCreate(L)) continue;
       L.batch(() => {
         for (const p of DB.patients()) {
           const c = L.clientByPuid(p.uid);
@@ -11870,6 +12135,7 @@ Located in ./vendor/QRCode
           }
         }
       });
+      Office.dedupe(L);   // اگر با همه این‌ها تکراری‌ای مانده (مثلاً از نسخه‌های قبلی)، همین حالا یکی می‌شود
     }
   }
   let syncTimer = 0;
@@ -12204,6 +12470,7 @@ Located in ./vendor/QRCode
         cfg.ledgers.push(entry); LS.saveCfg();
         await Office.reloadLedgers();
         const L = Office.ledger(id);
+        L.fresh = true;   // دفتر تازه همین گوشی: مراجعان از همین حالا ساخته می‌شوند
         L.put('meta', { id: 'meta', name, centers: $('#nl-centers', m).value.split(/[،,]/).map((x) => x.trim()).filter(Boolean), linked: isLinked }, me());
         L.put('users', { id: me().id, name: me().name, role: 'manager' }, me());
         if (isLinked) {
@@ -12312,6 +12579,8 @@ Located in ./vendor/QRCode
     for (const L of linked()) L.on((reason) => { if (reason === 'merge') { try { window.dispatchEvent(new Event('office-change')); } catch (e) { /* بی‌اثر */ } } });
     if (linked().length) setTimeout(syncClients, 2500);
     DB.on((reason) => { if (['patient', 'merge', 'replace', 'restore'].includes(reason)) scheduleClients(); });
+    // بعد از هر همگام‌سازی موفق دفتر (مثلاً اولین بار روی گوشی تازه) مراجعان بیماران تازه ساخته می‌شوند
+    LS.on((id, st) => { if (st && st.state === 'ok') { const L = Office.ledger(id); if (L && L.meta.linked) scheduleClients(); } });
   }
   window.DoctorOffice = { start, renderSettings, billBlock, readBill, autoBill, afterVisitSave, afterVisitDelete, isBooked, bookFor, syncClients, afterNewPatient,
     unlinkedCount: () => unlinked().length,

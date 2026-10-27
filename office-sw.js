@@ -1,6 +1,6 @@
 /* کار آفلاین: فایل‌های اپ ذخیره می‌شوند؛ فونت‌ها بعد از اولین دریافت. نسخه با هر تغییر فایل‌ها عوض می‌شود. */
-const VERSION = 'clinic-office-93b9341c2f';
-const BUILD = 'c1f4f40';
+const VERSION = 'clinic-office-450811bf5f';
+const BUILD = 'c4e2c3f';
 const FONTS = 'clinic-office-fonts';
 const PREFIX = VERSION.replace(/-[0-9a-f]+$/, '-');
 const PRECACHE = ["./office.html", "./office.webmanifest", "./office-icon-192.png", "./office-icon-512.png", "./office-maskable-512.png", "./office-apple-touch-icon.png", "./office-favicon-48.png"];
