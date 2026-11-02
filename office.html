@@ -174,6 +174,22 @@ table.plan { width: 100%; border-collapse: collapse; font-size: 14px; min-width:
 
 .warns { display: grid; gap: 6px; margin-block: 12px; }
 .warns div { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; }
+.warns div.caution { background: var(--surface-2); border-inline-start: 3px solid var(--warn); }
+.cx-cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 12px; }
+@media (max-width: 720px) { .cx-cards { grid-template-columns: minmax(0, 1fr); } }
+.cx-card .cx-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding-block: 7px; border-top: 1px solid var(--line); }
+.cx-card h3 + .cx-row { border-top: 0; }
+.cx-l { font-size: 13px; color: var(--muted); flex: 1 1 140px; }
+.cx-v { font-size: 14.5px; }
+.cx-v .big2 { font-size: 20px; font-weight: 800; }
+.cx-n { flex-basis: 100%; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.cx-wide { grid-column: 1 / -1; }
+.cx-head { flex-wrap: wrap; }
+.cx-head .btn-sm { min-height: 40px; }
+.cx-select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+  padding-inline: 10px; font: inherit; font-size: 14px; }
+.winline { background: var(--teal-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; margin-bottom: 8px; }
+.winline b { color: var(--teal); }
 .warns div::before { content: "!"; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
   background: var(--warn); color: var(--surface); font-weight: 800; font-size: 12px; margin-inline-end: 8px; }
 
@@ -307,7 +323,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 .name-row { display: flex; gap: 8px; align-items: stretch; }
 .name-row input { flex: 1; min-width: 0; }
 .name-row .chipbtn { margin: 0; align-self: center; white-space: nowrap; }
-.linked { font-size: 12.5px; color: var(--teal); display: flex; gap: 8px; align-items: center; }
+.linked { font-size: 12.5px; color: var(--teal); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 .modal { position: fixed; inset: 0; z-index: 30; background: rgba(10, 20, 22, .45); display: grid; align-items: end; justify-items: center; }
 .modal-in { width: min(720px, 100%); max-height: 86vh; overflow: auto; background: var(--bg); border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -502,7 +518,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "c4e2c3f", buildAt: 1793111014239 };</script>
+<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "9d43456", buildAt: 1793661888154 };</script>
 <script>
 /* ---- jdate.js ---- */
 /* تاریخ شمسی برای پرونده‌ها: خواندن قالب‌های مختلف، شکل استاندارد «yyyy/mm/dd»، شماره روز برای فاصله و مرتب‌سازی */
