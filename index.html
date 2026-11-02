@@ -174,6 +174,22 @@ table.plan { width: 100%; border-collapse: collapse; font-size: 14px; min-width:
 
 .warns { display: grid; gap: 6px; margin-block: 12px; }
 .warns div { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; }
+.warns div.caution { background: var(--surface-2); border-inline-start: 3px solid var(--warn); }
+.cx-cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 12px; }
+@media (max-width: 720px) { .cx-cards { grid-template-columns: minmax(0, 1fr); } }
+.cx-card .cx-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding-block: 7px; border-top: 1px solid var(--line); }
+.cx-card h3 + .cx-row { border-top: 0; }
+.cx-l { font-size: 13px; color: var(--muted); flex: 1 1 140px; }
+.cx-v { font-size: 14.5px; }
+.cx-v .big2 { font-size: 20px; font-weight: 800; }
+.cx-n { flex-basis: 100%; font-size: 11.5px; color: var(--muted); line-height: 1.6; }
+.cx-wide { grid-column: 1 / -1; }
+.cx-head { flex-wrap: wrap; }
+.cx-head .btn-sm { min-height: 40px; }
+.cx-select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink);
+  padding-inline: 10px; font: inherit; font-size: 14px; }
+.winline { background: var(--teal-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; margin-bottom: 8px; }
+.winline b { color: var(--teal); }
 .warns div::before { content: "!"; display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
   background: var(--warn); color: var(--surface); font-weight: 800; font-size: 12px; margin-inline-end: 8px; }
 
@@ -307,7 +323,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 .name-row { display: flex; gap: 8px; align-items: stretch; }
 .name-row input { flex: 1; min-width: 0; }
 .name-row .chipbtn { margin: 0; align-self: center; white-space: nowrap; }
-.linked { font-size: 12.5px; color: var(--teal); display: flex; gap: 8px; align-items: center; }
+.linked { font-size: 12.5px; color: var(--teal); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
 .modal { position: fixed; inset: 0; z-index: 30; background: rgba(10, 20, 22, .45); display: grid; align-items: end; justify-items: center; }
 .modal-in { width: min(720px, 100%); max-height: 86vh; overflow: auto; background: var(--bg); border-radius: 16px 16px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
 .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -559,10 +575,17 @@ table.data th { color: var(--muted); font-weight: 600; }
               <button type="button" role="radio" data-value="250">۲۵۰</button><button type="button" role="radio" data-value="300">۳۰۰</button><button type="button" role="radio" data-value="500">۵۰۰</button>
             </div></div>
           <div class="field c6"><label>نوع برنامه</label>
-            <div class="seg full" style="--n:3" role="radiogroup" aria-label="نوع برنامه" data-name="planType">
-              <button type="button" role="radio" data-value="Normal">عادی</button><button type="button" role="radio" data-value="DASH">DASH</button><button type="button" role="radio" data-value="Diabetic">دیابت</button>
+            <div class="seg full" style="--n:4" role="radiogroup" aria-label="نوع برنامه" data-name="planType">
+              <button type="button" role="radio" data-value="Normal">عادی</button><button type="button" role="radio" data-value="Mediterranean">مدیترانه‌ای</button><button type="button" role="radio" data-value="DASH">DASH</button><button type="button" role="radio" data-value="Diabetic">دیابت</button><button type="button" role="radio" data-value="HighProtein">پرپروتئین</button><button type="button" role="radio" data-value="LowCarb">لوکارب</button><button type="button" role="radio" data-value="Keto">کتوژنیک</button>
             </div>
             <div class="hint" id="plan-hint"></div></div>
+          <div class="field c6"><label>زمان‌بندی وعده‌ها (فستینگ)</label>
+            <div class="seg full" style="--n:4" role="radiogroup" aria-label="زمان‌بندی وعده‌ها" data-name="eating">
+              <button type="button" role="radio" data-value="std">معمول</button><button type="button" role="radio" data-value="tre14">۱۴:۱۰</button><button type="button" role="radio" data-value="tre16">۱۶:۸</button><button type="button" role="radio" data-value="f52">۵:۲</button>
+            </div>
+            <div class="hint" id="eating-hint" hidden></div></div>
+          <div class="field c6" id="window-field" hidden><label>بازه غذا خوردن (ساعت)</label>
+            <div class="seg full" style="--n:4" role="radiogroup" aria-label="بازه غذا خوردن" data-name="window" id="window-seg"></div></div>
         </div>
       </section>
 
@@ -613,8 +636,14 @@ table.data th { color: var(--muted); font-weight: 600; }
       <div class="warns" id="r-warns"></div>
       <section class="block" style="border:0;padding-top:4px">
         <h2>جدول واحدها <small>برای تغییر، روی هر عدد بزنید</small></h2>
+        <div class="winline" id="r-window" hidden></div>
         <div class="tablewrap"><table class="plan" id="plan-table"></table></div>
         <div class="planmeta"><span id="r-diff"></span><button type="button" class="linkbtn" id="btn-reset">بازگرداندن پیشنهاد اولیه</button></div>
+        <div id="r-fastday" hidden>
+          <h2 style="margin-top:18px">روز کم‌کالری ۵:۲ <small>هفته‌ای ۲ روز غیرپشت‌سرهم</small></h2>
+          <div class="tablewrap"><table class="plan" id="fastday-table"></table></div>
+          <div class="hint" id="fastday-note"></div>
+        </div>
       </section>
       <section class="block">
         <h2>نمونه منوی یک روز <small>قابل ویرایش؛ همین متن در سند می‌آید</small></h2>
@@ -636,7 +665,7 @@ table.data th { color: var(--muted); font-weight: 600; }
         <div class="seg full" style="--n:2" role="radiogroup" aria-label="محتوای فایل" data-name="scope">
           <button type="button" role="radio" data-value="full">کامل با راهنما</button><button type="button" role="radio" data-value="personal">فقط برنامه شخصی</button>
         </div>
-        <div class="hint">«فقط برنامه شخصی» دو صفحه اول است و برای مراجعه‌های بعدی کافی است.</div>
+        <div class="hint">«فقط برنامه شخصی» صفحه‌های جدول، منو، نکات و راهنمای نوع رژیم است و برای مراجعه‌های بعدی کافی است.</div>
         <div class="paper"><canvas id="preview" width="340" height="481" aria-label="پیش‌نمایش صفحه اول"></canvas><p id="preview-note">پیش‌نمایش صفحه اول</p></div>
         <div class="exports">
           <button type="button" class="secondary" id="btn-docx">دانلود Word</button>
@@ -701,6 +730,9 @@ table.data th { color: var(--muted); font-weight: 600; }
   <!-- مطب: نوبت‌ها و صندوق -->
   <div class="view" id="view-office" hidden></div>
 
+  <!-- محاسبه‌گر شاخص‌ها -->
+  <div class="view" id="view-calc" hidden></div>
+
   <!-- تنظیمات -->
   <div class="view settings" id="view-settings" hidden></div>
 </div>
@@ -724,6 +756,7 @@ table.data th { color: var(--muted); font-weight: 600; }
   <button type="button" data-view="records"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>پرونده‌ها</button>
   <button type="button" data-view="office"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13h3M7.5 16.5h6"/></svg>مطب</button>
   <button type="button" data-view="stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21.5 20h-19"/></svg>آمار</button>
+  <button type="button" data-view="calc"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8.5 11.5h.01M12 11.5h.01M15.5 11.5h.01M8.5 15h.01M12 15h.01M15.5 15v2.5M8.5 18h.01M12 18h.01"/></svg>محاسبه‌گر</button>
 </nav>
 
 <div class="modal" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="picker-title">
@@ -735,7 +768,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "c4e2c3f", buildAt: 1793111014225 };</script>
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "9d43456", buildAt: 1793661888123 };</script>
 <script>
 /* ---- JSZip (مجوز MIT، متن کامل در lib/jszip-LICENSE.md) ---- */
 /*!
@@ -1864,6 +1897,103 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   "Donnelly JE, et al. ACSM Position Stand: Appropriate physical activity intervention strategies for weight loss and prevention of weight regain for adults. Med Sci Sports Exerc. 2009;41(2):459-471."
  ],
  "sources_note": "مقادیر غذاهای ایرانی و ساندویچ‌ها از دستور پخت معمول و داده‌های ترکیب مواد غذایی محاسبه شده و تقریبی است.",
+ "diet_guides": {
+  "Mediterranean": {
+   "title": "راهنمای رژیم مدیترانه‌ای",
+   "items": [
+    "روغن زیتون را روغن اصلی پخت‌وپز و سالاد کنید؛ به اندازه واحدهای چربی جدول.",
+    "هفته‌ای دست‌کم دو بار ماهی (بهتر است ماهی چرب مثل قزل‌آلا، سالمون یا ساردین) و دست‌کم سه بار حبوبات (عدس، نخود، لوبیا) به‌جای گوشت قرمز بخورید.",
+    "هر روز سبزی فراوان بخورید و نان و غلات را سبوس‌دار انتخاب کنید (سنگک، نان جو، برنج قهوه‌ای، بلغور).",
+    "در میان‌وعده‌ها میوه و مغزهای خام و بی‌نمک (گردو، بادام، فندق) به اندازه جدول بخورید.",
+    "گوشت قرمز را کم کنید و گوشت فرآوری‌شده (سوسیس، کالباس)، شیرینی و نوشابه را به حداقل برسانید."
+   ]
+  },
+  "DASH": {
+   "title": "راهنمای رژیم DASH (کنترل فشار خون)",
+   "items": [
+    "سدیم روزانه حداکثر ۲۳۰۰ میلی‌گرم است؛ یعنی حدود یک قاشق مرباخوری نمک برای کل روز، همراه نمکِ نان و غذاهای آماده. نمکدان را سر سفره نگذارید و به‌جای نمک از لیمو، سیر، سبزی‌های معطر و ادویه استفاده کنید.",
+    "غذاهای شور و آماده را کنار بگذارید: سوسیس و کالباس، کنسرو، چیپس و پفک، پنیر شور، خیارشور و ترشی شور، سس‌ها و فست‌فود.",
+    "میوه و سبزی را هر روز به اندازه جدول بخورید و لبنیات را کم‌چرب انتخاب کنید.",
+    "مغزها، دانه‌ها و حبوبات بی‌نمک را چند بار در هفته بخورید.",
+    "اگر بیماری کلیه دارید یا دارویی مصرف می‌کنید که پتاسیم خون را بالا می‌برد، مقدار میوه و سبزی را با پزشک هماهنگ کنید."
+   ]
+  },
+  "Diabetic": {
+   "title": "راهنمای رژیم دیابت",
+   "items": [
+    "وعده‌ها را حذف نکنید و نان، برنج، میوه و لبنیات را طبق جدول بین وعده‌ها پخش کنید تا قند خون یک‌باره بالا نرود.",
+    "در هر وعده اول سالاد و سبزی، بعد پروتئین و در آخر نان یا برنج را بخورید؛ نان سبوس‌دار (سنگک، جو) بهتر از نان سفید است.",
+    "قند، عسل، شیرینی، نوشابه و آبمیوه را حذف کنید و میوه را کامل و در میان‌وعده بخورید.",
+    "بعد از ناهار و شام ۱۰ تا ۱۵ دقیقه پیاده‌روی کنید.",
+    "اگر انسولین یا قرص‌هایی مثل گلی‌بنکلامید مصرف می‌کنید و لرزش، تعریق، تپش قلب یا گیجی داشتید، قند خون را بسنجید و ۱۵ گرم قند ساده بخورید (۳ حبه قند یا نصف لیوان آبمیوه)؛ ۱۵ دقیقه بعد دوباره بسنجید."
+   ]
+  },
+  "HighProtein": {
+   "title": "راهنمای رژیم پرپروتئین",
+   "items": [
+    "در هر وعده اصلی یک منبع پروتئین بخورید (مرغ، ماهی، گوشت کم‌چرب، تخم‌مرغ، پنیر، ماست یا حبوبات) تا پروتئین در طول روز پخش شود.",
+    "منابع کم‌چرب را انتخاب کنید: سینه مرغ بی‌پوست، ماهی، گوشت بی‌چربی، سفیده تخم‌مرغ و ماست یونانی کم‌چرب.",
+    "اگر اشتهایتان کم است (مثلاً با داروی تزریقی کاهش وزن)، اول پروتئین وعده را بخورید و بعد بقیه غذا را.",
+    "هفته‌ای دست‌کم دو جلسه تمرین قدرتی انجام دهید تا عضله‌تان حفظ شود.",
+    "روزانه ۸ تا ۱۲ لیوان آب بنوشید. اگر بیماری کلیه دارید، پیش از افزایش پروتئین با پزشک هماهنگ کنید."
+   ]
+  },
+  "LowCarb": {
+   "title": "راهنمای رژیم کم‌کربوهیدرات (لوکارب)",
+   "items": [
+    "نان، برنج، ماکارونی، سیب‌زمینی و حبوبات را فقط به اندازه واحدهای نان جدول بخورید؛ قند، شیرینی، نوشابه و آبمیوه را حذف کنید.",
+    "نیمی از بشقاب را سبزی بدون نشاسته پر کنید؛ پروتئین (مرغ، ماهی، تخم‌مرغ، گوشت کم‌چرب، پنیر) و چربی سالم (روغن زیتون، زیتون، مغزها) جای کربوهیدرات را می‌گیرند.",
+    "میوه را کامل و در میان‌وعده بخورید، نه به‌صورت آبمیوه.",
+    "روزانه ۸ تا ۱۲ لیوان آب بنوشید؛ اگر یبوست شدید، آب و سبزی را بیشتر کنید.",
+    "اگر داروی قند خون یا فشار خون مصرف می‌کنید، پیش از شروع با پزشک هماهنگ کنید؛ ممکن است دوز دارو باید کم شود."
+   ]
+  },
+  "Keto": {
+   "title": "راهنمای رژیم کتوژنیک",
+   "items": [
+    "کربوهیدرات روزانه کمتر از ۵۰ گرم است: نان، برنج، ماکارونی، سیب‌زمینی، حبوبات، میوه، قند، عسل، شیرینی، نوشابه و آبمیوه را جز به اندازه جدول نخورید.",
+    "هر وعده: پروتئین (گوشت، مرغ، ماهی، تخم‌مرغ، پنیر) + سبزی بدون نشاسته (کاهو، خیار، کلم، بروکلی، گل‌کلم، کدو، بادمجان، فلفل دلمه‌ای، قارچ) + چربی سالم (روغن زیتون، زیتون، گردو، بادام). کره و روغن حیوانی را محدود کنید.",
+    "روزهای اول ممکن است سردرد، خستگی، سرگیجه یا یبوست داشته باشید. روزانه دست‌کم ۸ تا ۱۰ لیوان آب بنوشید و نمک غذا را بدون دستور پزشک کاملاً حذف نکنید؛ این علائم معمولاً یکی دو هفته بعد کم می‌شود.",
+    "اگر دیابت دارید یا داروی قند خون (به‌ویژه انسولین، گلی‌بنکلامید، امپاگلیفلوزین یا داپاگلیفلوزین)، داروی فشار خون یا ادرارآور مصرف می‌کنید، بدون هماهنگی با پزشک این رژیم را شروع نکنید.",
+    "اگر تهوع و استفراغ، درد شکم، تنفس تند، گیجی یا خواب‌آلودگی غیرعادی داشتید، فوراً به پزشک یا اورژانس مراجعه کنید.",
+    "این رژیم کوتاه‌مدت و زیر نظر پزشک است؛ آزمایش چربی خون و آزمایش‌های دیگر طبق نظر پزشک تکرار می‌شود."
+   ]
+  }
+ },
+ "eating_guides": {
+  "tre": {
+   "title": "راهنمای فستینگ {label}",
+   "items": [
+    "همه وعده‌ها را بین ساعت {start} تا {end} بخورید. بیرون از این ساعت‌ها فقط آب، چای و قهوه بدون قند و شیر و دمنوش بی‌قند مجاز است.",
+    "اگر تازه شروع می‌کنید، چند روز با بازه ۱۲ ساعته شروع کنید و در یکی دو هفته به بازه برنامه برسید.",
+    "در بازه غذا خوردن همان جدول را بخورید، نه بیشتر؛ فستینگ با کالری کمتر نتیجه می‌دهد، نه با پرخوری در ساعت‌های مجاز.",
+    "در ساعت‌های ناشتا آب فراوان بنوشید.",
+    "اگر دیابت دارید و دارو یا انسولین مصرف می‌کنید، باردار یا شیرده هستید یا سابقه اختلال خوردن دارید، بدون نظر پزشک فستینگ نکنید. اگر لرزش، تعریق سرد، سرگیجه یا ضعف شدید داشتید، ناشتایی را بشکنید و چیزی شیرین بخورید."
+   ]
+  },
+  "f52": {
+   "title": "راهنمای فستینگ ۵:۲",
+   "items": [
+    "هفته‌ای دو روز غیرپشت‌سرهم (مثلاً شنبه و سه‌شنبه) جدول «روز کم‌کالری» را بخورید و پنج روز دیگر جدول اصلی را.",
+    "در روزهای کم‌کالری آب، چای و قهوه بی‌قند و دمنوش فراوان بنوشید و ورزش سنگین را به روزهای عادی بگذارید.",
+    "روز بعد از روز کم‌کالری جبرانی نخورید؛ همان جدول اصلی کافی است.",
+    "اگر در روز کم‌کالری سرگیجه، ضعف شدید یا سردرد آزاردهنده داشتید، یک میان‌وعده سبک (مثلاً یک لیوان شیر یا یک میوه) اضافه کنید و به پزشک بگویید.",
+    "اگر دیابت دارید و دارو یا انسولین مصرف می‌کنید، باردار یا شیرده هستید یا سابقه اختلال خوردن دارید، بدون نظر پزشک این روش را شروع نکنید."
+   ]
+  }
+ },
+ "fast_day_title": "روز کم‌کالری (هفته‌ای ۲ روز غیرپشت‌سرهم)",
+ "fast_day_note": "در دو روز کم‌کالری هفته به‌جای جدول بالا این جدول را بخورید. روزهای دیگر همان جدول اصلی است.",
+ "diet_sources": {
+  "Mediterranean": "Estruch R, et al. Primary Prevention of Cardiovascular Disease with a Mediterranean Diet Supplemented with Extra-Virgin Olive Oil or Nuts. N Engl J Med. 2018;378:e34.",
+  "DASH": "Sacks FM, et al. Effects on blood pressure of reduced dietary sodium and the Dietary Approaches to Stop Hypertension (DASH) diet. N Engl J Med. 2001;344:3-10.",
+  "Diabetic": "Evert AB, et al. Nutrition Therapy for Adults With Diabetes or Prediabetes: A Consensus Report. Diabetes Care. 2019;42:731-754.",
+  "HighProtein": "Mozaffarian D, et al. Nutritional priorities to support GLP-1 therapy for obesity: a joint Advisory (ACLM, ASN, OMA, TOS). Am J Clin Nutr. 2025.",
+  "LowCarb": "Feinman RD, et al. Dietary carbohydrate restriction as the first approach in diabetes management: critical review and evidence base. Nutrition. 2015;31:1-13.",
+  "Keto": "Feinman RD, et al. Dietary carbohydrate restriction as the first approach in diabetes management: critical review and evidence base. Nutrition. 2015;31:1-13.",
+  "tre": "Liu D, et al. Calorie Restriction with or without Time-Restricted Eating in Weight Loss. N Engl J Med. 2022;386:1495-1504.",
+  "f52": "Carter S, et al. Effect of Intermittent Compared With Continuous Energy Restricted Diet on Glycemic Control in Patients With Type 2 Diabetes. JAMA Netw Open. 2018;1(3):e180756."
+ },
  "brand": {
   "name": "دکتر محمد بذرافشان",
   "subtitle": "تغذیه و مدیریت وزن",
@@ -1880,7 +2010,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
 </script>
 <script>
 /* ---- engine.js ---- */
-/* موتور محاسبه برنامه رژیم — هم‌خوان خط‌به‌خط با functions.py (هر تغییر باید در هر دو اعمال شود) */
+/* موتور محاسبه برنامه رژیم. سه نوع اول (عادی، DASH، دیابت) هم‌خوان با functions.py نسخه رومیزی است؛ نوع‌های تازه و فستینگ فقط در این اپ‌اند. */
 (function (root) {
   'use strict';
 
@@ -1958,11 +2088,76 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     'Night Snack':   { Grains: 0,    Protein: 0,   Fats: 0,   Dairy: 0.3,  Fruits: 0.3, Vegetables: 0 },
   };
 
+  // مدیترانه‌ای: سبزی و میوه فراوان، مغزها در میان‌وعده، روغن زیتون در وعده‌ها (الگوی PREDIMED)
+  const MED_DIST = {
+    'Breakfast':     { Grains: 0.25, Protein: 0.2, Fats: 0.25, Dairy: 0.3, Fruits: 0,    Vegetables: 0.15 },
+    'Morning Snack': { Grains: 0,    Protein: 0,   Fats: 0.1,  Dairy: 0,   Fruits: 0.35, Vegetables: 0 },
+    'Lunch':         { Grains: 0.4,  Protein: 0.4, Fats: 0.3,  Dairy: 0,   Fruits: 0,    Vegetables: 0.4 },
+    'Evening Snack': { Grains: 0.1,  Protein: 0,   Fats: 0.1,  Dairy: 0.4, Fruits: 0.3,  Vegetables: 0 },
+    'Dinner':        { Grains: 0.25, Protein: 0.4, Fats: 0.25, Dairy: 0.3, Fruits: 0,    Vegetables: 0.45 },
+    'Night Snack':   { Grains: 0,    Protein: 0,   Fats: 0,    Dairy: 0,   Fruits: 0.35, Vegetables: 0 },
+  };
+  // پرپروتئین: پروتئین در هر وعده اصلی و یک میان‌وعده (برای حفظ عضله در کاهش وزن)
+  const HP_DIST = {
+    'Breakfast':     { Grains: 0.25, Protein: 0.25, Fats: 0.3, Dairy: 0.3, Fruits: 0.2, Vegetables: 0.1 },
+    'Morning Snack': { Grains: 0,    Protein: 0,    Fats: 0,   Dairy: 0.3, Fruits: 0.4, Vegetables: 0 },
+    'Lunch':         { Grains: 0.4,  Protein: 0.35, Fats: 0.3, Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Evening Snack': { Grains: 0.1,  Protein: 0.1,  Fats: 0,   Dairy: 0.4, Fruits: 0,   Vegetables: 0 },
+    'Dinner':        { Grains: 0.25, Protein: 0.3,  Fats: 0.4, Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Night Snack':   { Grains: 0,    Protein: 0,    Fats: 0,   Dairy: 0,   Fruits: 0.4, Vegetables: 0 },
+  };
+  // کم‌کربوهیدرات: نان و برنج فقط در صبحانه و ناهار، میوه در میان‌وعده‌ها
+  const LOWCARB_DIST = {
+    'Breakfast':     { Grains: 0.5, Protein: 0.25, Fats: 0.3, Dairy: 0.5, Fruits: 0,   Vegetables: 0.1 },
+    'Morning Snack': { Grains: 0,   Protein: 0,    Fats: 0,   Dairy: 0,   Fruits: 0.5, Vegetables: 0 },
+    'Lunch':         { Grains: 0.5, Protein: 0.35, Fats: 0.3, Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Evening Snack': { Grains: 0,   Protein: 0,    Fats: 0.1, Dairy: 0.5, Fruits: 0.5, Vegetables: 0 },
+    'Dinner':        { Grains: 0,   Protein: 0.4,  Fats: 0.3, Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Night Snack':   { Grains: 0,   Protein: 0,    Fats: 0,   Dairy: 0,   Fruits: 0,   Vegetables: 0 },
+  };
+  // کتوژنیک: چهار وعده؛ بدون نان و میوه (اگر دستی اضافه شود، جای پیش‌فرضشان مشخص است)
+  const KETO_DIST = {
+    'Breakfast':     { Grains: 0.5, Protein: 0.25, Fats: 0.25, Dairy: 0,   Fruits: 0,   Vegetables: 0.1 },
+    'Morning Snack': { Grains: 0,   Protein: 0,    Fats: 0,    Dairy: 0,   Fruits: 0,   Vegetables: 0 },
+    'Lunch':         { Grains: 0.5, Protein: 0.35, Fats: 0.3,  Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Evening Snack': { Grains: 0,   Protein: 0.1,  Fats: 0.15, Dairy: 1,   Fruits: 1,   Vegetables: 0 },
+    'Dinner':        { Grains: 0,   Protein: 0.3,  Fats: 0.3,  Dairy: 0,   Fruits: 0,   Vegetables: 0.45 },
+    'Night Snack':   { Grains: 0,   Protein: 0,    Fats: 0,    Dairy: 0,   Fruits: 0,   Vegetables: 0 },
+  };
+
+  // ترتیب کلیدها همان ترتیب نمایش است. proteinPerKg: کف پروتئین به ازای هر کیلو وزن مرجع؛ fixedRange: کمینه و بیشینه
+  // لبنیات، میوه و سبزی بعد از ترجیحات؛ maxUnits: سقف واحد روزانه در طراحی خودکار
   const PLAN_TYPES = {
     Normal:   { fa: 'عادی', macros: { C: 55, P: 20, F: 25 }, bounds: { C: [45, 65], P: [15, 25], F: [20, 35] }, dist: NORMAL_DIST },
+    Mediterranean: { fa: 'مدیترانه‌ای', macros: { C: 45, P: 18, F: 37 }, bounds: { C: [40, 52], P: [15, 25], F: [30, 40] }, dist: MED_DIST },
     DASH:     { fa: 'DASH (فشار خون)', macros: { C: 55, P: 18, F: 27 }, bounds: { C: [50, 60], P: [15, 25], F: [22, 30] }, dist: DASH_DIST },
     Diabetic: { fa: 'دیابت', macros: { C: 45, P: 20, F: 35 }, bounds: { C: [35, 55], P: [15, 25], F: [25, 40] }, dist: DIABETIC_DIST },
+    HighProtein: { fa: 'پرپروتئین', macros: { C: 38, P: 28, F: 34 }, bounds: { C: [28, 45], P: [24, 35], F: [28, 42] }, dist: HP_DIST,
+      proteinPerKg: { lose: 1.4, other: 1.2 } },
+    LowCarb:  { fa: 'کم‌کربوهیدرات', macros: { C: 25, P: 25, F: 50 }, bounds: { C: [18, 26], P: [20, 32], F: [42, 58] }, dist: LOWCARB_DIST,
+      fixedRange: { Dairy: [0.5, 3.0], Fruits: [0.0, 3.0], Vegetables: [3.0, 8.0] } },
+    Keto:     { fa: 'کتوژنیک', macros: { C: 8, P: 25, F: 67 }, bounds: { C: [7, 10], P: [20, 32], F: [58, 76] }, dist: KETO_DIST,
+      fixedRange: { Dairy: [0.0, 2.0], Fruits: [0.0, 1.0], Vegetables: [2.0, 6.0] }, maxUnits: { Grains: 0 } },
   };
+
+  // الگوی زمانی وعده‌ها (فستینگ). TRE: همه وعده‌ها در یک بازه؛ سهم وعده‌های بیرون از بازه به وعده نزدیک منتقل می‌شود.
+  // ۵:۲: پنج روز به اندازه انرژی کل، دو روز غیرپشت‌سرهم ۵۰۰ (زن) یا ۶۰۰ (مرد) کیلوکالری.
+  const EATING = {
+    std:   { fa: 'معمول', label: '' },
+    tre14: { fa: '۱۴:۱۰', label: 'فستینگ ۱۴:۱۰', hours: 10, starts: [8, 9, 10, 11], start: 10,
+      meals: ['Breakfast', 'Lunch', 'Evening Snack', 'Dinner'], move: { 'Morning Snack': 'Breakfast', 'Night Snack': 'Dinner' },
+      at: { 'Breakfast': 0, 'Lunch': 4, 'Evening Snack': 7, 'Dinner': 9 } },
+    tre16: { fa: '۱۶:۸', label: 'فستینگ ۱۶:۸', hours: 8, starts: [10, 11, 12, 13], start: 12,
+      meals: ['Lunch', 'Evening Snack', 'Dinner'], move: { 'Breakfast': [['Lunch', 0.5], ['Evening Snack', 0.5]], 'Morning Snack': 'Evening Snack', 'Night Snack': 'Dinner' },
+      at: { 'Lunch': 0, 'Evening Snack': 4, 'Dinner': 7 } },
+    f52:   { fa: '۵:۲', label: 'فستینگ ۵:۲' },
+  };
+  // روز کم‌کالری ۵:۲ (واحدها ثابت؛ پروتئین و سبزی برای سیری)
+  const FAST_DAY = {
+    f: { kcal: 500, plan: { 'Breakfast': { Protein: 1, Dairy: 1 }, 'Dinner': { Protein: 2, Vegetables: 4, Fats: 0.5 } } },
+    m: { kcal: 600, plan: { 'Breakfast': { Protein: 1, Dairy: 1, Fruits: 1 }, 'Dinner': { Protein: 2.5, Vegetables: 4, Fats: 1 } } },
+  };
+  const eatingOf = (k) => (has(EATING, k) ? k : 'std');
 
   const DASH_LEVELS = [[1300, [2.5, 3.5, 3.5]], [1500, [2.5, 4.0, 3.5]], [1700, [2.5, 4.0, 3.5]],
                        [2000, [2.5, 4.5, 4.5]], [2300, [2.5, 4.5, 4.5]], [2850, [3.0, 5.5, 5.5]]];
@@ -2063,20 +2258,42 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       dairy = e < 1800 ? 2.0 : 2.5;
       fruit = e < 1800 ? 2.0 : 3.0;
       veg = e < 1600 ? 4.0 : 5.0;
+    } else if (planType === 'Mediterranean') {
+      dairy = e < 1600 ? 1.5 : (e < 2200 ? 2.0 : 2.5);
+      fruit = e < 1400 ? 2.0 : (e < 2000 ? 3.0 : 4.0);
+      veg = e < 1600 ? 4.0 : (e < 2000 ? 5.0 : 6.0);
+    } else if (planType === 'HighProtein') {
+      dairy = e < 1600 ? 2.0 : (e < 2200 ? 2.5 : 3.0);
+      fruit = e < 1600 ? 2.0 : 3.0;
+      veg = e < 1600 ? 4.0 : 5.0;
+    } else if (planType === 'LowCarb') {
+      dairy = e < 1800 ? 1.5 : 2.0;
+      fruit = e < 1600 ? 1.0 : 2.0;
+      veg = e < 1600 ? 4.0 : (e < 2200 ? 5.0 : 6.0);
+    } else if (planType === 'Keto') {
+      dairy = 1.0;
+      fruit = 0.0;
+      veg = e < 1400 ? 3.0 : (e < 2000 ? 4.0 : 5.0);
     } else {
       dairy = e < 1800 ? 2.0 : (e < 2600 ? 2.5 : 3.0);
       fruit = e < 1400 ? 2.0 : (e < 2000 ? 3.0 : 4.0);
       veg = e < 1600 ? 3.0 : (e < 1800 ? 4.0 : 5.0);
     }
     const out = { Dairy: dairy, Fruits: fruit, Vegetables: veg };
+    const range = (PLAN_TYPES[planType] && PLAN_TYPES[planType].fixedRange) || {};
     for (const g of ['Dairy', 'Fruits', 'Vegetables']) {
+      const [lo, hi] = range[g] || [FIXED_MIN[g], FIXED_MAX[g]];
       const v = out[g] + FIXED_STEP[g] * (prefs[g] || 0);
-      out[g] = Math.min(FIXED_MAX[g], Math.max(FIXED_MIN[g], v));
+      out[g] = Math.min(hi, Math.max(lo, v));
     }
     return out;
   }
 
-  function proteinFloorGrams(goal, refWeight) { return (goal === 'lose' ? 1.2 : 0.8) * refWeight; }
+  /** کف پروتئین روزانه (گرم) به ازای وزن مرجع؛ برنامه پرپروتئین کف بالاتری دارد */
+  function proteinFloorGrams(goal, refWeight, planType) {
+    const per = (PLAN_TYPES[planType] && PLAN_TYPES[planType].proteinPerKg) || { lose: 1.2, other: 0.8 };
+    return (goal === 'lose' ? per.lose : per.other) * refWeight;
+  }
 
   function macroTargets(planType, calories, prefs, proteinFloorG, override) {
     const pt = PLAN_TYPES[planType];
@@ -2147,17 +2364,18 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     return loss;
   }
 
-  function dailyUnits(calories, macros, fixed) {
+  function dailyUnits(calories, macros, fixed, maxUnits) {
     const D = fixed.Dairy, Fr = fixed.Fruits, V = fixed.Vegetables;
     const carbG = calories * macros.C / 400.0;
     const proG = calories * macros.P / 400.0;
-    const s0 = roundHalf(Math.max(0.0, (carbG - (12 * D + 15 * Fr + 5 * V)) / 15.0));
+    const gMax = maxUnits && typeof maxUnits.Grains === 'number' ? maxUnits.Grains : Infinity;
+    const s0 = Math.min(gMax, roundHalf(Math.max(0.0, (carbG - (12 * D + 15 * Fr + 5 * V)) / 15.0)));
     const m0 = roundHalf(Math.max(0.0, (proG - (8 * D + 2 * V + 3 * s0)) / 7.0));
     const fixedKcal = D * MACRO_GROUPS.Dairy.calorie + Fr * MACRO_GROUPS.Fruits.calorie + V * MACRO_GROUPS.Vegetables.calorie;
     const kS = MACRO_GROUPS.Grains.calorie, kM = MACRO_GROUPS.Protein.calorie, kF = MACRO_GROUPS.Fats.calorie;
     const sLo = Math.max(MIN_UNITS.Grains, s0 - SEARCH_RADIUS);
     const mLo = Math.max(MIN_UNITS.Protein, m0 - SEARCH_RADIUS);
-    const nS = Math.round((s0 + SEARCH_RADIUS - sLo) * 2) + 1;
+    const nS = Math.round((Math.min(gMax, s0 + SEARCH_RADIUS) - sLo) * 2) + 1;
     const nM = Math.round((m0 + SEARCH_RADIUS - mLo) * 2) + 1;
     let best = null, bestLoss = null;
     const consider = (s, m, f) => {
@@ -2212,15 +2430,64 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     return u;
   }
 
-  function designPlan(calorieGoal, planType, preferences, macros, goal, refWeight) {
+  /** سهم وعده‌ها برای فستینگ زمانی (TRE): سهم وعده‌های بیرون از بازه به وعده هم‌جوار داخل بازه منتقل می‌شود */
+  function eatingDist(dist, eatingKey) {
+    const ep = EATING[eatingOf(eatingKey)];
+    const out = JSON.parse(JSON.stringify(dist));
+    if (!ep.meals) return out;
+    for (const meal of MEALS) {
+      if (ep.meals.includes(meal)) continue;
+      const mv = ep.move[meal];
+      const targets = !mv ? [] : (Array.isArray(mv) ? mv : [[mv, 1]]);
+      for (const g of GROUPS) {
+        for (const [to, w] of targets) out[to][g] = (out[to][g] || 0) + w * (out[meal][g] || 0);
+        out[meal][g] = 0;
+      }
+    }
+    return out;
+  }
+
+  /** بازه و ساعت وعده‌ها برای الگوی زمانی؛ برای الگوی معمول null */
+  function eatingWindow(eatingKey, start) {
+    const key = eatingOf(eatingKey);
+    const ep = EATING[key];
+    if (!ep.meals) return { key, label: ep.label, meals: MEALS.slice(), start: null, end: null, times: null };
+    const s = ep.starts.includes(+start) ? +start : ep.start;
+    const times = {};
+    for (const m of ep.meals) times[m] = [s + ep.at[m], s + ep.at[m] + 1];
+    return { key, label: ep.label, meals: ep.meals.slice(), start: s, end: s + ep.hours, times };
+  }
+
+  /** هشدارهای ایمنی نوع برنامه و فستینگ (برای پزشک؛ در سند بیمار نمی‌آید) */
+  function safetyNotes(planType, eatingKey) {
+    const out = [];
+    if (planType === 'Keto') {
+      out.push('کتوژنیک برای بارداری و شیردهی، دیابت نوع ۱، مصرف مهارکننده SGLT2 (امپاگلیفلوزین، داپاگلیفلوزین؛ خطر کتواسیدوز با قند طبیعی)، پانکراتیت، بیماری پیشرفته کبد یا کلیه، هیپرکلسترولمی خانوادگی، پورفیری و اختلال‌های اکسیداسیون چربی مناسب نیست.');
+      out.push('با انسولین، سولفونیل‌اوره، داروی فشار خون یا ادرارآور، دوز دارو را از روزهای اول پایش و تنظیم کنید؛ چربی خون را چند هفته بعد دوباره بسنجید.');
+    } else if (planType === 'LowCarb') {
+      out.push('کم‌کربوهیدرات: با انسولین یا سولفونیل‌اوره خطر افت قند دارد و با مهارکننده SGLT2 احتیاط لازم است؛ دوز دارو را تنظیم کنید.');
+    } else if (planType === 'HighProtein') {
+      out.push('پرپروتئین: در بیماری مزمن کلیه (eGFR کمتر از ۶۰ یا آلبومینوری) توصیه نمی‌شود.');
+    }
+    const ek = eatingOf(eatingKey);
+    if (ek !== 'std') {
+      out.push('فستینگ برای بارداری و شیردهی، سن زیر ۱۸ سال، سابقه اختلال خوردن و مصرف انسولین یا سولفونیل‌اوره بدون تنظیم دوز مناسب نیست.');
+      if (ek !== 'f52') out.push('در بیمار تحت درمان با تیرزپاتاید یا سماگلوتاید، وعده‌های کمتر و حجیم‌تر ممکن است تهوع و پری را بیشتر کند.');
+    }
+    return out;
+  }
+
+  function designPlan(calorieGoal, planType, preferences, macros, goal, refWeight, eating) {
     if (!PLAN_TYPES[planType]) planType = 'Normal';
     const prefs = normalizePrefs(preferences);
     const e = +calorieGoal;
-    const floorG = refWeight ? proteinFloorGrams(goal, refWeight) : 0.0;
+    const floorG = refWeight ? proteinFloorGrams(goal, refWeight, planType) : 0.0;
     const target = macroTargets(planType, e, prefs, floorG, macros);
     const fixed = fixedGroupUnits(planType, e, prefs);
-    const units = dailyUnits(e, target, fixed);
-    const dist = JSON.parse(JSON.stringify(PLAN_TYPES[planType].dist));
+    const units = dailyUnits(e, target, fixed, macros ? null : PLAN_TYPES[planType].maxUnits);
+    const ek = eatingOf(eating && typeof eating === 'object' ? eating.key : eating);
+    const win = eatingWindow(ek, eating && typeof eating === 'object' ? eating.start : null);
+    const dist = eatingDist(PLAN_TYPES[planType].dist, ek);
     const plan = distribute(units, dist);
     const totals = planTotals(units);
     const actual = macroPercents(totals);
@@ -2230,7 +2497,18 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     if (floorG && totals.pro < 0.95 * floorG) warnings.push(`پروتئین برنامه (${Math.round(totals.pro)} گرم) کمتر از حداقل پیشنهادی (${Math.round(floorG)} گرم) است.`);
     if (e < 800) warnings.push('کالری کمتر از ۸۰۰: رژیم بسیار کم‌کالری فقط با پایش پزشکی.');
     return { calories: e, plan_type: planType, prefs, macros_target: target, protein_floor_g: floorG,
-             fixed, units, plan, totals, macros_actual: actual, meal_calories: mealCalories(plan), warnings };
+             fixed, units, plan, totals, macros_actual: actual, meal_calories: mealCalories(plan), warnings,
+             eating: win, safety: safetyNotes(planType, ek) };
+  }
+
+  /** برنامه روز کم‌کالری ۵:۲ (واحدهای ثابت بر حسب جنس) */
+  function fastDayPlan(sex) {
+    const fd = FAST_DAY[sexOf(sex)];
+    const plan = {};
+    for (const meal of MEALS) { plan[meal] = {}; for (const g of GROUPS) plan[meal][g] = ((fd.plan[meal] || {})[g]) || 0; }
+    const units = unitsFromPlan(plan);
+    const totals = planTotals(units);
+    return { kcal: fd.kcal, plan, units, totals, meal_calories: mealCalories(plan), meals: MEALS.filter((m) => fd.plan[m]) };
   }
 
   function assessPatient(p) {
@@ -2241,39 +2519,218 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     const factorSet = factorSetOf(p.factorSet);
     const pal = palValue(p.activity, factorSet);
     const tee = rmr * pal;
+    const f52 = eatingOf(p.eating) === 'f52';
     let target, floorApplied;
     if (p.calorieOverride) { target = Math.round(p.calorieOverride); floorApplied = false; }
+    else if (f52) { target = roundTo(tee, 25); floorApplied = false; }   // ۵:۲: پنج روز بدون کسری
     else [target, floorApplied] = targetCalories(tee, sex, p.goal, p.deficit, p.surplus);
     const refW = referenceWeight(p.weight, p.height);
     const warnings = [];
     if (p.age < 18) warnings.push('این محاسبات برای بزرگسالان (۱۸ سال به بالا) است.');
     if (p.goal === 'lose' && b < 18.5) warnings.push('BMI کمتر از ۱۸٫۵ است؛ کاهش وزن توصیه نمی‌شود.');
+    if (f52 && p.goal !== 'lose') warnings.push('الگوی ۵:۲ برای کاهش وزن است؛ دو روز کم‌کالری در هفته کسری انرژی می‌سازد.');
     if (floorApplied) warnings.push(`کالری هدف به حداقل توصیه‌شده (${KCAL_FLOOR[sex]} کیلوکالری) رسید؛ کسری واقعی ${Math.round(tee - target)} کیلوکالری است.`);
     if (p.calorieOverride && target < KCAL_FLOOR[sex]) warnings.push(`کالری دستی کمتر از حداقل توصیه‌شده برای ${sex === 'm' ? 'مردان' : 'زنان'} (${KCAL_FLOOR[sex]} کیلوکالری) است.`);
+    let fast52 = null;
+    if (f52) {
+      const fk = FAST_DAY[sex].kcal;
+      const avg = (5 * target + 2 * fk) / 7;
+      fast52 = { fast_kcal: fk, avg_kcal: avg, avg_deficit: tee - avg };
+    }
     return { sex, bmi: b, bmi_code: code, bmi_label: label, normal_range: normalWeightRange(p.height),
              ideal_weight: idealBodyWeight(p.height, sex), reference_weight: refW, rmr, tee, pal, factor_set: factorSet,
-             target_calories: target, floor_applied: floorApplied,
+             target_calories: target, floor_applied: floorApplied, fast52,
              waist: p.waist ? waistRisk(p.waist, p.height) : null, warnings };
   }
 
   function buildFullPlan(p) {
     const a = assessPatient(p);
-    const d = designPlan(a.target_calories, p.planType || 'Normal', p.preferences, p.macros || null, p.goal, a.reference_weight);
+    const d = designPlan(a.target_calories, p.planType || 'Normal', p.preferences, p.macros || null, p.goal, a.reference_weight,
+      { key: p.eating, start: p.window });
     d.assessment = a;
     d.warnings = a.warnings.concat(d.warnings);
+    if (a.fast52) d.fast_day = fastDayPlan(a.sex);
     return d;
   }
 
+  /** کالری مؤثر روزانه برای پیش‌بینی وزن (در ۵:۲ میانگین هفته) */
+  function effectiveCalories(d) { return d.assessment && d.assessment.fast52 ? d.assessment.fast52.avg_kcal : d.calories; }
+
   const Engine = {
     GROUPS, MEALS, ELEMENTS, MACRO_GROUPS, GROUP_FA, MEAL_FA, ACTIVITY_LEVELS, GOALS, PLAN_TYPES, KCAL_FLOOR,
-    FACTOR_SETS, DEFAULT_FACTOR_SET, DEFAULT_ACTIVITY, activityLevels, activityKey,
+    FACTOR_SETS, DEFAULT_FACTOR_SET, DEFAULT_ACTIVITY, activityLevels, activityKey, EATING, FAST_DAY, eatingOf,
     toNumber, roundHalf, roundTo, bmi, bmiClass, normalWeightRange, idealBodyWeight, referenceWeight, waistRisk,
     rmrMifflin, palValue, targetCalories, normalizePrefs, fixedGroupUnits, proteinFloorGrams, macroTargets,
     planTotals, macroPercents, planLoss, dailyUnits, distribute, mealCalories, unitsFromPlan, designPlan,
+    eatingDist, eatingWindow, safetyNotes, fastDayPlan, effectiveCalories,
     assessPatient, buildFullPlan,
   };
   root.Engine = Engine;
   if (typeof module !== 'undefined' && module.exports) module.exports = Engine;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* ---- indices.js ---- */
+/* شاخص‌های بالینی محاسبه‌گر (بدون رابط کاربری؛ در Node هم آزمون می‌شود).
+   واحدها: وزن کیلوگرم، قد و دورها سانتی‌متر، قند و چربی‌ها mg/dL، انسولین µU/mL، کراتینین mg/dL، پلاکت ×۱۰۰۰ در میکرولیتر (۱۰⁹ در لیتر).
+   هر فرمول منبعش را کنار خودش دارد؛ ورودی نامعتبر → null. */
+(function (root) {
+  'use strict';
+  const ok = (...xs) => xs.every((x) => typeof x === 'number' && Number.isFinite(x) && x > 0);
+  const male = (sex) => sex === 'm';
+  const inchesOver60 = (h) => h / 2.54 - 60;
+
+  // ------------------------------------------------------------------ وزن
+  function bmi(w, h) { return ok(w, h) ? w / ((h / 100) ** 2) : null; }
+  function weightForBmi(b, h) { return ok(b, h) ? b * ((h / 100) ** 2) : null; }
+  /** وزن ایده‌آل: Devine 1974، Robinson 1983، Miller 1983، Hamwi 1964 (پایه ۵ فوت، به ازای هر اینچ بیشتر) */
+  const IBW = {
+    devine:   { m: [50.0, 2.3],  f: [45.5, 2.3],  fa: 'دواین' },
+    robinson: { m: [52.0, 1.9],  f: [49.0, 1.7],  fa: 'رابینسون' },
+    miller:   { m: [56.2, 1.41], f: [53.1, 1.36], fa: 'میلر' },
+    hamwi:    { m: [48.0, 2.7],  f: [45.5, 2.2],  fa: 'هموی' },
+  };
+  function ibw(method, h, sex) {
+    const f = IBW[method];
+    if (!f || !ok(h)) return null;
+    const [base, per] = f[male(sex) ? 'm' : 'f'];
+    return base + per * inchesOver60(h);
+  }
+  /** وزن تعدیل‌شده برای چاقی: IBW + ۰٫۴ × (وزن واقعی − IBW) */
+  function adjustedWeight(w, ideal) { return ok(w, ideal) ? (w > ideal ? ideal + 0.4 * (w - ideal) : w) : null; }
+  /** سطح بدن، Mosteller 1987 */
+  function bsa(w, h) { return ok(w, h) ? Math.sqrt((w * h) / 3600) : null; }
+
+  // ------------------------------------------------------------------ دور کمر و ترکیب بدن
+  function whtr(waist, h) { return ok(waist, h) ? waist / h : null; }
+  function whr(waist, hip) { return ok(waist, hip) ? waist / hip : null; }
+  /** نسبت دور کمر به باسن، WHO 2008: چاقی شکمی از ۰٫۹۰ (مرد) و ۰٫۸۵ (زن) */
+  function whrHigh(ratio, sex) { return ratio === null ? null : ratio >= (male(sex) ? 0.90 : 0.85); }
+  /** درصد چربی نیروی دریایی آمریکا، Hodgdon و Beckett 1984 (فرمول متریک) */
+  function bodyFatNavy(sex, h, waist, neck, hip) {
+    if (male(sex)) {
+      if (!ok(h, waist, neck) || waist <= neck) return null;
+      return 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(h)) - 450;
+    }
+    if (!ok(h, waist, neck, hip) || waist + hip <= neck) return null;
+    return 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(h)) - 450;
+  }
+  /** توده چربی نسبی (RFM)، Woolcott و Bergman 2018: ۶۴ − ۲۰ × قد/کمر + ۱۲ × (زن=۱) */
+  function bodyFatRfm(sex, h, waist) { return ok(h, waist) ? 64 - 20 * (h / waist) + (male(sex) ? 0 : 12) : null; }
+  /** درصد چربی از BMI، Deurenberg 1991: ۱٫۲×BMI + ۰٫۲۳×سن − ۱۰٫۸×(مرد=۱) − ۵٫۴ */
+  function bodyFatDeurenberg(b, age, sex) { return ok(b, age) ? 1.2 * b + 0.23 * age - 10.8 * (male(sex) ? 1 : 0) - 5.4 : null; }
+  /** طبقه درصد چربی، ACE: چاقی از ۲۵٪ (مرد) و ۳۲٪ (زن) */
+  function bodyFatClass(pct, sex) {
+    if (pct === null || pct === undefined) return null;
+    const t = male(sex) ? [6, 14, 18, 25] : [14, 21, 25, 32];
+    if (pct < t[0]) return ['low', 'خیلی کم (در حد چربی ضروری)'];
+    if (pct < t[1]) return ['ok', 'ورزشکار'];
+    if (pct < t[2]) return ['ok', 'تناسب اندام'];
+    if (pct < t[3]) return ['ok', 'متوسط'];
+    return ['high', 'چاقی'];
+  }
+  function composition(w, h, pct) {
+    if (!ok(w, h, pct) || pct >= 100) return null;
+    const fm = w * pct / 100, ffm = w - fm, h2 = (h / 100) ** 2;
+    return { fm, ffm, ffmi: ffm / h2, fmi: fm / h2 };
+  }
+
+  // ------------------------------------------------------------------ انرژی
+  function rmrMifflin(w, h, age, sex) { return ok(w, h, age) ? 10 * w + 6.25 * h - 5 * age + (male(sex) ? 5 : -161) : null; }
+  /** هریس-بندیکت بازبینی‌شده، Roza و Shizgal 1984 */
+  function rmrHarris(w, h, age, sex) {
+    if (!ok(w, h, age)) return null;
+    return male(sex) ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * age : 447.593 + 9.247 * w + 3.098 * h - 4.330 * age;
+  }
+  /** کچ-مک‌آردل: ۳۷۰ + ۲۱٫۶ × توده بدون چربی */
+  function rmrKatch(ffm) { return ok(ffm) ? 370 + 21.6 * ffm : null; }
+  /** انرژی کل NASEM 2023 برای بزرگسالان ۱۹ سال به بالا (TEE = A + B×سن + C×قد + D×وزن) */
+  const NASEM = {
+    m: { inactive: [753.07, -10.83, 6.50, 14.10], low: [581.47, -10.83, 8.30, 14.94], active: [1004.82, -10.83, 6.52, 15.91], very: [-517.88, -10.83, 15.61, 19.11] },
+    f: { inactive: [584.90, -7.01, 5.72, 11.71], low: [575.77, -7.01, 6.60, 12.14], active: [710.25, -7.01, 6.54, 12.34], very: [511.83, -7.01, 9.07, 12.56] },
+  };
+  const NASEM_FA = { inactive: 'کم‌تحرک', low: 'کمی فعال', active: 'فعال', very: 'خیلی فعال' };
+  function teeNasem(w, h, age, sex, level) {
+    const c = NASEM[male(sex) ? 'm' : 'f'][level];
+    if (!c || !ok(w, h, age)) return null;
+    return c[0] + c[1] * age + c[2] * h + c[3] * w;
+  }
+  /** کاهش وزن تقریبی هفتگی در هفته‌های اول (۷۷۰۰ کیلوکالری ≈ ۱ کیلو)؛ بعداً کندتر می‌شود */
+  function weeklyLoss(deficit) { return ok(deficit) ? deficit * 7 / 7700 : null; }
+  function weeksTo(current, target, deficit) {
+    if (!ok(current, target, deficit) || target >= current) return null;
+    return (current - target) * 7700 / (deficit * 7);
+  }
+  /** ضربان هدف ورزش متوسط: ۶۵ تا ۷۵ درصد (۲۲۰ − سن) */
+  function hrZone(age) { return ok(age) ? [0.65 * (220 - age), 0.75 * (220 - age)] : null; }
+
+  // ------------------------------------------------------------------ آزمایش‌ها
+  /** HOMA-IR = قند ناشتا (mg/dL) × انسولین ناشتا (µU/mL) ÷ ۴۰۵ */
+  function homaIR(glu, ins) { return ok(glu, ins) ? glu * ins / 405 : null; }
+  /** برش ایرانی ۱٫۸ (Esteghamati 2010) و برش رایج ۲٫۵ */
+  function homaClass(v) { return v === null ? null : (v < 1.8 ? ['ok', 'طبیعی'] : (v < 2.5 ? ['warn', 'بالاتر از برش ایرانی'] : ['bad', 'مقاومت به انسولین محتمل'])); }
+  /** شاخص TyG = ln(تری‌گلیسرید × قند ناشتا ÷ ۲) */
+  function tyg(tg, glu) { return ok(tg, glu) ? Math.log(tg * glu / 2) : null; }
+  function tgHdl(tg, hdl) { return ok(tg, hdl) ? tg / hdl : null; }
+  /** FIB-4 = سن × AST ÷ (پلاکت × √ALT)؛ پلاکت ×۱۰⁹/L */
+  function fib4(age, ast, alt, plt) { return ok(age, ast, alt, plt) ? (age * ast) / (plt * Math.sqrt(alt)) : null; }
+  /** AASLD 2023: زیر ۱٫۳ (۶۵ سال به بالا زیر ۲٫۰) کم‌خطر؛ بالای ۲٫۶۷ پرخطر */
+  function fib4Class(v, age) {
+    if (v === null) return null;
+    const lo = age >= 65 ? 2.0 : 1.3;
+    if (v < lo) return ['ok', 'فیبروز پیشرفته بعید'];
+    if (v <= 2.67) return ['warn', 'نامشخص؛ الاستوگرافی (فیبرواسکن)'];
+    return ['bad', 'فیبروز پیشرفته محتمل'];
+  }
+  /** eGFR با معادله CKD-EPI 2021 بدون نژاد */
+  function egfr(scr, age, sex) {
+    if (!ok(scr, age)) return null;
+    const f = !male(sex), k = f ? 0.7 : 0.9, a = f ? -0.241 : -0.302;
+    return 142 * Math.min(scr / k, 1) ** a * Math.max(scr / k, 1) ** -1.200 * 0.9938 ** age * (f ? 1.012 : 1);
+  }
+  /** مرحله KDIGO */
+  function egfrStage(v) {
+    if (v === null) return null;
+    if (v >= 90) return ['ok', 'G1 (طبیعی یا بالا)'];
+    if (v >= 60) return ['ok', 'G2 (کاهش خفیف)'];
+    if (v >= 45) return ['warn', 'G3a (کاهش خفیف تا متوسط)'];
+    if (v >= 30) return ['bad', 'G3b (کاهش متوسط تا شدید)'];
+    if (v >= 15) return ['bad', 'G4 (کاهش شدید)'];
+    return ['bad', 'G5 (نارسایی کلیه)'];
+  }
+  /** LDL فریدوالد (فقط تری‌گلیسرید کمتر از ۴۰۰) */
+  function ldlFriedewald(tc, hdl, tg) { return ok(tc, hdl, tg) && tg < 400 ? tc - hdl - tg / 5 : null; }
+  /** LDL معادله Sampson (NIH 2020)؛ تا تری‌گلیسرید ۸۰۰ */
+  function ldlSampson(tc, hdl, tg) {
+    if (!ok(tc, hdl, tg) || tg > 800) return null;
+    const nh = tc - hdl;
+    return tc / 0.948 - hdl / 0.971 - (tg / 8.56 + (tg * nh) / 2140 - (tg * tg) / 16100) - 9.44;
+  }
+  /** طبقه LDL، NCEP ATP III */
+  function ldlClass(v) {
+    if (v === null) return null;
+    if (v < 100) return ['ok', 'مطلوب'];
+    if (v < 130) return ['ok', 'نزدیک مطلوب'];
+    if (v < 160) return ['warn', 'مرزی'];
+    if (v < 190) return ['bad', 'بالا'];
+    return ['bad', 'خیلی بالا'];
+  }
+  /** شاخص کبد چرب (FLI)، Bedogni 2006: زیر ۳۰ رد، ۶۰ یا بیشتر محتمل */
+  function fli(tg, b, ggt, waist) {
+    if (!ok(tg, b, ggt, waist)) return null;
+    const y = 0.953 * Math.log(tg) + 0.139 * b + 0.718 * Math.log(ggt) + 0.053 * waist - 15.745;
+    return 100 * Math.exp(y) / (1 + Math.exp(y));
+  }
+  function fliClass(v) { return v === null ? null : (v < 30 ? ['ok', 'کبد چرب بعید'] : (v < 60 ? ['warn', 'نامشخص'] : ['bad', 'کبد چرب محتمل'])); }
+
+  const Indices = {
+    IBW, NASEM, NASEM_FA, bmi, weightForBmi, ibw, adjustedWeight, bsa, whtr, whr, whrHigh, bodyFatNavy, bodyFatRfm, bodyFatDeurenberg,
+    bodyFatClass, composition, rmrMifflin, rmrHarris, rmrKatch, teeNasem, weeklyLoss, weeksTo, hrZone,
+    homaIR, homaClass, tyg, tgHdl, fib4, fib4Class, egfr, egfrStage, ldlFriedewald, ldlSampson, ldlClass, fli, fliClass,
+  };
+  root.Indices = Indices;
+  if (typeof module !== 'undefined' && module.exports) module.exports = Indices;
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -2311,11 +2768,17 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     return `${list.slice(0, -1).join('، ')} و ${list[list.length - 1]}`;
   }
 
-  function menuForMeal(meal, u, fr) {
+  // نوع برنامه فقط انتخاب غذا را عوض می‌کند، نه واحدها را
+  function menuForMeal(meal, u, fr, style) {
     const G = u.Grains, P = u.Protein, F = u.Fats, D = u.Dairy, Fr = u.Fruits, V = u.Vegetables;
+    const keto = style === 'Keto', med = style === 'Mediterranean', hp = style === 'HighProtein';
+    // ماست یونانی: هر واحد دوسوم لیوان (کربوهیدرات کمتر، پروتئین بیشتر)
+    const yogurt = (d) => (keto || hp ? `${cups(d * 2 / 3)} ماست یونانی کم‌چرب` : `${cups(d)} ماست کم‌چرب`);
+    const milk = (d) => (keto || hp ? yogurt(d) : `${cups(d)} شیر کم‌چرب`);
+    const breadName = med ? 'نان سنگک یا نان جو' : 'نان سنگک';
     const parts = [];
     if (meal === 'Breakfast') {
-      if (G) parts.push(bread(G));
+      if (G) parts.push(med ? `${num(30 * G)} گرم ${breadName} (حدود ${words(G)} کف دست)` : bread(G));
       if (P) {
         const eggs = P >= 1.5 ? Math.ceil(P - 1) : 0;
         const ch = P - eggs;
@@ -2327,19 +2790,23 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         parts.push(`${num(4 * walnut, 0)} نیمه گردو`);
         if (F > walnut) parts.push(`${num(4 * (F - walnut), 0)} عدد زیتون سیاه`);
       }
-      if (D) parts.push(`${cups(D)} شیر کم‌چرب`);
+      if (D) parts.push(milk(D));
       if (Fr) parts.push(fruit(Fr, fr.B));
       if (V) parts.push(`${cups(V)} خیار و گوجه‌فرنگی`);
       return parts.join(' + ');
     }
     if (meal === 'Lunch') {
-      if (G) parts.push(`${riceQty(G)} برنج پخته`);
-      if (P) parts.push(`${num(30 * P)} گرم مرغ یا ماهی کبابی، آب‌پز یا بخارپز`);
-      if (V) parts.push(`${cups(V)} سالاد شیرازی`);
-      if (D) parts.push(`${cups(D)} ماست کم‌چرب`);
+      if (G) parts.push(`${riceQty(G)} برنج پخته${med ? ' (یا بلغور)' : ''}`);
+      if (P) {
+        const what = keto ? 'گوشت، مرغ یا ماهی کبابی، آب‌پز یا بخارپز' : (hp ? 'سینه مرغ، ماهی یا گوشت بی‌چربی کبابی یا بخارپز'
+          : (med ? 'ماهی یا مرغ کبابی یا بخارپز (هفته‌ای دست‌کم دو بار ماهی)' : 'مرغ یا ماهی کبابی، آب‌پز یا بخارپز'));
+        parts.push(`${num(30 * P)} گرم ${what}`);
+      }
+      if (V) parts.push(`${cups(V)} ${keto ? 'سالاد سبز (کاهو، خیار، کلم)' : 'سالاد شیرازی'}`);
+      if (D) parts.push(yogurt(D));
       if (Fr) parts.push(fruit(Fr, fr.B));
       let t = parts.join(' + ');
-      if (F) t += `${t ? '. ' : ''}سهم روغن این وعده (${tsp(F)}) را در پخت یا روی سالاد استفاده کنید.`;
+      if (F) t += `${t ? '. ' : ''}سهم ${med || keto ? 'روغن زیتون' : 'روغن'} این وعده (${tsp(F)}) را در پخت یا روی سالاد استفاده کنید.`;
       return t;
     }
     if (meal === 'Dinner') {
@@ -2358,37 +2825,43 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         parts.push(`املت با ${joinFa(inner)}`);
         if (salad) parts.push(`${cups(salad)} سالاد${oilSalad ? ` با ${tsp(oilSalad)} روغن زیتون` : ''}`);
       } else {
-        if (P) parts.push(`${num(30 * P)} گرم مرغ یا گوشت کم‌چرب (پخته)`);
-        if (V) parts.push(`${cups(V)} سالاد`);
+        if (P) parts.push(`${num(30 * P)} گرم ${keto ? 'گوشت، مرغ یا ماهی (پخته)' : (med ? 'ماهی، مرغ یا گوشت کم‌چرب (پخته)' : 'مرغ یا گوشت کم‌چرب (پخته)')}`);
+        if (V) parts.push(`${cups(V)} سالاد${keto ? ' یا سبزی پخته (کدو، بادمجان، گل‌کلم)' : ''}`);
         if (F) parts.push(`${tsp(F)} روغن زیتون روی سالاد`);
       }
-      if (G) parts.push(`${num(30 * G)} گرم نان سنگک، بربری یا تافتون (حدود ${words(G)} کف دست)`);
-      if (D) parts.push(`${cups(D)} ماست کم‌چرب`);
+      if (G) parts.push(`${num(30 * G)} گرم ${med ? breadName : 'نان سنگک، بربری یا تافتون'} (حدود ${words(G)} کف دست)`);
+      if (D) parts.push(yogurt(D));
       if (Fr) parts.push(fruit(Fr, fr.B));
       return parts.join(' + ');
     }
     // میان‌وعده‌ها
     const key = meal === 'Morning Snack' ? 'MS' : (meal === 'Evening Snack' ? 'ES' : 'NS');
-    if (D) parts.push(`${cups(D)} ${key === 'MS' ? 'ماست کم‌چرب' : 'شیر کم‌چرب'}`);
-    if (G) parts.push(key === 'ES' ? oats(G) : `${num(30 * G)} گرم نان سنگک`);
+    if (D) parts.push(key === 'MS' ? yogurt(D) : milk(D));
+    if (G) parts.push(key === 'ES' ? oats(G) : `${num(30 * G)} گرم ${breadName}`);
     if (Fr) parts.push(fruit(Fr, fr[key]));
     if (P) parts.push(cheese(P));
-    if (F) parts.push(almonds(F));
+    if (F) parts.push(med || keto ? `${num(6 * F, 0)} عدد بادام یا ${num(4 * F, 0)} نیمه گردو` : almonds(F));
     if (V) parts.push(`${cups(V)} خیار`);
     return parts.join(' + ');
   }
 
-  function generateMenu(plan, MEALS, date) {
+  function generateMenu(plan, MEALS, date, style) {
     const fr = fruitsFor(FA.jalaliMonth(date || new Date()));
     const out = {};
-    for (const m of MEALS) out[m] = menuForMeal(m, plan[m], fr) || '—';
+    for (const m of MEALS) out[m] = menuForMeal(m, plan[m], fr, style) || '—';
     return out;
   }
 
   /** متن «این جدول را چطور بخوانید» با عدد واقعی همین برنامه */
   function howToRead(plan, MEALS, MEAL_FA) {
     let meal = 'Breakfast';
-    if (!plan.Breakfast.Grains) meal = MEALS.find((m) => plan[m].Grains > 0) || 'Breakfast';
+    if (!plan.Breakfast.Grains) meal = MEALS.find((m) => plan[m].Grains > 0) || null;
+    if (!meal) {   // برنامه بدون نان (مثلاً کتوژنیک): مثال با گروه گوشت
+      const pm = MEALS.find((m) => plan[m].Protein > 0) || 'Lunch';
+      const pv = plan[pm].Protein || 1;
+      return `هر عدد نشان می‌دهد از هر گروه غذایی چند «واحد» در آن وعده بخورید. مثلاً ${num(pv)} در ستون «گوشت» ` +
+        `${MEAL_FA[pm]} یعنی ${words(pv)} واحد گوشت؛ برای نمونه ${num(30 * pv)} گرم مرغ پخته یا ${digits(Math.max(1, Math.round(pv)))} تخم‌مرغ.`;
+    }
     const g = plan[meal].Grains || 1;
     return `هر عدد نشان می‌دهد از هر گروه غذایی چند «واحد» در آن وعده بخورید. مثلاً ${num(g)} در ستون «نان و غلات» ` +
       `${MEAL_FA[meal]} یعنی ${words(g)} واحد نان؛ برای نمونه ${num(30 * g)} گرم نان سنگک یا ${riceQty(g)} برنج پخته.`;
@@ -2439,7 +2912,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
    * doc: {
    *   patient: {name, fileNo, date, age, height, weight, bmi, targetWeight, kcal, waist, abdomen, thigh, wrist, bodyFat, nextVisit},
    *   rows: [{meal, time, units:[6], kcal}], total: {units:[6], kcal},
-   *   howToRead, menu: [[mealFa, text]×6], rx: [4 texts]
+   *   howToRead, menu: [[mealFa, text]…], rx: [4 texts],
+   *   اختیاری: window (متن بازه فستینگ)، fastDay {title, note, rows, total, menu}، typeGuide/eatingGuide {title, items}، sources
    * }
    */
   function buildModel(doc, C, opts) {
@@ -2464,17 +2938,35 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       rows: doc.rows.map((r) => [r.meal, r.time, ...r.units.map(cell), FA.num(r.kcal)]),
       total: [C.plan_total_label, '', ...doc.total.units.map((u) => FA.num(u)), FA.num(doc.total.kcal)],
     });
+    if (doc.window) B.push({ t: 'p', text: doc.window, style: 'def', before: 80, after: 0 });
     B.push({ t: 'gap', after: 160 });
     B.push({ t: 'box', title: C.how_to_read_title, paras: [doc.howToRead, C.how_to_read_2] });
 
     B.push({ t: 'pagebreak' });
-    B.push({ t: 'h2', text: C.menu_title, before: 0 });
+    const fd = doc.fastDay;
+    if (fd) {
+      B.push({ t: 'h2', text: fd.title, before: 0 });
+      B.push({ t: 'p', text: fd.note, style: 'small-muted', after: 80 });
+      B.push({
+        t: 'plan', header: C.plan_columns,
+        rows: fd.rows.map((r) => [r.meal, r.time, ...r.units.map(cell), FA.num(r.kcal)]),
+        total: [C.plan_total_label, '', ...fd.total.units.map((u) => FA.num(u)), FA.num(fd.total.kcal)],
+      });
+      B.push({ t: 'gap', after: 80 });
+      B.push({ t: 'kv', widths: [1700, 8166], rows: fd.menu });
+    }
+    B.push({ t: 'h2', text: C.menu_title, before: fd ? 260 : 0 });
     B.push({ t: 'p', text: C.menu_intro, style: 'small-muted', after: 80 });
     B.push({ t: 'kv', widths: [1700, 8166], rows: doc.menu });
     B.push({ t: 'h2', text: C.rx_title, before: 260 });
     B.push({ t: 'kv', widths: [1700, 8166], rows: C.rx_labels.map((l, i) => [l, doc.rx[i]]) });
     B.push({ t: 'h2', text: C.notes_title, before: 260 });
     B.push({ t: 'list', kind: 'nums-notes', items: C.notes, size: 'body', after: 60, justify: true });
+    for (const g of [doc.typeGuide, doc.eatingGuide]) {
+      if (!g) continue;
+      B.push({ t: 'h2', text: g.title, before: 260 });
+      B.push({ t: 'list', kind: 'dots', items: g.items, size: 'body', after: 60, justify: true });
+    }
     if (o.personalOnly) return B;
 
     const G = C.guide;
@@ -2525,7 +3017,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       if (s.numbered) B.push({ t: 'list', kind: 'nums-steps', items: s.numbered, size: 'body', after: 50, justify: true });
     }
     B.push({ t: 'h2', text: C.sources_title, before: 280 });
-    for (const s of C.sources) B.push({ t: 'ltr', text: s });
+    for (const s of (doc.sources || C.sources)) B.push({ t: 'ltr', text: s });
     B.push({ t: 'p', text: C.sources_note, style: 'tiny-muted', before: 40 });
     return B;
   }
@@ -3400,7 +3892,10 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   const SITES = ['بازوی راست', 'بازوی چپ', 'راست ناف', 'چپ ناف', 'بالای ناف', 'پایین ناف', 'ران راست', 'ران چپ'];
   const DOSES = [2.5, 5, 7.5, 10, 12.5, 15];
   const DRUGS = ['Spartina'];
-  const PLAN_TYPES_FA = { Normal: 'عادی', DASH: 'DASH', Diabetic: 'دیابت' };
+  const PLAN_TYPES_FA = { Normal: 'عادی', Mediterranean: 'مدیترانه‌ای', DASH: 'DASH', Diabetic: 'دیابت', HighProtein: 'پرپروتئین',
+    LowCarb: 'کم‌کربوهیدرات', Keto: 'کتوژنیک' };
+  // الگوی زمانی وعده‌ها (فستینگ) در ویزیت رژیم؛ خالی یعنی وعده‌های معمول
+  const EATING_FA = { tre14: '۱۴:۱۰', tre16: '۱۶:۸', f52: '۵:۲' };
   const MON_REASONS = ['عوارض دارو', 'رسیدن به هدف', 'هزینه', 'سفر یا وقفه موقت', 'تصمیم بیمار', 'نظر پزشک', 'سایر'];
   const NO_FX = 'بدون عارضه';
   const SIDE_FX = ['تهوع', 'استفراغ', 'یبوست', 'اسهال', 'سوءهاضمه یا رفلاکس', 'درد شکم', 'سردرد یا سرگیجه', 'خستگی',
@@ -3440,7 +3935,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       ['واحد نان', 'uGrains', 'num'], ['واحد گوشت', 'uProtein', 'num'], ['واحد چربی', 'uFats', 'num'], ['واحد لبنیات', 'uDairy', 'num'],
       ['واحد میوه', 'uFruits', 'num'], ['واحد سبزی', 'uVegetables', 'num'], ['وزن هدف', 'targetW', 'num'], ['مراجعه بعدی', 'nextVisit', 'date'],
       ['رژیم تجویزی', 'regimen', 'text'], ['مکمل ها', 'supplements', 'text'], ['توضیحات', 'notes', 'text'], ['uid', 'uid', 'text'],
-      ['نوع ویزیت', 'mode', 'text'],
+      ['نوع ویزیت', 'mode', 'text'], ['فستینگ', 'eating', 'text'],
     ],
   };
   // نام‌های قدیمی ستون‌ها که هنگام ورود هم پذیرفته می‌شوند
@@ -3946,7 +4441,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   }
   const VISIT_NUM = ['homeW', 'clinicW', 'dose', 'waist', 'abdomen', 'thigh', 'wrist', 'steps', 'pal', 'deficit', 'rmr', 'tee',
     'kcalTarget', 'kcalPlan', 'pC', 'pP', 'pF', 'uGrains', 'uProtein', 'uFats', 'uDairy', 'uFruits', 'uVegetables', 'targetW', 'session'];
-  const VISIT_TEXT = ['center', 'type', 'site', 'drug', 'notes', 'activity', 'goal', 'planType', 'regimen', 'supplements', 'mode', 'reason', 'sideFx'];
+  const VISIT_TEXT = ['center', 'type', 'site', 'drug', 'notes', 'activity', 'goal', 'planType', 'regimen', 'supplements', 'mode', 'reason', 'sideFx', 'eating'];
   const V_KNOWN = new Set(['uid', 'puid', 'kind', 'date', 'created', 'u', 'del', 'fat', 'muscle', 'nextVisit', ...VISIT_NUM, ...VISIT_TEXT]);
   function cleanVisit(v) {
     const o = { uid: v.uid || newId(), puid: v.puid, kind: v.kind === 'diet' ? 'diet' : 'proc', date: JD.parse(v.date) || JD.today(),
@@ -3954,6 +4449,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     for (const k of VISIT_NUM) { const n = toNum(v[k]); if (n !== null) o[k] = k === 'session' || k === 'steps' ? Math.round(n) : n; }
     for (const k of VISIT_TEXT) { const t = toText(v[k]); if (t) o[k] = k === 'site' ? (SITE_FIX[t] || t) : t; }
     if (o.mode && !MODES.includes(o.mode)) o.mode = /آنلاین|online|مجازی/i.test(o.mode) ? 'آنلاین' : (/حضور/.test(o.mode) ? 'حضوری' : o.mode);
+    if (o.eating) o.eating = eatingLabel(o.eating) || o.eating;
     const fat = toPct(v.fat), mus = toPct(v.muscle);
     if (fat !== null) o.fat = fat;
     if (mus !== null) o.muscle = mus;
@@ -4098,12 +4594,22 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     }
     return out;
   }
-  /** «dash - 1825» → نوع رژیم و کالری */
+  /** «۱۶:۸»، «16:8»، «فستینگ ۵:۲» → شکل ثابت؛ ناشناخته → '' */
+  function eatingLabel(t) {
+    const x = JD.latinDigits(String(t || '')).replace(/\s+/g, '');
+    for (const v of Object.values(EATING_FA)) if (x.includes(JD.latinDigits(v))) return v;
+    return '';
+  }
+  /** «dash - 1825»، «کتوژنیک - 1500» → نوع رژیم و کالری */
+  const REGIMEN_RE = /(normal|dash|diabet\w*|mediterranean|med|keto\w*|low[\s-]?carb|high[\s-]?protein|عادی|دیابت|مدیترانه‌ای|مدیترانه ای|مدیترانه|پرپروتئین|کم‌کربوهیدرات|کم کربوهیدرات|لوکارب|کتوژنیک|کتو)\s*[-–—:]?\s*([0-9۰-۹]{3,4})/i;
   function parseRegimen(t) {
-    const m = /(normal|dash|diabet\w*|عادی|دیابت)\s*[-–—:]?\s*([0-9۰-۹]{3,4})/i.exec(JD.latinDigits(t || ''));
+    const m = REGIMEN_RE.exec(JD.latinDigits(t || ''));
     if (!m) return {};
-    const k = m[1].toLowerCase();
-    return { planType: k === 'dash' ? 'DASH' : (k.startsWith('diabet') || k === 'دیابت' ? 'دیابت' : 'عادی'), kcalPlan: +m[2] };
+    const k = m[1].toLowerCase().replace(/[\s-‌]/g, '');
+    const type = k === 'dash' ? 'DASH' : (k.startsWith('diabet') || k === 'دیابت' ? 'دیابت'
+      : (/^med|^مدیترانه/.test(k) ? 'مدیترانه‌ای' : (/^keto|^کتو/.test(k) ? 'کتوژنیک'
+        : (/lowcarb|کمکربوهیدرات|لوکارب/.test(k) ? 'کم‌کربوهیدرات' : (/highprotein|پرپروتئین/.test(k) ? 'پرپروتئین' : 'عادی')))));
+    return { planType: type, kcalPlan: +m[2] };
   }
 
   /**
@@ -4201,7 +4707,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   }
 
   const DB = {
-    FORMAT, VERSION, COLS, CENTERS, PLACES, MODES, PROC_TYPES, TYPE_LABEL, DIET_TYPES, SITES, DOSES, DRUGS, PLAN_TYPES_FA, SHEET_OF_KIND,
+    FORMAT, VERSION, COLS, CENTERS, PLACES, MODES, PROC_TYPES, TYPE_LABEL, DIET_TYPES, SITES, DOSES, DRUGS, PLAN_TYPES_FA, EATING_FA, SHEET_OF_KIND,
+    eatingLabel, parseRegimen,
     MON_REASONS, SIDE_FX, NO_FX, SOURCES, FU_NOTES, FU_ENDS, RECALL,
     init, saveNow, snapshot, merge, differsFrom, replaceAll, clearAll, batch,
     patients, patient, patientByPid, visits, visitsOf, visit, nextPid, counts,
@@ -4357,6 +4864,16 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     return styles;
   }
   function headerRow(xml) { const m = /<row\b[^>]*\sr="1"[^>]*>[\s\S]*?<\/row>|<row\b[^>]*\sr="1"[^>]*\/>/.exec(xml); return m ? m[0] : ''; }
+  /** سرستون‌هایی که در قالب نیستند (ستون‌های تازه بعد از uid) با همان قالب‌بندی سرستون قبلی اضافه می‌شوند */
+  function completeHeader(row, cols) {
+    if (!row || row.endsWith('/>')) return row;
+    const cells = [...row.matchAll(/<c\b[^>]*>/g)].map((c) => c[0]);
+    const have = new Set(cells.map((c) => colIndex(attr(c, 'r'))));
+    const style = cells.length ? attr(cells[cells.length - 1], 's') : null;
+    let add = '';
+    cols.forEach(([label], ci) => { if (!have.has(ci)) add += cellXml(`${colLetter(ci)}1`, style, label); });
+    return add ? row.replace(/<\/row>$/, `${add}</row>`) : row;
+  }
   function replaceSheetData(xml, inner, lastCol, lastRow) {
     let out = xml.replace(/<sheetData>[\s\S]*?<\/sheetData>|<sheetData\/>/, `<sheetData>${inner}</sheetData>`);
     out = out.replace(/<dimension ref="[^"]*"\/>/, `<dimension ref="A1:${lastCol}${Math.max(1, lastRow)}"/>`);
@@ -4420,7 +4937,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       const cols = DB.COLS[sheet];
       const fcol = cols.findIndex((c) => c[2] === 'formula');
       const rows = data[sheet];
-      let inner = headerRow(xml);
+      let inner = completeHeader(headerRow(xml), cols);
       rows.forEach((vals, i) => {
         const r = i + 2;
         let cells = '';
@@ -10105,13 +10622,24 @@ Located in ./vendor/QRCode
   const MEAL_SHORT = { 'Breakfast': 'صبحانه', 'Morning Snack': 'میان صبح', 'Lunch': 'ناهار', 'Evening Snack': 'میان عصر', 'Dinner': 'شام', 'Night Snack': 'میان شب' };
   const PLAN_HINT = {
     Normal: 'کربوهیدرات ۵۵٪، پروتئین ۲۰٪، چربی ۲۵٪. لبنیات، میوه و سبزی بر اساس الگوی غذایی سالم DGA.',
+    Mediterranean: 'کربوهیدرات ۴۵٪، پروتئین ۱۸٪، چربی ۳۷٪ (بیشتر روغن زیتون و مغزها)؛ ماهی و حبوبات به‌جای گوشت قرمز. پشتوانه: PREDIMED؛ مناسب پیشگیری قلبی‌عروقی، کبد چرب و دیابت.',
     DASH: 'برای فشار خون: میوه و سبزی طبق جدول NHLBI، لبنیات و گوشت کم‌چرب، سدیم حداکثر ۲۳۰۰ میلی‌گرم در روز.',
     Diabetic: 'کربوهیدرات ۴۵٪ و پخش‌شده بین شش وعده؛ میوه در میان‌وعده‌ها، نه در صبحانه.',
+    HighProtein: 'پروتئین حدود ۲۸٪ و دست‌کم ۱٫۴ گرم به ازای هر کیلو وزن مرجع در کاهش وزن، برای حفظ عضله (به‌ویژه با تیرزپاتاید یا سماگلوتاید و در سالمندان). در بیماری مزمن کلیه نه.',
+    LowCarb: 'کربوهیدرات حدود ۲۵٪ (کمتر از ۱۳۰ گرم در روز)، پروتئین ۲۵٪، چربی ۵۰٪. با داروی قند یا فشار خون، دوز دارو را تنظیم کنید.',
+    Keto: 'کربوهیدرات زیر ۵۰ گرم در روز (حدود ۸٪)، پروتئین ۲۵٪، چربی حدود ۶۵٪؛ بدون نان و میوه. کوتاه‌مدت و زیر نظر پزشک؛ موارد منع در بخش «برنامه» می‌آید.',
+  };
+  const EATING_HINT = {
+    std: '',
+    tre14: 'همه وعده‌ها در بازه ۱۰ ساعته؛ سهم میان‌وعده صبح به صبحانه و میان‌وعده شب به شام منتقل می‌شود.',
+    tre16: 'همه وعده‌ها در بازه ۸ ساعته (ناهار، عصرانه، شام)؛ سهم صبحانه بین ناهار و عصرانه پخش می‌شود. در کارآزمایی‌ها کاهش وزن با فستینگ زمانی هم‌اندازه کم کردن کالری روزانه بوده است؛ اثرش از کالری کمتر است.',
+    f52: 'پنج روز به اندازه انرژی کل و دو روز غیرپشت‌سرهم ۵۰۰ (زن) یا ۶۰۰ (مرد) کیلوکالری؛ کسری کالری انتخاب‌شده به کار نمی‌رود.',
   };
   const DEFAULTS = () => ({
     name: '', file: '', sex: 'f', age: '', height: '', weight: '', waist: '', abdomen: '', thigh: '', wrist: '', fat: '', steps: '',
     factorSet: loadSettings().factorSet === 'classic' ? 'classic' : 'nasem', puid: '',
     activity: loadSettings().factorSet === 'classic' ? 'sedentary' : 'inactive', goal: 'lose', deficit: '500', surplus: '300', planType: 'Normal',
+    eating: 'std', window: '',
     prefs: { Grains: 0, Protein: 0, Fats: 0, Dairy: 0, Fruits: 0, Vegetables: 0 },
     kcal: '', mc: '', mp: '', mf: '', date: F.jalali(new Date()), weeks: '2', next: nextVisit(2), target: '',
   });
@@ -10144,6 +10672,19 @@ Located in ./vendor/QRCode
         <span><b>${title}</b>${desc ? `<small>${desc.trim()}</small>` : ''}</span><span class="pal num">×${num(v.pal, 3)}</span></button>`;
     }).join('');
   }
+  // گزینه‌های بازه فستینگ به الگوی انتخاب‌شده بستگی دارد
+  let winFor = null;
+  function renderWindow() {
+    const ep = E.EATING[E.eatingOf(state.f.eating)];
+    const box = $('#window-field');
+    if (!box) return;
+    box.hidden = !ep.starts;
+    if (!ep.starts) { winFor = null; return; }
+    if (!ep.starts.includes(+state.f.window)) state.f.window = String(ep.start);
+    if (winFor === state.f.eating) return;
+    winFor = state.f.eating;
+    $('#window-seg').innerHTML = ep.starts.map((h) => `<button type="button" role="radio" data-value="${h}">${F.digits(h)} تا ${F.digits(h + ep.hours)}</button>`).join('');
+  }
   function buildForm() {
     renderActs();
     $('#prefs').innerHTML = E.GROUPS.map((g) => `<div class="pref"><span>${E.GROUP_FA[g]}</span>
@@ -10158,8 +10699,11 @@ Located in ./vendor/QRCode
   }
   function syncForm() {
     if (!E.FACTOR_SETS[state.f.factorSet]) state.f.factorSet = 'nasem';
+    if (!E.PLAN_TYPES[state.f.planType]) state.f.planType = 'Normal';
+    state.f.eating = E.eatingOf(state.f.eating);
     state.f.activity = E.activityKey(state.f.activity, state.f.factorSet);
     renderActs();
+    renderWindow();
     for (const [id, key] of Object.entries(INPUTS)) { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = state.f[key] ?? ''; }
     $$('.seg[data-name]').forEach((seg) => {
       const nm = seg.dataset.name;
@@ -10168,9 +10712,11 @@ Located in ./vendor/QRCode
       seg.querySelectorAll('[role="radio"]').forEach((b) => { b.setAttribute('aria-checked', String(b.dataset.value === v)); b.tabIndex = b.dataset.value === v ? 0 : -1; });
     });
     $$('.act').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.act === state.f.activity)));
-    $('#deficit-field').hidden = state.f.goal !== 'lose';
-    $('#surplus-field').hidden = state.f.goal !== 'gain';
+    $('#deficit-field').hidden = state.f.goal !== 'lose' || state.f.eating === 'f52';
+    $('#surplus-field').hidden = state.f.goal !== 'gain' || state.f.eating === 'f52';
     $('#plan-hint').textContent = PLAN_HINT[state.f.planType];
+    $('#eating-hint').textContent = EATING_HINT[state.f.eating] || '';
+    $('#eating-hint').hidden = !EATING_HINT[state.f.eating];
     $('#factor-hint').textContent = FACTOR_HINT[state.f.factorSet];
     $('#sample-note').hidden = !state.sample;
     const mc = [state.f.mc, state.f.mp, state.f.mf].map((x) => E.toNumber(x || 'x'));
@@ -10209,6 +10755,7 @@ Located in ./vendor/QRCode
         } else if (!(name in state.f)) { if (hooks.onSeg) hooks.onSeg(name, v); return; }
         else state.f[name] = v;
         if (name === 'weeks') state.f.next = nextVisit(v);
+        if (name === 'eating') state.f.window = String(E.EATING[E.eatingOf(v)].start || '');
         onChange();
         return;
       }
@@ -10266,7 +10813,7 @@ Located in ./vendor/QRCode
     if (Object.keys(errs).length) return { ok: false, errs };
     return { ok: true, p: { sex: f.sex, age, height, weight, waist: opt('waist'), activity: f.activity, factorSet: f.factorSet, goal: f.goal,
       deficit: +f.deficit, surplus: +f.surplus, planType: f.planType, preferences: clone(f.prefs), calorieOverride: kcal, macros,
-      steps: opt('steps') } };
+      steps: opt('steps'), eating: E.eatingOf(f.eating), window: E.toNumber(f.window || '') } };
   }
 
   // ------------------------------------------------------------------ محاسبه
@@ -10284,7 +10831,7 @@ Located in ./vendor/QRCode
     state.inputs = r.p;
     state.basePlan = clone(d.plan);
     state.plan = clone(d.plan);
-    state.menu = M.generateMenu(state.plan, E.MEALS, new Date());
+    state.menu = M.generateMenu(state.plan, E.MEALS, new Date(), d.plan_type);
     state.menuEdited = {}; state.menuStale = {};
     state.rx = M.rxTexts(r.p.age, r.p.steps);
     state.dirty = false;
@@ -10300,8 +10847,9 @@ Located in ./vendor/QRCode
     const weeks = +state.f.weeks || 2;
     const a = d.assessment;
     let delta = 0;
-    if (p.goal === 'lose') delta = -Math.max(0, a.tee - d.calories) * 7 * weeks / 7700;
-    else if (p.goal === 'gain') delta = Math.max(0, d.calories - a.tee) * 7 * weeks / 7700;
+    const eff = E.effectiveCalories(d);
+    if (p.goal === 'lose' || a.fast52) delta = -Math.max(0, a.tee - eff) * 7 * weeks / 7700;
+    else if (p.goal === 'gain') delta = Math.max(0, eff - a.tee) * 7 * weeks / 7700;
     return E.roundHalf(p.weight + delta);
   }
 
@@ -10332,14 +10880,16 @@ Located in ./vendor/QRCode
     const n = (val, label, cls) => `<div class="n ${cls || ''}"><b class="num">${num(val, val % 1 ? 2 : 0)}</b><small>${label}</small></div>`;
     const op = (s) => `<span class="op">${s}</span>`;
     let chain = n(Math.round(a.rmr), 'انرژی استراحت') + op('×') + n(a.pal, 'ضریب فعالیت') + op('=') + n(Math.round(a.tee), 'انرژی کل');
-    if (p.calorieOverride) chain += op('→') + n(d.calories, 'کالری دستی', 'goal');
+    if (a.fast52 && !p.calorieOverride) chain += op('→') + n(d.calories, 'پنج روز') + op('·') + n(a.fast52.fast_kcal, 'دو روز') + op('≈') + n(Math.round(a.fast52.avg_kcal), 'میانگین روزانه', 'goal');
+    else if (p.calorieOverride) chain += op('→') + n(d.calories, 'کالری دستی', 'goal');
     else if (p.goal === 'lose') chain += op('−') + n(a.floor_applied ? Math.round(a.tee - d.calories) : p.deficit, a.floor_applied ? 'کسری واقعی' : 'کسری') + op('≈') + n(d.calories, 'کالری هدف', 'goal');
     else if (p.goal === 'gain') chain += op('+') + n(p.surplus, 'اضافه') + op('≈') + n(d.calories, 'کالری هدف', 'goal');
     else chain += op('≈') + n(d.calories, 'کالری هدف', 'goal');
     $('#r-chain').innerHTML = chain;
     $('#r-chain-note').textContent = 'انرژی استراحت با معادله میفلین-سنت‌جئور؛ ' +
       (a.factor_set === 'classic' ? 'ضریب فعالیت از ضرایب رایج سایت‌ها (۱٫۲ تا ۱٫۹).' : 'ضریب فعالیت هم‌خوان با معادلات انرژی NASEM 2023.') +
-      (a.floor_applied ? ' کالری هدف روی حداقل توصیه‌شده تنظیم شد.' : '');
+      (a.floor_applied ? ' کالری هدف روی حداقل توصیه‌شده تنظیم شد.' : '') +
+      (a.fast52 ? ` در ۵:۲ کسری از دو روز کم‌کالری می‌آید؛ میانگین کسری روزانه حدود ${num(Math.round(a.fast52.avg_deficit), 0)} کیلوکالری.` : '');
     renderLive();
     if (full) { renderMenuEditor(); renderRx(); }
     renderDirtyNote();
@@ -10360,7 +10910,7 @@ Located in ./vendor/QRCode
     // جدول
     const kc = E.mealCalories(state.plan);
     const head = `<thead><tr><th scope="col">وعده</th>${E.GROUPS.map((g) => `<th scope="col">${SHORT[g]}</th>`).join('')}<th scope="col">کالری</th></tr></thead>`;
-    const rows = E.MEALS.map((m) => `<tr><th scope="row">${MEAL_SHORT[m]}</th>${E.GROUPS.map((g) => {
+    const rows = mealsShown().map((m) => `<tr><th scope="row">${MEAL_SHORT[m]}</th>${E.GROUPS.map((g) => {
       const v = state.plan[m][g];
       const sel = state.sel && state.sel.meal === m && state.sel.group === g;
       return `<td class="cell num ${v ? '' : 'zero'}" data-meal="${m}" data-group="${g}" tabindex="0" role="button" aria-selected="${sel}"
@@ -10374,10 +10924,32 @@ Located in ./vendor/QRCode
       <span class="chip ${ok ? 'ok' : 'warn'} num">\u2066${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${num(Math.abs(diff))}\u2069</span>`;
     const changed = JSON.stringify(state.plan) !== JSON.stringify(state.basePlan);
     $('#btn-reset').hidden = !changed;
-    // هشدارها
+    const win = d.eating;
+    $('#r-window').hidden = !(win && win.times);
+    if (win && win.times) $('#r-window').innerHTML = `<b>${win.label}</b> بازه غذا خوردن ساعت <b class="num">${F.digits(win.start)}</b> تا <b class="num">${F.digits(win.end)}</b>؛ وعده‌های بیرون از بازه حذف شده‌اند.`;
+    renderFastDay();
+    // هشدارها و موارد احتیاط نوع برنامه
     const warns = d.warnings.slice();
     if (!ok) warns.push(`بعد از ویرایش، کالری برنامه ${num(Math.abs(diff))} کیلوکالری ${diff > 0 ? 'بیشتر' : 'کمتر'} از هدف است.`);
-    $('#r-warns').innerHTML = warns.map((w) => `<div>${w}</div>`).join('');
+    $('#r-warns').innerHTML = warns.map((w) => `<div>${w}</div>`).join('') + (d.safety || []).map((w) => `<div class="caution">${w}</div>`).join('');
+  }
+  /** وعده‌هایی که در جدول و سند می‌آیند (در فستینگ زمانی فقط وعده‌های داخل بازه) */
+  function mealsShown() { const w = state.result && state.result.eating; return w && w.meals ? w.meals : E.MEALS; }
+  function mealTime(m) {
+    const w = state.result && state.result.eating;
+    if (w && w.times && w.times[m]) return `${F.digits(w.times[m][0])} تا ${F.digits(w.times[m][1])}`;
+    return C.meal_times[E.MEALS.indexOf(m)];
+  }
+  function renderFastDay() {
+    const fd = state.result && state.result.fast_day;
+    const box = $('#r-fastday');
+    box.hidden = !fd;
+    if (!fd) return;
+    const head = `<thead><tr><th scope="col">وعده</th>${E.GROUPS.map((g) => `<th scope="col">${SHORT[g]}</th>`).join('')}<th scope="col">کالری</th></tr></thead>`;
+    const rows = fd.meals.map((m) => `<tr><th scope="row">${MEAL_SHORT[m]}</th>${E.GROUPS.map((g) => `<td class="num ${fd.plan[m][g] ? '' : 'zero'}">${fd.plan[m][g] ? num(fd.plan[m][g]) : '–'}</td>`).join('')}<td class="kc num">${num(fd.meal_calories[m])}</td></tr>`).join('');
+    const foot = `<tfoot><tr><th scope="row">جمع</th>${E.GROUPS.map((g) => `<td class="num">${num(fd.units[g])}</td>`).join('')}<td class="kc num">${num(fd.totals.calorie)}</td></tr></tfoot>`;
+    $('#fastday-table').innerHTML = head + `<tbody>${rows}</tbody>` + foot;
+    $('#fastday-note').textContent = `${fd.kcal === 600 ? 'مرد' : 'زن'}: ${num(fd.kcal, 0)} کیلوکالری؛ پروتئین ${num(fd.totals.pro, 0)} گرم. این جدول ثابت است و در سند بعد از جدول اصلی می‌آید.`;
   }
 
   function renderDirtyNote() {
@@ -10394,7 +10966,7 @@ Located in ./vendor/QRCode
   }
 
   function renderMenuEditor() {
-    $('#menu-editor').innerHTML = E.MEALS.map((m) => `<div class="menu-item field">
+    $('#menu-editor').innerHTML = mealsShown().map((m) => `<div class="menu-item field">
       <div class="lab"><label for="menu-${m.replace(' ', '-')}">${E.MEAL_FA[m]}</label>
       <span>${state.menuStale[m] ? '<span class="stale">با جدول هم‌خوان نیست</span> ' : ''}${state.menuEdited[m] || state.menuStale[m] ? `<button type="button" class="linkbtn" data-regen="${m}">ساخت دوباره</button>` : ''}</span></div>
       <textarea id="menu-${m.replace(' ', '-')}" data-menu="${m}" rows="2"></textarea></div>`).join('');
@@ -10425,7 +10997,7 @@ Located in ./vendor/QRCode
     $('#st-close').addEventListener('click', () => { state.sel = null; renderStepper(); renderLive(); });
     $('#btn-reset').addEventListener('click', () => {
       state.plan = clone(state.basePlan);
-      state.menu = M.generateMenu(state.plan, E.MEALS, new Date());
+      state.menu = M.generateMenu(state.plan, E.MEALS, new Date(), planStyle());
       state.menuEdited = {}; state.menuStale = {};
       state.sel = null; renderStepper(); renderLive(); renderMenuEditor();
     });
@@ -10440,7 +11012,7 @@ Located in ./vendor/QRCode
       const b = ev.target.closest('[data-regen]');
       if (!b) return;
       const m = b.dataset.regen;
-      state.menu[m] = M.generateMenu(state.plan, E.MEALS, new Date())[m];
+      state.menu[m] = M.generateMenu(state.plan, E.MEALS, new Date(), planStyle())[m];
       state.menuEdited[m] = false; state.menuStale[m] = false;
       renderMenuEditor();
     });
@@ -10450,6 +11022,7 @@ Located in ./vendor/QRCode
     });
   }
 
+  const planStyle = () => (state.result ? state.result.plan_type : 'Normal');
   function selectCell(meal, group) { state.sel = { meal, group }; renderStepper(); renderLive(); }
   function bump(delta) {
     if (!state.sel) return;
@@ -10458,7 +11031,7 @@ Located in ./vendor/QRCode
     if (v === state.plan[meal][group]) return;
     state.plan[meal][group] = v;
     if (state.menuEdited[meal]) state.menuStale[meal] = true;
-    else state.menu[meal] = M.generateMenu(state.plan, E.MEALS, new Date())[meal];
+    else state.menu[meal] = M.generateMenu(state.plan, E.MEALS, new Date(), planStyle())[meal];
     renderStepper(); renderLive(); renderMenuEditor();
   }
   function renderStepper() {
@@ -10474,15 +11047,33 @@ Located in ./vendor/QRCode
     const d = state.result, a = d.assessment, f = state.f, p = state.inputs;
     const u = curUnits(), t = E.planTotals(u), kc = E.mealCalories(state.plan);
     const optNum = (x) => { const v = E.toNumber(x || ''); return Number.isNaN(v) || v <= 0 ? null : v; };
+    const shown = mealsShown();
+    const win = d.eating;
+    const guide = C.diet_guides && C.diet_guides[d.plan_type];
+    let eatGuide = null;
+    if (win && win.times && C.eating_guides) {
+      const g = C.eating_guides.tre;
+      const fill = (t) => t.replace('{label}', E.EATING[win.key].fa).replace('{start}', F.digits(win.start)).replace('{end}', F.digits(win.end));
+      eatGuide = { title: fill(g.title), items: g.items.map(fill) };
+    } else if (win && win.key === 'f52' && C.eating_guides) eatGuide = C.eating_guides.f52;
+    const fd = d.fast_day;
+    const extra = C.diet_sources ? [C.diet_sources[d.plan_type], C.diet_sources[win && win.times ? 'tre' : (win && win.key)]].filter(Boolean) : [];
     return {
+      typeGuide: guide || null, eatingGuide: eatGuide,
+      window: win && win.times ? `بازه غذا خوردن: ساعت ${F.digits(win.start)} تا ${F.digits(win.end)} (${win.label}). بیرون از این بازه فقط آب، چای و قهوه بی‌قند.` : null,
+      fastDay: fd ? { title: C.fast_day_title, note: C.fast_day_note,
+        rows: fd.meals.map((m) => ({ meal: E.MEAL_FA[m], time: C.meal_times[E.MEALS.indexOf(m)], units: E.GROUPS.map((g) => fd.plan[m][g]), kcal: fd.meal_calories[m] })),
+        total: { units: E.GROUPS.map((g) => fd.units[g]), kcal: fd.totals.calorie },
+        menu: (() => { const mm = M.generateMenu(fd.plan, E.MEALS, new Date(), d.plan_type); return fd.meals.map((m) => [E.MEAL_FA[m], mm[m]]); })() } : null,
+      sources: extra.length ? C.sources.concat(extra.filter((x, i) => extra.indexOf(x) === i)) : null,
       patient: { name: f.name.trim() || null, fileNo: f.file.trim() ? F.digits(f.file.trim()) : null, date: F.digits(f.date.trim()) || null,
         age: p.age, height: p.height, weight: p.weight, bmi: num(a.bmi), targetWeight: optNum(f.target), kcal: t.calorie,
         waist: optNum(f.waist), abdomen: optNum(f.abdomen), thigh: optNum(f.thigh), wrist: optNum(f.wrist), bodyFat: optNum(f.fat),
         nextVisit: F.digits(f.next.trim()) || null },
-      rows: E.MEALS.map((m, i) => ({ meal: E.MEAL_FA[m], time: C.meal_times[i], units: E.GROUPS.map((g) => state.plan[m][g]), kcal: kc[m] })),
+      rows: shown.map((m) => ({ meal: E.MEAL_FA[m], time: mealTime(m), units: E.GROUPS.map((g) => state.plan[m][g]), kcal: kc[m] })),
       total: { units: E.GROUPS.map((g) => u[g]), kcal: t.calorie },
-      howToRead: M.howToRead(state.plan, E.MEALS, E.MEAL_FA),
-      menu: E.MEALS.map((m) => [E.MEAL_FA[m], (state.menu[m] || '').trim() || '—']),
+      howToRead: M.howToRead(state.plan, shown, E.MEAL_FA),
+      menu: shown.map((m) => [E.MEAL_FA[m], (state.menu[m] || '').trim() || '—']),
       rx: state.rx.map((x) => (x || '').trim() || '—'),
     };
   }
@@ -10517,7 +11108,8 @@ Located in ./vendor/QRCode
       'فعالیت', 'هدف', 'نوع برنامه', 'کالری', ...E.GROUPS.map((g) => E.GROUP_FA[g])];
     const v = [latin(f.date), latin(f.file), f.name, f.sex === 'm' ? 'مرد' : 'زن', state.inputs.age, state.inputs.height, state.inputs.weight,
       a.bmi.toFixed(1), latin(f.waist), latin(f.abdomen), latin(f.thigh), latin(f.wrist), latin(f.fat),
-      E.activityLevels(f.factorSet)[E.activityKey(f.activity, f.factorSet)].fa.split(':')[0], E.GOALS[f.goal], E.PLAN_TYPES[f.planType].fa, Math.round(t.calorie), ...E.GROUPS.map((g) => u[g])];
+      E.activityLevels(f.factorSet)[E.activityKey(f.activity, f.factorSet)].fa.split(':')[0], E.GOALS[f.goal],
+      E.PLAN_TYPES[d.plan_type].fa + (d.eating && d.eating.label ? ` + ${d.eating.label}` : ''), Math.round(t.calorie), ...E.GROUPS.map((g) => u[g])];
     return { head: head.join('\t'), row: v.join('\t') };
   }
 
@@ -10696,7 +11288,7 @@ Located in ./vendor/QRCode
   // ------------------------------------------------------------------ رابط برای بخش پرونده‌ها (records.js)
   window.App = {
     state, hooks, STANDALONE, syncForm, onChange, compute, showTab, saveDraft, fileName, curUnits, setStatus, saveFile, canShareFiles,
-    updateBar, renderStepper, loadSettings, saveSettings, DEFAULTS,
+    updateBar, renderStepper, loadSettings, saveSettings, DEFAULTS, mealsShown,
     setView(v) { state.view = v; if (v !== 'plan') state.sel = null; renderStepper(); updateBar(); },
     newPatient() { state.f = DEFAULTS(); state.sample = false; state.result = null; state.plan = null; state.dirty = false; state.sel = null;
       ['age', 'height', 'weight', 'kcal'].forEach((k) => setErr(k, '')); saveDraft(); syncForm(); showTab('patient'); renderPlan(false); },
@@ -10743,7 +11335,8 @@ Located in ./vendor/QRCode
   const n1 = (v, d) => (v === null || v === undefined || v === '' ? '' : Charts.fmtNum(v, d ?? 1));
   const kg = (v) => (v === null || v === undefined ? '—' : `${n1(v)} کیلو`);
   const R = { view: 'plan', screen: 'list', puid: null, filter: 'all', q: '', months: 12, center: 'all', charts: [], seg: {} };
-  const PLAN_KEY = { 'عادی': 'Normal', 'DASH': 'DASH', 'دیابت': 'Diabetic' };
+  const PLAN_KEY = Object.fromEntries(Object.entries(DB.PLAN_TYPES_FA).map(([k, v]) => [v, k]));
+  const EATING_KEY = Object.fromEntries(Object.entries(DB.EATING_FA).map(([k, v]) => [v, k]));
   const progTag = (prog) => (prog === 'inj' ? '<span class="tag inj">تزریق</span>' : prog === 'diet' ? '<span class="tag diet">رژیم</span>'
     : prog === 'both' ? '<span class="tag inj">تزریق</span><span class="tag diet">رژیم</span>' : '');
   const norm = (s) => JD.latinDigits(String(s || '')).replace(/[‌\s]/g, '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLowerCase();
@@ -10823,7 +11416,7 @@ Located in ./vendor/QRCode
   function apply(st) {
     st = st || { view: 'plan' };
     R.view = st.view || 'plan';
-    for (const v of ['plan', 'records', 'stats', 'settings', 'office']) { const el = $(`#view-${v}`); if (el) el.hidden = v !== R.view; }
+    for (const v of ['plan', 'records', 'stats', 'settings', 'office', 'calc']) { const el = $(`#view-${v}`); if (el) el.hidden = v !== R.view; }
     $$('#tabbar [data-view]').forEach((b) => b.setAttribute('aria-current', b.dataset.view === R.view ? 'page' : 'false'));
     $('#btn-new').hidden = R.view !== 'plan';
     $('#btn-settings').textContent = R.view === 'settings' ? 'بستن تنظیمات' : 'تنظیمات';
@@ -10834,6 +11427,7 @@ Located in ./vendor/QRCode
     if (R.view === 'records') renderRecords(st);
     else if (R.view === 'stats') renderStats();
     else if (R.view === 'settings') renderSettings();
+    else if (R.view === 'calc') { try { if (window.Calc) window.Calc.show(); } catch (e) { $('#view-calc').innerHTML = `<div class="health"><div class="health-item bad">محاسبه‌گر باز نشد: ${esc(e.message)}</div></div>`; } }
     else if (R.view === 'office' && window.DoctorOffice) {
       try { window.DoctorOffice.show(st.o); } catch (e) { const ov = $('#view-office'); if (ov) ov.innerHTML = `<div class="health"><div class="health-item bad">بخش مطب باز نشد: ${esc(e.message)}. پرونده‌ها و بقیه اپ سالم‌اند.</div></div>`; }
       return;
@@ -10998,7 +11592,7 @@ Located in ./vendor/QRCode
       return [t, v.dose ? `دوز ${n1(v.dose)}` : '', v.reason || '', v.site || '', place, mode === 'آنلاین' && place !== 'آنلاین' ? 'آنلاین' : '',
         v.sideFx && v.sideFx !== DB.NO_FX ? `عارضه: ${splitFx(v.sideFx).join('، ')}` : ''].filter(Boolean).join(' · ');
     }
-    return [v.type || 'رژیم', v.planType && v.kcalPlan ? `${v.planType} ${fa(Math.round(v.kcalPlan))}` : (v.planType || ''), place].filter(Boolean).join(' · ');
+    return [v.type || 'رژیم', v.planType && v.kcalPlan ? `${v.planType} ${fa(Math.round(v.kcalPlan))}` : (v.planType || ''), v.eating ? `فستینگ ${v.eating}` : '', place].filter(Boolean).join(' · ');
   }
   function fxSummary(vs) {
     const c = new Map();
@@ -11310,7 +11904,7 @@ Located in ./vendor/QRCode
       type: kind === 'proc' ? 'تزریق دارو' : (same.length ? 'پیگیری رژیم' : 'مشاوره و رژیم'),
       session: Math.max(same.length, ...same.map((x) => x.session || 0)) + 1,
       drug: (lastSame && lastSame.drug) || 'Spartina', dose: lastSame ? lastSame.dose : null,
-      site: kind === 'proc' ? nextSite(lastSame && lastSame.site) : '', planType: lastSame ? lastSame.planType : '',
+      site: kind === 'proc' ? nextSite(lastSame && lastSame.site) : '', planType: lastSame ? lastSame.planType : '', eating: lastSame ? lastSame.eating : '',
     };
     if (v) { const m = DB.modeOf(v); d.mode = m.value || 'حضوری'; d.center = DB.centerOf(v); }
     if (!v && fromAppt) {   // از نوبت امروز در «مطب»
@@ -11372,7 +11966,8 @@ Located in ./vendor/QRCode
         ${kind === 'diet' ? `
           ${F.num('v-waist', 'دور کمر', d.waist, 'سانتی‌متر')}${F.num('v-abdomen', 'دور شکم', d.abdomen, 'سانتی‌متر')}${F.num('v-thigh', 'دور ران', d.thigh, 'سانتی‌متر')}
           ${F.num('v-wrist', 'دور مچ', d.wrist, 'سانتی‌متر')}${F.num('v-steps', 'قدم روزانه', d.steps, 'قدم')}${F.num('v-target', 'وزن هدف', d.targetW, 'کیلوگرم')}
-          ${F.seg('vf:plan', 'نوع رژیم', ['عادی', 'DASH', 'دیابت'], d.planType || '')}
+          ${F.chips('vf:plan', 'نوع رژیم', [...new Set([...Object.values(DB.PLAN_TYPES_FA), d.planType].filter(Boolean))], d.planType || '')}
+          ${F.chips('vf:eat', 'فستینگ', [...new Set([...Object.values(DB.EATING_FA), d.eating].filter(Boolean))], d.eating || '', '', '<div class="hint">خالی یعنی وعده‌های معمول.</div>')}
           ${F.num('v-kcal', 'کالری برنامه', d.kcalPlan, 'kcal', { cls: 'c3' })}${F.text('v-next', 'مراجعه بعدی', d.nextVisit ? JD.show(d.nextVisit) : '', { cls: 'c3', ph: 'مثلاً ۱۴۰۵/۰۸/۰۱' })}
           ${F.area('v-supp', 'مکمل‌ها', d.supplements)}${planInfo}` : ''}
         ${F.area('v-notes', 'توضیحات', d.notes)}
@@ -11449,7 +12044,8 @@ Located in ./vendor/QRCode
         if (val('v-next')) { nextV = JD.parse(val('v-next')); if (!nextV) errs.push('تاریخ مراجعه بعدی معتبر نیست.'); }
         Object.assign(rec, { waist: numOrNull('v-waist', 'دور کمر', 30, 250, errs), abdomen: numOrNull('v-abdomen', 'دور شکم', 30, 250, errs),
           thigh: numOrNull('v-thigh', 'دور ران', 20, 150, errs), wrist: numOrNull('v-wrist', 'دور مچ', 8, 40, errs), steps: numOrNull('v-steps', 'قدم روزانه', 0, 100000, errs),
-          targetW: numOrNull('v-target', 'وزن هدف', 25, 400, errs), planType: segVal(box, 'vf:plan'), kcalPlan: numOrNull('v-kcal', 'کالری برنامه', 600, 6000, errs),
+          targetW: numOrNull('v-target', 'وزن هدف', 25, 400, errs), planType: segVal(box, 'vf:plan'), eating: segVal(box, 'vf:eat') || null,
+          kcalPlan: numOrNull('v-kcal', 'کالری برنامه', 600, 6000, errs),
           nextVisit: nextV, supplements: val('v-supp') });
         if (rec.planType && rec.kcalPlan && (!v || !v.regimen || v.regimen === `${v.planType} - ${v.kcalPlan}`)) rec.regimen = `${rec.planType} - ${Math.round(rec.kcalPlan)}`;
       }
@@ -11490,6 +12086,7 @@ Located in ./vendor/QRCode
       steps: lastDiet && lastDiet.steps ? fa(Math.round(lastDiet.steps)) : '',
     });
     if (lastDiet && PLAN_KEY[lastDiet.planType]) st.f.planType = PLAN_KEY[lastDiet.planType];
+    if (lastDiet && EATING_KEY[lastDiet.eating]) { st.f.eating = EATING_KEY[lastDiet.eating]; st.f.window = ''; }
     st.sample = false; st.result = null; st.plan = null; st.dirty = false; st.sel = null;
     App.saveDraft(); App.syncForm(); App.showTab('patient');
     if (st.f.age && st.f.height && st.f.weight) toast(`اطلاعات «${DB.fullName(p)}» در فرم آمد. «طراحی برنامه» را بزنید.`);
@@ -11502,9 +12099,14 @@ Located in ./vendor/QRCode
     $('#btn-pick').hidden = false;
     if (!p) { el.hidden = true; return; }
     el.hidden = false;
-    el.innerHTML = `<span>پیوند با پرونده شماره ${esc(fa(p.pid))}</span><button type="button" class="linkbtn" id="open-rec">پرونده و نمودارها</button><button type="button" class="linkbtn" id="unlink">قطع پیوند</button>`;
+    // بیمارِ تزریق (۶۰ روز اخیر) با نوع پیش‌فرض: پیشنهاد برنامه پرپروتئین برای حفظ عضله
+    const today = JD.dayOf(JD.today());
+    const onInj = f.planType === 'Normal' && DB.visitsOf(p.uid).some((v) => v.kind === 'proc' && (v.type || 'تزریق دارو') === 'تزریق دارو' && today - JD.dayOf(v.date) <= 60);
+    el.innerHTML = `<span>پیوند با پرونده شماره ${esc(fa(p.pid))}</span><button type="button" class="linkbtn" id="open-rec">پرونده و نمودارها</button><button type="button" class="linkbtn" id="unlink">قطع پیوند</button>` +
+      (onInj ? '<div class="hint" id="hp-hint" style="flex-basis:100%">این بیمار تزریق کاهش وزن دارد؛ برای حفظ عضله برنامه «پرپروتئین» مناسب‌تر است. <button type="button" class="linkbtn" id="use-hp">انتخاب پرپروتئین</button></div>' : '');
     $('#unlink').onclick = () => { f.puid = ''; App.saveDraft(); renderLinked(); renderSaveVisit(); };
     $('#open-rec').onclick = () => go({ view: 'records', screen: 'detail', puid: p.uid });
+    if (onInj) $('#use-hp').onclick = () => { f.planType = 'HighProtein'; App.onChange(); };
   }
   function openPicker(onPick, title) {
     const m = $('#picker');
@@ -11525,6 +12127,7 @@ Located in ./vendor/QRCode
     };
   }
   function closePicker() { $('#picker').hidden = true; }
+  App.pickPatient = (onPick, title) => openPicker(onPick, title);
 
   // ثبت برنامه ساخته‌شده به‌عنوان ویزیت رژیم
   function saveWeightKind() { return R.seg.saveWeight || ((R.seg.saveCenter || App.loadSettings().center) === 'آنلاین' ? 'home' : 'clinic'); }
@@ -11560,7 +12163,8 @@ Located in ./vendor/QRCode
       const prior = DB.visitsOf(p.uid).filter((v) => v.kind === 'diet');
       const same = prior.find((v) => v.date === date);
       const others = prior.filter((v) => v !== same);
-      const planFa = DB.PLAN_TYPES_FA[inp.planType];
+      const planFa = DB.PLAN_TYPES_FA[d.plan_type] || DB.PLAN_TYPES_FA[inp.planType];
+      const eatFa = DB.EATING_FA[d.eating && d.eating.key] || null;
       const lvl = E.activityLevels(inp.factorSet)[E.activityKey(inp.activity, inp.factorSet)];
       const wk = saveWeightKind();
       const rec = {
@@ -11571,13 +12175,15 @@ Located in ./vendor/QRCode
         homeW: wk === 'home' ? inp.weight : (same ? same.homeW : undefined), clinicW: wk === 'clinic' ? inp.weight : (same ? same.clinicW : undefined),
         fat: DB.toNum(f.fat) ?? (same ? same.fat : undefined), muscle: same ? same.muscle : undefined,
         waist: DB.toNum(f.waist), abdomen: DB.toNum(f.abdomen), thigh: DB.toNum(f.thigh), wrist: DB.toNum(f.wrist), steps: DB.toNum(f.steps),
-        activity: lvl.fa.split(':')[0], pal: a.pal, goal: E.GOALS[inp.goal], deficit: inp.goal === 'lose' ? inp.deficit : undefined,
-        rmr: Math.round(a.rmr), tee: Math.round(a.tee), planType: planFa, kcalTarget: d.calories, kcalPlan: Math.round(t.calorie),
+        activity: lvl.fa.split(':')[0], pal: a.pal, goal: E.GOALS[inp.goal],
+        deficit: a.fast52 && !inp.calorieOverride ? Math.round(a.fast52.avg_deficit) : (inp.goal === 'lose' ? inp.deficit : undefined),
+        rmr: Math.round(a.rmr), tee: Math.round(a.tee), planType: planFa, eating: eatFa, kcalTarget: d.calories, kcalPlan: Math.round(t.calorie),
         pC: Math.round(pc.C), pP: Math.round(pc.P), pF: Math.round(pc.F), uGrains: u.Grains, uProtein: u.Protein, uFats: u.Fats, uDairy: u.Dairy,
         uFruits: u.Fruits, uVegetables: u.Vegetables, targetW: DB.toNum(f.target), nextVisit: JD.parse(f.next) || undefined,
         regimen: `${planFa} - ${Math.round(t.calorie)}`, supplements: same ? same.supplements : undefined, notes: same ? same.notes : undefined,
       };
       for (const k of Object.keys(rec)) if (rec[k] === null || rec[k] === undefined || rec[k] === '') delete rec[k];
+      if (!eatFa) rec.eating = null;   // برنامه بدون فستینگ، فستینگِ ثبت قبلی همین تاریخ را پاک می‌کند
       const savedV = DB.saveVisit(rec);
       if (window.DoctorOffice) { try { window.DoctorOffice.afterVisitSave(savedV, window.DoctorOffice.autoBill(savedV)); } catch (e) { /* صندوق اختیاری است */ } }
       if (R.seg.saveCenter !== 'آنلاین') App.saveSettings({ center: R.seg.saveCenter });
@@ -12021,6 +12627,259 @@ Located in ./vendor/QRCode
     Sync.on(() => renderSyncLine());
     try { history.replaceState({ view: 'plan' }, ''); } catch (e) { /* بی‌اثر */ }
     if (Sync.configured) Sync.startAuto();
+  };
+})();
+
+</script>
+<script>
+/* ---- calc.js ---- */
+/* محاسبه‌گر شاخص‌ها: BMI، وزن ایده‌آل، دور کمر، ترکیب بدن، انرژی، هدف وزن، نیازهای روزانه و شاخص‌های آزمایشگاهی.
+   فقط محاسبه است؛ چیزی در پرونده ذخیره نمی‌شود. ورودی‌ها فقط روی همین دستگاه می‌مانند (مثل پیش‌نویس برنامه‌ساز). */
+(function () {
+  'use strict';
+  const App = window.App, I = window.Indices, E = window.Engine, F = window.FA;
+  if (!App || !I || !E || !F) return;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const KEY = 'diet-planner-calc-v1';
+  const BODY = [
+    ['age', 'سن', 'سال', 'numeric'], ['height', 'قد', 'سانتی‌متر'], ['weight', 'وزن', 'کیلوگرم'], ['target', 'وزن هدف', 'کیلوگرم'],
+    ['waist', 'دور کمر', 'سانتی‌متر'], ['hip', 'دور باسن', 'سانتی‌متر'], ['neck', 'دور گردن', 'سانتی‌متر'], ['fat', 'درصد چربی (دستگاه)', '٪'],
+  ];
+  const LABS = [
+    ['glu', 'قند ناشتا', 'mg/dL'], ['ins', 'انسولین ناشتا', 'µU/mL'], ['tg', 'تری‌گلیسرید', 'mg/dL'], ['tc', 'کلسترول تام', 'mg/dL'],
+    ['hdl', 'HDL', 'mg/dL'], ['scr', 'کراتینین', 'mg/dL'], ['ast', 'AST', 'U/L'], ['alt', 'ALT', 'U/L'],
+    ['plt', 'پلاکت', 'هزار/µL'], ['ggt', 'GGT', 'U/L'],
+  ];
+  const RANGE = { age: [18, 100], height: [120, 230], weight: [30, 350], target: [30, 350], waist: [40, 250], hip: [50, 250], neck: [20, 70],
+    fat: [3, 75], glu: [30, 600], ins: [0.5, 300], tg: [20, 3000], tc: [50, 600], hdl: [5, 200], scr: [0.2, 20], ast: [3, 3000],
+    alt: [3, 3000], plt: [10, 1500], ggt: [3, 3000] };
+  const ACTS = Object.entries(E.FACTOR_SETS.nasem.levels);
+  const NASEM_OF = { bed: null, inactive: 'inactive', low: 'low', active: 'active', very: 'very' };
+
+  let S = load();
+  function load() {
+    try { const o = JSON.parse(localStorage.getItem(KEY) || 'null'); if (o && o.v) return { sex: o.sex === 'm' ? 'm' : 'f', act: o.act || 'inactive', v: o.v, from: o.from || '' }; } catch (e) { /* بی‌اثر */ }
+    return { sex: 'f', act: 'inactive', v: {}, from: '' };
+  }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* بی‌اثر */ } }
+  /** عدد معتبر یا null (بیرون از بازه منطقی هم null، با پیام خطا) */
+  function val(k) {
+    const t = S.v[k];
+    if (t === undefined || t === null || String(t).trim() === '') return null;
+    const n = E.toNumber(t);
+    if (Number.isNaN(n)) return null;
+    const [lo, hi] = RANGE[k] || [0, Infinity];
+    return n >= lo && n <= hi ? n : null;
+  }
+  const bad = (k) => { const t = S.v[k]; return t !== undefined && String(t).trim() !== '' && val(k) === null; };
+  const n = (x, d) => (x === null || x === undefined || Number.isNaN(x) ? '—' : F.num(x, d ?? 1));
+  const chip = (c) => (c ? `<span class="chip ${({ ok: 'ok', warn: 'warn', bad: 'bad', high: 'bad', low: 'warn' })[c[0]] || 'info'}">${esc(c[1])}</span>` : '');
+  const row = (label, value, extra, note) => `<div class="cx-row"><span class="cx-l">${label}</span><span class="cx-v">${value}</span>${extra || ''}${note ? `<small class="cx-n">${note}</small>` : ''}</div>`;
+
+  // ------------------------------------------------------------------ فرم
+  function inputHtml([k, label, unit, mode]) {
+    return `<div class="field c2 m3"><label for="cx-${k}">${label}</label><div class="unit-in"><input id="cx-${k}" data-cx="${k}" inputmode="${mode || 'decimal'}" autocomplete="off" value="${esc(S.v[k] ?? '')}"${bad(k) ? ' aria-invalid="true"' : ''}><span>${unit}</span></div></div>`;
+  }
+  function skeleton() {
+    // ظرف تازه در هر ساخت تا شنونده‌ها روی هم جمع نشوند
+    const root = document.createElement('div');
+    $('#view-calc').replaceChildren(root);
+    root.innerHTML = `<div class="view-head cx-head"><h2>محاسبه‌گر شاخص‌ها</h2>
+        <div class="row-btns" style="margin:0"><button type="button" class="btn-sm" id="cx-pick">از پرونده‌ها</button><button type="button" class="btn-sm" id="cx-plan">از برنامه‌ساز</button><button type="button" class="btn-sm" id="cx-clear">پاک کردن</button></div></div>
+      <div class="hint" id="cx-from" style="margin:-4px 0 8px"></div>
+      <section class="block" style="padding-top:4px">
+        <div class="grid">
+          <div class="field c2 m6"><label>جنس</label><div class="seg full" style="--n:2" role="radiogroup" aria-label="جنس" id="cx-sex">
+            <button type="button" role="radio" data-value="f">زن</button><button type="button" role="radio" data-value="m">مرد</button></div></div>
+          ${BODY.map(inputHtml).join('')}
+          <div class="field c6"><label for="cx-act">سطح فعالیت (برای انرژی کل)</label>
+            <select id="cx-act" class="cx-select">${ACTS.map(([k, v]) => `<option value="${k}">${esc(v.fa.split(':')[0])} (×${F.num(v.pal, 2)})</option>`).join('')}</select></div>
+        </div>
+        <details class="adv" id="cx-labs"${LABS.some(([k]) => S.v[k]) ? ' open' : ''}><summary>آزمایش‌ها (اختیاری)</summary>
+          <div class="grid" style="margin-top:8px">${LABS.map((f) => inputHtml(f)).join('')}</div>
+          <div class="hint">واحدها مثل برگه آزمایشگاه‌های ایران است (mg/dL). پلاکت را به هزار در میکرولیتر بنویسید؛ مثلاً ۲۵۰.</div>
+        </details>
+      </section>
+      <div id="cx-out"></div>
+      <p class="hint" style="margin-top:14px">این محاسبه‌ها برای کمک به تصمیم بالینی است و جای معاینه و قضاوت پزشک را نمی‌گیرد. چیزی در پرونده ذخیره نمی‌شود.</p>`;
+    $('#cx-act').value = S.act;
+    syncSex();
+    root.addEventListener('input', (e) => {
+      const inp = e.target.closest('[data-cx]');
+      if (!inp) return;
+      S.v[inp.dataset.cx] = inp.value;
+      inp.setAttribute('aria-invalid', bad(inp.dataset.cx) ? 'true' : 'false');
+      save(); renderOut();
+    });
+    $('#cx-act').addEventListener('change', (e) => { S.act = e.target.value; save(); renderOut(); });
+    $('#cx-sex').addEventListener('click', (e) => {
+      const b = e.target.closest('[role="radio"]');
+      if (!b) return;
+      S.sex = b.dataset.value; syncSex(); save(); renderOut();
+    });
+    $('#cx-clear').addEventListener('click', () => { S = { sex: 'f', act: 'inactive', v: {}, from: '' }; save(); build(); });
+    $('#cx-plan').addEventListener('click', fromPlanner);
+    $('#cx-pick').hidden = !App.pickPatient;
+    $('#cx-pick').addEventListener('click', () => { if (App.pickPatient) App.pickPatient(fromPatient, 'محاسبه برای بیمار'); });
+  }
+  function syncSex() { $$('#cx-sex [role="radio"]').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.value === S.sex))); }
+  function build() { skeleton(); renderOut(); }
+
+  function fromPlanner() {
+    const f = App.state.f;
+    const act = E.activityKey(f.activity, 'nasem');
+    S.sex = f.sex === 'm' ? 'm' : 'f';
+    S.act = act;
+    Object.assign(S.v, { age: f.age, height: f.height, weight: f.weight, waist: f.waist, fat: f.fat, target: f.target });
+    S.from = f.name ? `اعداد از برنامه‌ساز (${f.name})` : 'اعداد از برنامه‌ساز';
+    save(); build();
+  }
+  function fromPatient(p) {
+    const DB = window.DB;
+    if (!p || !DB) return;
+    const s = DB.summary(p);
+    const vs = [...s.visits].reverse();
+    const last = (k) => { const v = vs.find((x) => typeof x[k] === 'number'); return v ? v[k] : null; };
+    const fat = last('fat') ?? (typeof p.fat0 === 'number' ? p.fat0 : null);
+    const w = s.curW ?? DB.toNum(p.w0);
+    S = { sex: p.sex === 'm' ? 'm' : 'f', act: S.act, v: {}, from: `پرونده ${DB.fullName(p)}` };
+    const put = (k, x) => { if (x !== null && x !== undefined) S.v[k] = F.num(x, 1); };
+    put('age', s.age); put('height', p.height); put('weight', w); put('waist', last('waist')); put('fat', fat); put('target', last('targetW'));
+    save(); build();
+  }
+
+  // ------------------------------------------------------------------ نتیجه‌ها
+  function renderOut() {
+    const out = $('#cx-out');
+    if (!out) return;
+    $('#cx-from').textContent = S.from || '';
+    const sex = S.sex, age = val('age'), h = val('height'), w = val('weight');
+    const waist = val('waist'), hip = val('hip'), neck = val('neck'), fatIn = val('fat'), target = val('target');
+    const cards = [];
+    if (!h || !w) {
+      out.innerHTML = '<div class="empty" style="padding-block:24px">قد و وزن را وارد کنید تا شاخص‌ها حساب شوند؛ با سن و جنس، انرژی و ترکیب بدن هم می‌آید.</div>' + labsCard(age, sex, null, waist);
+      return;
+    }
+    // بدن و وزن
+    const b = I.bmi(w, h), [bc, bl] = E.bmiClass(b);
+    const range = E.normalWeightRange(h), ref = E.referenceWeight(w, h);
+    const dev = I.ibw('devine', h, sex);
+    const ibwAll = Object.keys(I.IBW).map((k) => `${I.IBW[k].fa} ${n(I.ibw(k, h, sex), 1)}`).join(' · ');
+    cards.push(card('بدن و وزن', [
+      row('BMI', `<b class="num big2">${n(b, 1)}</b>`, chip([({ normal: 'ok', under: 'warn', over: 'warn' })[bc] || 'bad', bl]), 'WHO'),
+      row('وزن سالم (BMI ۱۸٫۵ تا ۲۴٫۹)', `<b class="num">${n(range[0], 0)} تا ${n(range[1], 0)}</b> کیلو`),
+      row('وزن ایده‌آل', `<b class="num">${n(dev, 1)}</b> کیلو`, '', `دواین؛ دیگر فرمول‌ها: ${ibwAll}`),
+      row('وزن تعدیل‌شده', `<b class="num">${n(I.adjustedWeight(w, dev), 1)}</b> کیلو`, '', 'وزن ایده‌آل + ۰٫۴ × مازاد وزن؛ برای دوز دارو و نیازها در چاقی'),
+      row('وزن مرجع برنامه‌ساز', `<b class="num">${n(ref, 1)}</b> کیلو`, '', 'کمترِ وزن فعلی و وزنِ BMI ۲۵؛ مبنای پروتئین در برنامه‌ساز'),
+      row('سطح بدن', `<b class="num">${n(I.bsa(w, h), 2)}</b> متر مربع`, '', 'Mosteller'),
+    ]));
+    // دور کمر
+    const wl = [];
+    if (waist) {
+      const wr = E.waistRisk(waist, h);
+      const cls = (c) => ({ ok: 'ok', risk: 'warn', high: 'bad' }[c]);
+      wl.push(row('دور کمر', `<b class="num">${n(waist, 1)}</b> سانتی‌متر`, chip([cls(wr.waist_code), wr.waist_label.split(' (')[0]]), 'برش ایرانی ۹۰ و ۹۵ سانتی‌متر برای هر دو جنس'));
+      wl.push(row('نسبت دور کمر به قد', `<b class="num">${n(wr.whtr, 2)}</b>`, chip([cls(wr.whtr_code), wr.whtr_label]), '۰٫۵ به بالا افزایش خطر؛ ۰٫۶ به بالا خطر بالا'));
+      if (hip) {
+        const r = I.whr(waist, hip);
+        wl.push(row('نسبت دور کمر به باسن', `<b class="num">${n(r, 2)}</b>`, chip(I.whrHigh(r, sex) ? ['bad', 'چاقی شکمی'] : ['ok', 'طبیعی']), `WHO: از ${sex === 'm' ? '۰٫۹۰' : '۰٫۸۵'}`));
+      }
+    } else wl.push('<div class="kv">دور کمر را وارد کنید (و برای نسبت کمر به باسن، دور باسن را).</div>');
+    cards.push(card('دور کمر', wl));
+    // ترکیب بدن
+    const bl2 = [];
+    const navy = waist && neck ? I.bodyFatNavy(sex, h, waist, neck, hip) : null;
+    const rfm = waist ? I.bodyFatRfm(sex, h, waist) : null;
+    const deur = age ? I.bodyFatDeurenberg(b, age, sex) : null;
+    const pct = fatIn ?? navy ?? rfm ?? deur;
+    const pctSrc = fatIn !== null ? 'دستگاه' : (navy !== null ? 'نیروی دریایی' : (rfm !== null ? 'RFM' : 'Deurenberg'));
+    if (fatIn !== null) bl2.push(row('درصد چربی (دستگاه)', `<b class="num">${n(fatIn, 1)}٪</b>`, chip(I.bodyFatClass(fatIn, sex))));
+    if (navy !== null) bl2.push(row('درصد چربی نیروی دریایی', `<b class="num">${n(navy, 1)}٪</b>`, chip(I.bodyFatClass(navy, sex)), `دور کمر، گردن${sex === 'f' ? ' و باسن' : ''} و قد؛ Hodgdon 1984`));
+    else bl2.push(row('درصد چربی نیروی دریایی', '—', '', `برای این روش دور گردن${sex === 'f' ? '، کمر و باسن' : ' و کمر'} لازم است`));
+    if (rfm !== null) bl2.push(row('توده چربی نسبی (RFM)', `<b class="num">${n(rfm, 1)}٪</b>`, chip(I.bodyFatClass(rfm, sex)), 'از قد و دور کمر؛ Woolcott 2018'));
+    if (deur !== null) bl2.push(row('درصد چربی از BMI', `<b class="num">${n(deur, 1)}٪</b>`, chip(I.bodyFatClass(deur, sex)), 'Deurenberg 1991؛ تقریبی‌ترین روش'));
+    const comp = pct !== null ? I.composition(w, h, pct) : null;
+    if (comp) {
+      bl2.push(row(`توده چربی / بدون چربی (${pctSrc})`, `<b class="num">${n(comp.fm, 1)}</b> / <b class="num">${n(comp.ffm, 1)}</b> کیلو`));
+      bl2.push(row('شاخص توده بدون چربی (FFMI)', `<b class="num">${n(comp.ffmi, 1)}</b>`, '', `شاخص توده چربی (FMI) ${n(comp.fmi, 1)}`));
+    }
+    bl2.push('<div class="kv">چاقی بر پایه درصد چربی (ACE): ۲۵٪ یا بیشتر در مرد، ۳۲٪ یا بیشتر در زن.</div>');
+    cards.push(card('ترکیب بدن', bl2));
+    // انرژی
+    if (age) {
+      const lvl = E.FACTOR_SETS.nasem.levels[S.act] || E.FACTOR_SETS.nasem.levels.inactive;
+      const mif = I.rmrMifflin(w, h, age, sex), hb = I.rmrHarris(w, h, age, sex), km = comp ? I.rmrKatch(comp.ffm) : null;
+      const tee = mif * lvl.pal;
+      const nk = NASEM_OF[S.act];
+      const teeN = nk ? I.teeNasem(w, h, age, sex, nk) : null;
+      const floor = E.KCAL_FLOOR[sex === 'm' ? 'm' : 'f'];
+      const tgt = (d) => { const v = E.roundTo(tee - d, 25); return v < floor ? `<span class="num">${F.num(floor, 0)}</span><small> (کف)</small>` : `<span class="num">${F.num(v, 0)}</span>`; };
+      cards.push(card('انرژی روزانه', [
+        row('انرژی استراحت (میفلین)', `<b class="num">${n(mif, 0)}</b> کیلوکالری`, '', 'مبنای برنامه‌ساز'),
+        row('هریس-بندیکت / کچ-مک‌آردل', `<b class="num">${n(hb, 0)}</b> / <b class="num">${km ? n(km, 0) : '—'}</b>`, '', km ? `کچ-مک‌آردل با توده بدون چربی (${pctSrc})` : 'کچ-مک‌آردل به درصد چربی نیاز دارد'),
+        row('انرژی کل (میفلین × ضریب)', `<b class="num big2">${n(tee, 0)}</b> کیلوکالری`, '', `ضریب ${F.num(lvl.pal, 2)} (${esc(lvl.fa.split(':')[0])})`),
+        row('انرژی کل با معادله NASEM 2023', teeN ? `<b class="num">${n(teeN, 0)}</b> کیلوکالری` : '—', '', nk ? `دسته «${I.NASEM_FA[nk]}»؛ از داده آب دونشاندار` : 'برای بستری معادله جدا ندارد'),
+        row('کالری با کسری ۵۰۰ / ۷۵۰ / ۱۰۰۰', `${tgt(500)} / ${tgt(750)} / ${tgt(1000)}`, '', `کف ${F.num(floor, 0)} کیلوکالری برای ${sex === 'm' ? 'مردان' : 'زنان'}`),
+      ]));
+      // نیازها
+      const hr = I.hrZone(age);
+      cards.push(card('نیازهای روزانه', [
+        row('پروتئین نگهداری (۰٫۸ گرم/کیلو)', `<b class="num">${n(0.8 * ref, 0)}</b> گرم`, '', `بر پایه وزن مرجع ${n(ref, 0)} کیلو`),
+        row('پروتئین در کاهش وزن (۱٫۲ تا ۱٫۶)', `<b class="num">${n(Math.max(60, 1.2 * ref), 0)} تا ${n(Math.max(60, 1.6 * ref), 0)}</b> گرم`, '', 'به‌ویژه با تیرزپاتاید یا سماگلوتاید؛ دست‌کم ۶۰ گرم؛ در بیماری کلیه نه'),
+        row('آب کل روزانه', `<b class="num">${sex === 'm' ? '۲٫۵' : '۲'}</b> لیتر`, '', 'EFSA؛ حدود ۸۰٪ از نوشیدنی‌ها؛ در گرما و ورزش بیشتر'),
+        row('فیبر', `<b class="num">${n(14 * (tee - 500) / 1000, 0)} تا ${n(14 * tee / 1000, 0)}</b> گرم`, '', '۱۴ گرم به ازای هر ۱۰۰۰ کیلوکالری'),
+        row('ضربان هدف ورزش متوسط', `<b class="num">${n(hr[0], 0)} تا ${n(hr[1], 0)}</b> در دقیقه`, '', '۶۵ تا ۷۵٪ ضربان بیشینه (۲۲۰ − سن)'),
+      ]));
+      // هدف وزن
+      const gl = [];
+      for (const p of [5, 10, 15]) gl.push(row(`کاهش ${F.digits(p)}٪`, `<b class="num">${n(w * (1 - p / 100), 1)}</b> کیلو`, '', `${n(w * p / 100, 1)} کیلو کمتر`));
+      if (target && target < w) {
+        const lose = w - target;
+        gl.push(row('تا وزن هدف', `<b class="num">${n(lose, 1)}</b> کیلو (${n(100 * lose / w, 1)}٪)`, '', `BMI در وزن هدف ${n(I.bmi(target, h), 1)}`));
+        gl.push(row('زمان تقریبی با کسری ۵۰۰ / ۷۵۰', `<b class="num">${n(I.weeksTo(w, target, 500), 0)}</b> / <b class="num">${n(I.weeksTo(w, target, 750), 0)}</b> هفته`, '', 'با قاعده ۷۷۰۰ کیلوکالری؛ کاهش وزن با گذشت زمان کندتر می‌شود، پس عدد واقعی بیشتر است'));
+      } else gl.push('<div class="kv">برای زمان رسیدن، وزن هدف کمتر از وزن فعلی را وارد کنید.</div>');
+      gl.push(row('کاهش هفتگی تقریبی با کسری ۵۰۰ / ۷۵۰', `<b class="num">${n(I.weeklyLoss(500), 2)}</b> / <b class="num">${n(I.weeklyLoss(750), 2)}</b> کیلو`, '', 'در هفته‌های اول'));
+      cards.push(card('هدف وزن', gl));
+    } else {
+      cards.push(card('انرژی و نیازها', ['<div class="kv">سن را وارد کنید تا انرژی استراحت، انرژی کل، نیاز پروتئین و هدف وزن حساب شود.</div>']));
+    }
+    out.innerHTML = `<div class="cx-cards">${cards.join('')}</div>${labsCard(age, sex, b, waist)}`;
+  }
+  function card(title, rows) { return `<div class="card cx-card"><h3>${title}</h3>${rows.join('')}</div>`; }
+
+  function labsCard(age, sex, b, waist) {
+    const glu = val('glu'), ins = val('ins'), tg = val('tg'), tc = val('tc'), hdl = val('hdl'), scr = val('scr');
+    const ast = val('ast'), alt = val('alt'), plt = val('plt'), ggt = val('ggt');
+    const rows = [];
+    const hm = I.homaIR(glu, ins);
+    if (hm !== null) rows.push(row('HOMA-IR', `<b class="num">${n(hm, 2)}</b>`, chip(I.homaClass(hm)), 'قند × انسولین ÷ ۴۰۵؛ برش ایرانی ۱٫۸، برش رایج ۲٫۵'));
+    const ty = I.tyg(tg, glu);
+    if (ty !== null) rows.push(row('شاخص TyG', `<b class="num">${n(ty, 2)}</b>`, chip(ty >= 8.5 ? ['warn', 'بالا'] : ['ok', 'پایین']), 'ln(تری‌گلیسرید × قند ÷ ۲)؛ برش یکسانی ندارد، حدود ۸٫۵ به بالا با مقاومت به انسولین همراه است'));
+    const th = I.tgHdl(tg, hdl);
+    if (th !== null) rows.push(row('نسبت تری‌گلیسرید به HDL', `<b class="num">${n(th, 2)}</b>`, chip(th >= 3 ? ['warn', 'مقاومت به انسولین محتمل'] : ['ok', 'پایین']), '۳ یا بیشتر (mg/dL)'));
+    const lf = I.ldlFriedewald(tc, hdl, tg), ls = I.ldlSampson(tc, hdl, tg);
+    if (ls !== null || lf !== null) rows.push(row('LDL محاسبه‌ای (Sampson / فریدوالد)', `<b class="num">${n(ls, 0)}</b> / <b class="num">${n(lf, 0)}</b> mg/dL`, chip(I.ldlClass(ls ?? lf)), tg >= 400 ? 'تری‌گلیسرید ۴۰۰ یا بیشتر: LDL مستقیم اندازه‌گیری شود' : 'Sampson (NIH 2020) دقیق‌تر است، به‌ویژه با تری‌گلیسرید بالا'));
+    if (tc && hdl) rows.push(row('کلسترول غیر HDL', `<b class="num">${n(tc - hdl, 0)}</b> mg/dL`, '', 'هدف: ۳۰ واحد بالاتر از هدف LDL'));
+    const eg = I.egfr(scr, age, sex);
+    if (eg !== null) rows.push(row('eGFR', `<b class="num">${n(eg, 0)}</b> mL/min/1.73m²`, chip(I.egfrStage(eg)), 'CKD-EPI 2021 بدون نژاد؛ مرحله KDIGO'));
+    else if (scr) rows.push(row('eGFR', '—', '', 'برای eGFR سن هم لازم است'));
+    const fb = I.fib4(age, ast, alt, plt);
+    if (fb !== null) rows.push(row('FIB-4', `<b class="num">${n(fb, 2)}</b>`, chip(I.fib4Class(fb, age)), `برش پایین ${age >= 65 ? '۲٫۰ (۶۵ سال به بالا)' : '۱٫۳'}، بالا ۲٫۶۷؛ AASLD 2023`));
+    const fl = I.fli(tg, b, ggt, waist);
+    if (fl !== null) rows.push(row('شاخص کبد چرب (FLI)', `<b class="num">${n(fl, 0)}</b>`, chip(I.fliClass(fl)), 'تری‌گلیسرید، BMI، GGT و دور کمر؛ زیر ۳۰ رد، ۶۰ به بالا محتمل'));
+    if (!rows.length) return '';
+    return `<div class="cx-cards" style="margin-top:0"><div class="card cx-card cx-wide"><h3>شاخص‌های آزمایشگاهی</h3>${rows.join('')}</div></div>`;
+  }
+
+  // ------------------------------------------------------------------ ورود به نما
+  let built = false;
+  window.Calc = {
+    show() {
+      if (!built) { build(); built = true; } else renderOut();
+    },
+    reset() { built = false; },
   };
 })();
 
