@@ -175,6 +175,21 @@ table.plan { width: 100%; border-collapse: collapse; font-size: 14px; min-width:
 .warns { display: grid; gap: 6px; margin-block: 12px; }
 .warns div { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 8px 12px; font-size: 13.5px; }
 .warns div.caution { background: var(--surface-2); border-inline-start: 3px solid var(--warn); }
+/* خانه تاریخ شمسی */
+.di-row { display: flex; gap: 6px; align-items: stretch; }
+.di-row input { flex: 1; min-width: 0; }
+.di-cal { flex: none; width: 44px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--teal); cursor: pointer; display: grid; place-items: center; }
+.di-hint { font-size: 12px; color: var(--muted); min-height: 0; line-height: 1.6; }
+.di-hint.ok { color: var(--teal); } .di-hint.warn { color: var(--warn); } .di-hint.bad { color: var(--danger); }
+.di-quick { margin-top: 2px; } .di-quick button { min-height: 30px; padding: 2px 10px; font-size: 12.5px; }
+.di-nav { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 8px; }
+.di-nav .round { width: 40px; height: 40px; display: inline-grid; place-items: center; padding: 0; }
+.di-nav select { min-height: 40px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); font: inherit; padding-inline: 6px; }
+.di-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; direction: ltr; }
+.di-grid .di-wd { text-align: center; font-size: 12px; color: var(--muted); padding-block: 2px; }
+.di-grid button { direction: rtl; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; min-height: 42px; font: inherit; font-size: 15px; cursor: pointer; }
+.di-grid button.is-today { border-color: var(--teal); color: var(--teal); font-weight: 700; }
+.di-grid button[aria-current="true"] { background: var(--teal); border-color: var(--teal); color: var(--on-teal); font-weight: 700; }
 .cx-cards { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-block: 12px; }
 @media (max-width: 720px) { .cx-cards { grid-template-columns: minmax(0, 1fr); } }
 .cx-card .cx-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding-block: 7px; border-top: 1px solid var(--line); }
@@ -379,6 +394,32 @@ table.data th { color: var(--muted); font-weight: 600; }
 .rc-kind { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 0 8px; margin-inline-start: auto; }
 .rc-kind.late { background: var(--warn-soft); color: var(--warn); }
 .rc-kind.lost { background: var(--danger-soft); color: var(--danger); }
+.rc-kind.bday { background: var(--gold-soft); color: var(--gold); }
+/* پاسخ به درمان و آزمایش‌ها در صفحه بیمار */
+.rs-card { background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); padding: 10px 14px; margin-bottom: 10px; }
+.rs-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.rs-card h3 small { font-weight: 400; font-size: 11.5px; color: var(--muted); display: block; }
+.rs-card h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin: 10px 0 2px; }
+.rs-row { display: flex; gap: 10px; align-items: baseline; padding-block: 6px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.rs-card h3 + .rs-row { border-top: 0; }
+.rs-l { flex: none; min-width: 64px; color: var(--muted); font-size: 12.5px; }
+.rs-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.rs-n { display: block; font-size: 11.5px; color: var(--muted); }
+.rs-acts { display: inline-flex; gap: 6px; margin-inline-start: 8px; vertical-align: middle; }
+.rs-cg .rs-n { margin-top: 4px; }
+.rs-flag { background: var(--warn-soft); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; margin-top: 6px; }
+.rs-note { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+.lb-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 0 8px; padding-block: 6px; border-top: 1px solid var(--line); font-size: 13.5px; }
+.lb-n { color: var(--ink); font-size: 13px; }
+.lb-v { text-align: end; white-space: nowrap; }
+.lb-v small { color: var(--muted); font-size: 11px; }
+.lb-sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+.lb-sp { color: var(--teal); flex: none; width: 64px; height: 18px; margin-inline-start: auto; }
+details.labs > summary, details.chk > summary { cursor: pointer; color: var(--teal); font-size: 14px; padding-block: 8px; }
+details.labs > summary small { color: var(--muted); font-size: 12px; margin-inline-start: 6px; }
+details.labs { border-top: 1px solid var(--line); margin-top: 4px; }
+details.chk .chips.multi button { text-align: start; line-height: 1.5; padding-block: 6px; }
+.dose-hint .warn-t { color: var(--warn); font-weight: 700; }
 .rc-meta { font-size: 12.5px; color: var(--muted); }
 .rc-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .rc-actions a.btn-sm { text-decoration: none; display: inline-flex; align-items: center; min-height: 36px; }
@@ -408,6 +449,19 @@ table.data th { color: var(--muted); font-weight: 600; }
 .o-week button[aria-current="true"] small, .o-week button[aria-current="true"] i { color: var(--on-teal); }
 .o-week button.is-today { border-color: var(--teal); }
 .o-kpis .kpi b.money { font-size: 18px; }
+.o-delta { display: block; font-size: 11.5px; font-weight: 700; color: var(--muted); }
+.o-delta.up { color: var(--ok); } .o-delta.down { color: var(--danger); }
+.o-wbars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; direction: ltr; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); padding: 10px 8px 6px; margin-bottom: 6px; }
+.o-wb { direction: rtl; display: grid; justify-items: center; gap: 2px; min-width: 0; }
+.o-wb small { font-size: 11px; color: var(--muted); }
+.o-wb.is-today small { color: var(--teal); font-weight: 700; }
+.o-wv { font-size: 10.5px; color: var(--ink); min-height: 15px; white-space: nowrap; }
+.o-wcol { height: 70px; width: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 2px; border-bottom: 1px solid var(--line); }
+.o-wcol i { display: block; width: 38%; max-width: 14px; border-radius: 3px 3px 0 0; min-height: 0; }
+.o-wcol i.inc, .o-wlegend i.inc { background: var(--teal-soft); border: 1px solid var(--teal); }
+.o-wcol i.rec, .o-wlegend i.rec { background: var(--teal); }
+.o-wlegend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--muted); margin-bottom: 10px; }
+.o-wlegend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-inline-end: 4px; vertical-align: -1px; }
 .money.neg, .kpi b.neg { color: var(--danger); }
 .ap-list { display: grid; gap: 8px; }
 .ap-item { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; background: var(--surface); border-radius: var(--r); box-shadow: var(--shadow); padding: 10px 12px; border-inline-start: 4px solid var(--line); }
@@ -607,14 +661,14 @@ table.data th { color: var(--muted); font-weight: 600; }
       <section class="block">
         <h2>اطلاعات سند</h2>
         <div class="grid">
-          <div class="field c3"><label for="f-date">تاریخ تنظیم</label><input id="f-date" autocomplete="off"></div>
+          <div class="field c3 di-field"><label for="f-date">تاریخ تنظیم</label><div class="di-row"><input id="f-date" data-datein="visit" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۱۴۰۵۰۸۱۲"><button type="button" class="di-cal" data-dipick="f-date" aria-label="انتخاب از تقویم" title="انتخاب از تقویم"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div><div class="di-hint" id="f-date-di" aria-live="polite"></div></div>
           <div class="field c3"><label for="f-target">وزن هدف این دوره</label><div class="unit-in"><input id="f-target" inputmode="decimal" autocomplete="off"><span>کیلوگرم</span></div>
             <button type="button" class="chipbtn" id="target-suggest" hidden></button></div>
           <div class="field c6"><label>مراجعه بعدی</label>
             <div class="seg full" style="--n:4" role="radiogroup" aria-label="فاصله تا مراجعه بعدی" data-name="weeks">
               <button type="button" role="radio" data-value="1">۱ هفته</button><button type="button" role="radio" data-value="2">۲ هفته</button><button type="button" role="radio" data-value="3">۳ هفته</button><button type="button" role="radio" data-value="4">۴ هفته</button>
             </div></div>
-          <div class="field c6"><label for="f-next">تاریخ مراجعه بعدی</label><input id="f-next" autocomplete="off"></div>
+          <div class="field c6 di-field"><label for="f-next">تاریخ مراجعه بعدی</label><div class="di-row"><input id="f-next" data-datein="next" data-ref="f-date" inputmode="numeric" autocomplete="off" placeholder="مثلاً ۱۴۰۵۰۸۲۶"><button type="button" class="di-cal" data-dipick="f-next" aria-label="انتخاب از تقویم" title="انتخاب از تقویم"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div><div class="di-hint" id="f-next-di" aria-live="polite"></div></div>
         </div>
       </section>
     </form>
@@ -768,7 +822,7 @@ table.data th { color: var(--muted); font-weight: 600; }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "9d43456", buildAt: 1793661888123 };</script>
+<script>window.APP_CONFIG = { docxUrls: ["./lib/docx.iife.js"], build: "16f6ed8", buildAt: 1793696166032 };</script>
 <script>
 /* ---- JSZip (مجوز MIT، متن کامل در lib/jszip-LICENSE.md) ---- */
 /*!
@@ -3872,6 +3926,269 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
 
 </script>
 <script>
+/* ---- datein.js ---- */
+/* خانه تاریخ شمسی: نوشتن ساده (فقط عدد، شکل کوتاه)، نمایش فوری روز هفته و نام ماه، خطای فوری، تقویم برای انتخاب با لمس،
+   و هشدار اشتباه‌های محتمل (مراجعه در آینده، مراجعه بعدی قبل از مراجعه، سن نامعقول). در اپ دکتر و اپ منشی مشترک است. */
+(function (root) {
+  'use strict';
+  const JD = root.JD || (typeof require === 'function' ? require('./jdate.js') : null);
+  const WEEKDAYS = ['پنجشنبه', 'جمعه', 'شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه'];   // ۱۹۷۰/۰۱/۰۱ پنجشنبه بود
+  const fa = (s) => JD.faDigits(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const monthLength = (y, m) => (m <= 6 ? 31 : m <= 11 ? 30 : (JD.isLeap(y) ? 30 : 29));
+  const weekday = (d) => { const n = JD.dayOf(d); return n === null ? '' : WEEKDAYS[((n % 7) + 7) % 7]; };
+  const thisYear = () => JD.split(JD.today())[0];
+
+  /** سال دو رقمی: ۰۵ → ۱۴۰۵، ۶۷ → ۱۳۶۷ (هرچه از امسال (و برای تاریخ تولد از امسال) جلوتر نرود) */
+  function fullYear(yy, kind) {
+    const cy = thisYear();
+    const y14 = 1400 + yy;
+    return y14 <= cy + (kind === 'birth' ? 0 : 1) ? y14 : 1300 + yy;
+  }
+
+  /**
+   * خواندن تاریخ با قالب‌های آزاد. خروجی: { date } یا { err }.
+   * ۱۴۰۵۰۸۱۲، ۰۵۰۸۱۲، ۱۴۰۵/۸/۱۲، ۰۵/۸/۱۲، ۱۲/۸/۱۴۰۵ (روز/ماه/سال مثل اکسل)، ۸/۱۲ و ۰۸۱۲ (امسال)، امروز، دیروز، فردا، تاریخ میلادی.
+   */
+  function parse(text, kind) {
+    const raw = JD.latinDigits(String(text ?? '')).trim();
+    if (!raw) return { date: null, empty: true };
+    const t = raw.replace(/[٫،,\\]/g, '/').replace(/\s+/g, ' ');
+    const T = JD.today();
+    if (/^امروز$/.test(t)) return { date: T };
+    if (/^دیروز$/.test(t)) return { date: JD.addDays(T, -1) };
+    if (/^فردا$/.test(t)) return { date: JD.addDays(T, 1) };
+    let y, m, d, yy = null;
+    let mt;
+    if ((mt = /^(\d{4})(\d{2})(\d{2})$/.exec(t))) {
+      if (+mt[1] >= 1200) [y, m, d] = [+mt[1], +mt[2], +mt[3]];
+      else return { err: 'تاریخ را مثل ۱۴۰۵۰۸۱۲ یا ۱۴۰۵/۰۸/۱۲ بنویسید.' };
+    } else if ((mt = /^(\d{2})(\d{2})(\d{2})$/.exec(t))) {
+      yy = +mt[1]; [m, d] = [+mt[2], +mt[3]];
+    } else if ((mt = /^(\d{2})(\d{2})$/.exec(t)) && kind !== 'birth') {
+      [y, m, d] = [thisYear(), +mt[1], +mt[2]];
+    } else {
+      const parts = t.split(/[/\-. ]+/).filter(Boolean);
+      if (parts.some((p) => !/^\d+$/.test(p))) return { err: 'تاریخ را فقط با عدد بنویسید؛ مثلاً ۱۴۰۵/۰۸/۱۲.' };
+      if (parts.length === 2 && kind !== 'birth') {
+        [y, m, d] = [thisYear(), +parts[0], +parts[1]];
+      } else if (parts.length === 3) {
+        const [a, b, c] = parts;
+        if (a.length === 4) [y, m, d] = [+a, +b, +c];
+        else if (c.length === 4) [y, m, d] = [+c, +b, +a];
+        else if (+a > 31 || a.length === 2 || +c <= 31) { yy = +a; [m, d] = [+b, +c]; }
+        else { yy = +c; [m, d] = [+b, +a]; }
+      } else return { err: 'تاریخ کامل نیست؛ مثلاً ۱۴۰۵/۰۸/۱۲.' };
+    }
+    if (yy !== null) { if (yy > 99) return { err: 'سال را چهار رقمی بنویسید.' }; y = fullYear(yy, kind); }
+    if (y > 1700) {   // میلادی
+      const g = new Date(Date.UTC(y, m - 1, d));
+      if (g.getUTCMonth() !== m - 1 || g.getUTCDate() !== d) return { err: 'تاریخ میلادی نامعتبر است.' };
+      return { date: JD.fromDate(new Date(y, m - 1, d)) };
+    }
+    if (y < 1200 || y > 1600) return { err: 'سال نامعتبر است.' };
+    if (m < 1 || m > 12) return { err: 'ماه باید بین ۱ و ۱۲ باشد.' };
+    const ml = monthLength(y, m);
+    if (d < 1 || d > ml) return { err: `${JD.MONTHS[m - 1]} ${fa(y)} ${fa(ml)} روز دارد.` };
+    let date = JD.canon(y, m, d);
+    // «۱/۱۵» برای مراجعه بعدی در اسفند یعنی سال بعد
+    if (kind === 'next' && yy === null && /^(\d{2})(\d{2})$|^\d+[/\-. ]\d+$/.test(t) && JD.dayOf(date) < JD.dayOf(T) - 1 && d <= monthLength(y + 1, m)) date = JD.canon(y + 1, m, d);
+    return { date };
+  }
+
+  /** متن زیر خانه و هشدارها برای تاریخ معتبر */
+  function describe(date, kind, ref) {
+    const T = JD.today();
+    const diff = JD.dayOf(date) - JD.dayOf(T);
+    let text = `${weekday(date)} ${JD.show(date, true)}`;
+    let warn = null, err = null;
+    if (kind === 'birth') {
+      const age = JD.age(date, T);
+      text = `${JD.show(date, true)} · ${age >= 0 ? `${fa(age)} سال` : 'در آینده'}`;
+      if (age < 1 || age > 110) err = 'تاریخ تولد نامعقول است؛ سال را بررسی کنید.';
+      else if (age < 12 || age > 95) warn = `سن ${fa(age)} سال می‌شود؛ مطمئنید؟`;
+      return { text, warn, err, age };
+    }
+    text += ` · ${JD.ago(date)}`;
+    if (kind === 'visit') {
+      if (diff > 0) warn = 'تاریخ مراجعه در آینده است.';
+      else if (diff < -730) warn = 'بیش از دو سال پیش است.';
+    } else if (kind === 'lab') {
+      if (diff > 0) err = 'تاریخ آزمایش نمی‌تواند در آینده باشد.';
+      else if (diff < -365) warn = 'آزمایش بیش از یک سال پیش است.';
+    } else if (kind === 'next') {
+      if (ref && JD.dayOf(date) <= JD.dayOf(ref)) err = 'مراجعه بعدی باید بعد از تاریخ مراجعه باشد.';
+      else if (diff < 0) warn = 'این تاریخ گذشته است.';
+      else if (diff > 365) warn = 'بیش از یک سال بعد است.';
+    } else if (Math.abs(diff) > 365) warn = 'بیش از یک سال با امروز فاصله دارد.';
+    return { text, warn, err };
+  }
+
+  /** خواندن و بررسی کامل یک خانه (برای ذخیره فرم): { date, err, warn, empty } */
+  function check(el) {
+    if (!el) return { date: null, empty: true };
+    const kind = el.dataset.datein || 'any';
+    const r = parse(el.value, kind);
+    if (r.empty || r.err) return r;
+    const refEl = el.dataset.ref && document.getElementById(el.dataset.ref);
+    const ref = refEl ? parse(refEl.value, refEl.dataset.datein).date : null;
+    const dsc = describe(r.date, kind, ref);
+    return { date: r.date, err: dsc.err, warn: dsc.warn, text: dsc.text, age: dsc.age };
+  }
+  function value(el) { const r = check(el); return r.err ? null : (r.date || null); }
+
+  const QUICK = {
+    visit: [['امروز', 0], ['دیروز', -1]],
+    lab: [['امروز', 0]],
+    next: [['۱ هفته', 7, 'ref'], ['۲ هفته', 14, 'ref'], ['۴ هفته', 28, 'ref']],
+    office: [['امروز', 0], ['فردا', 1], ['هفته بعد', 7, 'self']],
+  };
+  const CAL_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 9.5h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
+  /**
+   * HTML خانه تاریخ. kind: visit | next | birth | lab | any. opts: { cls, ref (شناسه خانه تاریخ مراجعه برای next)، quick (کلید QUICK یا false)، ph }
+   */
+  function field(id, label, date, kind, opts) {
+    const o = opts || {};
+    const k = kind || 'any';
+    const q = o.quick === false ? null : QUICK[o.quick || k];
+    const ph = o.ph || (k === 'birth' ? 'مثلاً ۱۳۶۷۰۴۱۷' : 'مثلاً ۱۴۰۵۰۸۱۲');
+    return `<div class="field ${o.cls || 'c3'} di-field"><label for="${id}">${label}</label>
+      <div class="di-row"><input id="${id}" data-datein="${k}"${o.ref ? ` data-ref="${o.ref}"` : ''} value="${esc(date ? JD.show(date) : '')}" placeholder="${esc(ph)}" inputmode="numeric" autocomplete="off">
+      <button type="button" class="di-cal" data-dipick="${id}" aria-label="انتخاب از تقویم" title="انتخاب از تقویم">${CAL_ICON}</button></div>
+      <div class="di-hint" id="${id}-di" aria-live="polite"></div>
+      ${q ? `<div class="chips di-quick" data-diquick="${id}">${q.map(([l, n, base]) => `<button type="button" data-dq="${n}" data-dqbase="${base || ''}">${l}</button>`).join('')}</div>` : ''}</div>`;
+  }
+
+  /** به‌روز کردن متن زیر خانه؛ final: بعد از ترک خانه (شکل استاندارد نوشته می‌شود و خطا پررنگ می‌شود) */
+  function refresh(el, final) {
+    const hint = document.getElementById(`${el.id}-di`);
+    const r = check(el);
+    let cls = '', msg = '';
+    const typing = !final && /^\d{1,7}$/.test(JD.latinDigits(el.value.trim()));
+    if (r.empty) msg = '';
+    else if (!r.date) { msg = final || !typing ? r.err : ''; cls = 'bad'; }
+    else if (typing && /^1[34]\d{4}$/.test(JD.latinDigits(el.value.trim()))) msg = '';   // شش رقم اولِ «۱۴۰۵۰۸۱۲» هنوز تمام نشده
+    else {
+      msg = r.text + (r.err ? ` — ${r.err}` : (r.warn ? ` — ${r.warn}` : ''));
+      cls = r.err ? 'bad' : (r.warn ? 'warn' : 'ok');
+      if (final && JD.show(r.date) !== el.value.trim()) { el.value = JD.show(r.date); el.dispatchEvent(new Event('input', { bubbles: true })); }
+    }
+    el.setAttribute('aria-invalid', String(!!(final && (r.err || (!r.date && !r.empty)))));
+    if (hint) { hint.textContent = msg || ''; hint.className = `di-hint ${cls}`; }
+    return r;
+  }
+  function set(el, date) {
+    el.value = date ? JD.show(date) : '';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    refresh(el, true);
+  }
+
+  /** شنونده‌ها روی یک ظرف (یک بار برای هر ظرف) */
+  function wire(box) {
+    if (!box) return;
+    for (const el of box.querySelectorAll('[data-datein]')) if (el.value.trim()) refresh(el, true);
+    if (box._diWired) return;
+    box._diWired = true;
+    box.addEventListener('input', (e) => {
+      const el = e.target;
+      if (!el.dataset || !el.dataset.datein) return;
+      // هشت رقم پشت‌سرهم همان لحظه شکل تاریخ می‌گیرد (مکان‌نما آخر خانه است، پس نوشتن به هم نمی‌خورد)
+      const t = JD.latinDigits(el.value.trim());
+      if (/^\d{8}$/.test(t)) {
+        const r = parse(t, el.dataset.datein);
+        if (r.date) { el.value = JD.show(r.date); el.dispatchEvent(new Event('input', { bubbles: true })); return; }
+      }
+      refresh(el, false);
+      // خانه‌ای که به این تاریخ وابسته است (مراجعه بعدی) هم دوباره بررسی شود
+      for (const dep of box.querySelectorAll(`[data-ref="${el.id}"]`)) if (dep.value.trim()) refresh(dep, true);
+    });
+    box.addEventListener('focusout', (e) => { const el = e.target; if (el.dataset && el.dataset.datein) refresh(el, true); });
+    box.addEventListener('click', async (e) => {
+      const pk = e.target.closest('[data-dipick]');
+      if (pk) {
+        const el = document.getElementById(pk.dataset.dipick);
+        const cur = value(el) || parse(el.value, el.dataset.datein).date;
+        const refEl = el.dataset.ref && document.getElementById(el.dataset.ref);
+        const d = await pick(cur, { kind: el.dataset.datein, ref: refEl ? value(refEl) : null });
+        if (d) set(el, d);
+        return;
+      }
+      const q = e.target.closest('[data-diquick] [data-dq]');
+      if (q) {
+        const el = document.getElementById(q.parentElement.dataset.diquick);
+        let base = JD.today();
+        if (q.dataset.dqbase === 'ref') { const refEl = el.dataset.ref && document.getElementById(el.dataset.ref); base = (refEl && value(refEl)) || base; }
+        if (q.dataset.dqbase === 'self') base = value(el) || base;
+        set(el, JD.addDays(base, +q.dataset.dq));
+      }
+    });
+  }
+
+  // ------------------------------------------------------------------ تقویم
+  const CHEV = {
+    right: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    left: '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  };
+  /** انتخاب تاریخ از تقویم ماهانه (آینده سمت راست، مثل تقویم نوبت‌ها). خروجی: تاریخ یا null */
+  function pick(initial, opts) {
+    const o = opts || {};
+    return new Promise((resolve) => {
+      const T = JD.today();
+      const start = initial || (o.kind === 'birth' ? JD.canon(thisYear() - 30, 1, 1) : (o.kind === 'next' && o.ref ? JD.addDays(o.ref, 14) : T));
+      let [y, m] = JD.split(start);
+      const m0 = document.createElement('div');
+      m0.className = 'modal'; m0.setAttribute('role', 'dialog'); m0.setAttribute('aria-modal', 'true'); m0.setAttribute('aria-label', 'انتخاب تاریخ');
+      const cy = thisYear();
+      const years = [];
+      for (let yr = cy + 1; yr >= 1300; yr--) years.push(yr);
+      const draw = () => {
+        const first = JD.canon(y, m, 1);
+        const n1 = JD.dayOf(first);
+        const lead = ((n1 % 7) + 7 + 5) % 7;   // شنبه = ۰
+        const ml = monthLength(y, m);
+        let cells = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'].map((w) => `<span class="di-wd">${w}</span>`).join('');
+        for (let i = 0; i < lead; i++) cells += '<span></span>';
+        for (let d = 1; d <= ml; d++) {
+          const dt = JD.canon(y, m, d);
+          cells += `<button type="button" data-dpday="${dt}" class="${dt === T ? 'is-today' : ''}" aria-current="${dt === initial}" aria-label="${esc(`${weekday(dt)} ${JD.show(dt, true)}`)}">${fa(d)}</button>`;
+        }
+        m0.innerHTML = `<div class="modal-in di-calbox"><div class="modal-head"><h2>انتخاب تاریخ</h2><button type="button" class="ghost" data-x>بستن</button></div>
+          <div class="di-nav"><button type="button" class="round" data-dpm="1" aria-label="ماه بعد" title="ماه بعد">${CHEV.right}</button>
+            <select data-dpmon aria-label="ماه">${JD.MONTHS.map((mn, i) => `<option value="${i + 1}"${i + 1 === m ? ' selected' : ''}>${mn}</option>`).join('')}</select>
+            <select data-dpyear aria-label="سال">${years.map((yr) => `<option value="${yr}"${yr === y ? ' selected' : ''}>${fa(yr)}</option>`).join('')}</select>
+            <button type="button" class="round" data-dpm="-1" aria-label="ماه قبل" title="ماه قبل">${CHEV.left}</button></div>
+          <div class="di-grid">${cells}</div>
+          <div class="row-btns"><button type="button" class="secondary" data-dptoday>امروز (${esc(JD.show(T, true))})</button></div></div>`;
+      };
+      const done = (v) => { m0.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+      const onKey = (e) => { if (e.key === 'Escape') done(null); };
+      m0.addEventListener('click', (e) => {
+        if (e.target === m0 || e.target.closest('[data-x]')) { done(null); return; }
+        const dd = e.target.closest('[data-dpday]');
+        if (dd) { done(dd.dataset.dpday); return; }
+        if (e.target.closest('[data-dptoday]')) { done(T); return; }
+        const mv = e.target.closest('[data-dpm]');
+        if (mv) { m += +mv.dataset.dpm; if (m > 12) { m = 1; y++; } if (m < 1) { m = 12; y--; } y = Math.max(1300, Math.min(cy + 1, y)); draw(); }
+      });
+      m0.addEventListener('change', (e) => {
+        if (e.target.matches('[data-dpmon]')) { m = +e.target.value; draw(); }
+        if (e.target.matches('[data-dpyear]')) { y = +e.target.value; draw(); }
+      });
+      document.addEventListener('keydown', onKey);
+      draw();
+      document.body.appendChild(m0);
+    });
+  }
+
+  const DateIn = { parse, describe, check, value, field, wire, refresh, set, pick, weekday, fullYear };
+  root.DateIn = DateIn;
+  if (typeof module !== 'undefined' && module.exports) module.exports = DateIn;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
 /* ---- db.js ---- */
 /* پرونده‌های بیماران روی خود دستگاه: ذخیره در IndexedDB، ادغام بی‌تعارض بین دستگاه‌ها، تبدیل به/از شیت‌های اکسل.
    ایمنی داده: پیش از هر تغییر نسخه یک پشتیبان کامل داخل گوشی گرفته می‌شود، داده خراب هرگز بازنویسی نمی‌شود،
@@ -3894,6 +4211,33 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
   const DRUGS = ['Spartina'];
   const PLAN_TYPES_FA = { Normal: 'عادی', Mediterranean: 'مدیترانه‌ای', DASH: 'DASH', Diabetic: 'دیابت', HighProtein: 'پرپروتئین',
     LowCarb: 'کم‌کربوهیدرات', Keto: 'کتوژنیک' };
+  // چک‌لیست شروع تزریق (از برچسب تیرزپاتاید)؛ در پرونده بیمار، کلیدهای تیک‌خورده
+  const INJ_CHECK = [
+    ['mtc', 'سابقه شخصی یا خانوادگی سرطان مدولاری تیروئید یا MEN2 ندارد'],
+    ['panc', 'سابقه پانکراتیت ندارد'],
+    ['gb', 'درباره بیماری کیسه صفرا پرسیده شد'],
+    ['preg', 'باردار یا شیرده نیست و برنامه بارداری ندارد'],
+    ['ocp', 'درباره قرص ضدبارداری توضیح داده شد (روش کمکی تا ۴ هفته بعد از شروع و هر افزایش دوز)'],
+    ['hypo', 'انسولین یا سولفونیل‌اوره مصرف نمی‌کند، یا دوزش تنظیم شد'],
+    ['surg', 'گفته شد پیش از جراحی یا آندوسکوپی، تزریق را به پزشک بیهوشی بگوید'],
+  ];
+  // آزمایش‌ها (در ویزیت، با تاریخ خودشان): کلید، نام، واحد، کمینه و بیشینه پذیرفتنی
+  const LABS = [
+    ['glu', 'قند ناشتا', 'mg/dL', 30, 600], ['a1c', 'HbA1c', '٪', 3, 20], ['ins', 'انسولین ناشتا', 'µU/mL', 0.5, 300],
+    ['tg', 'تری‌گلیسرید', 'mg/dL', 20, 3000], ['tc', 'کلسترول', 'mg/dL', 50, 600], ['ldl', 'LDL', 'mg/dL', 10, 400], ['hdl', 'HDL', 'mg/dL', 5, 200],
+    ['alt', 'ALT', 'U/L', 3, 3000], ['ast', 'AST', 'U/L', 3, 3000], ['ggt', 'GGT', 'U/L', 3, 3000], ['cr', 'کراتینین', 'mg/dL', 0.2, 20],
+    ['tsh', 'TSH', 'mIU/L', 0.005, 150], ['vitd', 'ویتامین D', 'ng/mL', 2, 250], ['ferr', 'فریتین', 'ng/mL', 1, 5000], ['b12', 'B12', 'pg/mL', 50, 5000],
+    ['hb', 'هموگلوبین', 'g/dL', 3, 25], ['plt', 'پلاکت', 'هزار/µL', 10, 1500],
+  ];
+  const LAB_KEYS = LABS.map((x) => x[0]);
+  // نام کوتاه موارد چک‌لیست برای ستون اکسل
+  const CHK_SHORT = { mtc: 'MTC/MEN2', panc: 'پانکراتیت', gb: 'کیسه صفرا', preg: 'بارداری و شیردهی', ocp: 'قرص ضدبارداری', hypo: 'انسولین یا سولفونیل‌اوره', surg: 'جراحی و آندوسکوپی' };
+  const chkText = (ks) => (Array.isArray(ks) ? INJ_CHECK.filter(([k]) => ks.includes(k)).map(([k]) => CHK_SHORT[k]).join('، ') : '');
+  function parseChkText(t) {
+    const s = String(t ?? '');
+    const ks = INJ_CHECK.map(([k]) => k).filter((k) => s.includes(CHK_SHORT[k]) || new RegExp(`(^|[^a-z])${k}([^a-z]|$)`).test(s));
+    return ks.length ? ks : null;
+  }
   // الگوی زمانی وعده‌ها (فستینگ) در ویزیت رژیم؛ خالی یعنی وعده‌های معمول
   const EATING_FA = { tre14: '۱۴:۱۰', tre16: '۱۶:۸', f52: '۵:۲' };
   const MON_REASONS = ['عوارض دارو', 'رسیدن به هدف', 'هزینه', 'سفر یا وقفه موقت', 'تصمیم بیمار', 'نظر پزشک', 'سایر'];
@@ -3915,7 +4259,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       ['درصد چربی اولیه', 'fat0', 'pct'], ['درصد عضله اولیه', 'muscle0', 'pct'], ['شاخص توده بدنی', '$bmi', 'formula'],
       ['سابقه بیماری ها', 'history', 'text'], ['آلرژی ها', 'allergies', 'text'], ['داروها', 'meds', 'text'], ['تماس', 'phone', 'text'],
       ['توضیحات', 'notes', 'text'], ['uid', 'uid', 'text'],
-      ['وزن اولیه منزل', 'w0Home', 'num'], ['منبع آشنایی', 'source', 'text'],
+      ['وزن اولیه منزل', 'w0Home', 'num'], ['منبع آشنایی', 'source', 'text'], ['چک‌لیست تزریق', 'injCheck', 'chk'],
     ],
     Procedures: [
       ['تاریخ', 'date', 'date'], ['شناسه بیمار', '$pid', 'pid'], ['مرکز مراجعه', 'center', 'text'], ['نوع اقدامات', 'type', 'text'],
@@ -3923,6 +4267,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       ['دارو ها', 'drug', 'text'], ['دوز', 'dose', 'num'], ['درصد چربی', 'fat', 'pct'], ['درصد عضله', 'muscle', 'pct'],
       ['نوبت', 'session', 'int'], ['توضیحات', 'notes', 'text'], ['uid', 'uid', 'text'],
       ['نوع ویزیت', 'mode', 'text'], ['دور کمر', 'waist', 'num'], ['عوارض', 'sideFx', 'text'], ['دلیل عدم تزریق', 'reason', 'text'],
+      ['آزمایش‌ها', 'labText', 'lab'],
     ],
     Nutritions: [
       ['تاریخ مراجعه', 'date', 'date'], ['شناسه بیمار', '$pid', 'pid'], ['مرکز مراجعه', 'center', 'text'], ['نوع اقدامات', 'type', 'text'],
@@ -3935,7 +4280,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       ['واحد نان', 'uGrains', 'num'], ['واحد گوشت', 'uProtein', 'num'], ['واحد چربی', 'uFats', 'num'], ['واحد لبنیات', 'uDairy', 'num'],
       ['واحد میوه', 'uFruits', 'num'], ['واحد سبزی', 'uVegetables', 'num'], ['وزن هدف', 'targetW', 'num'], ['مراجعه بعدی', 'nextVisit', 'date'],
       ['رژیم تجویزی', 'regimen', 'text'], ['مکمل ها', 'supplements', 'text'], ['توضیحات', 'notes', 'text'], ['uid', 'uid', 'text'],
-      ['نوع ویزیت', 'mode', 'text'], ['فستینگ', 'eating', 'text'],
+      ['نوع ویزیت', 'mode', 'text'], ['فستینگ', 'eating', 'text'], ['آزمایش‌ها', 'labText', 'lab'],
     ],
   };
   // نام‌های قدیمی ستون‌ها که هنگام ورود هم پذیرفته می‌شوند
@@ -4117,7 +4462,8 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     if (ls && !(S.meta.sync && S.meta.sync.lastSync >= ls)) S.meta.sync = Object.assign({}, S.meta.sync || {}, { lastSync: ls });
     return n;
   }
-  function changed(reason) { scheduleSave(); emit(reason); }
+  let rev = 0;   // شماره تغییر (برای حافظه موقت محاسبه‌ها)
+  function changed(reason) { rev++; scheduleSave(); emit(reason); }
 
   function validSnapshot(o) {
     return !!o && typeof o === 'object' && o.format === FORMAT && (o.patients === undefined || Array.isArray(o.patients)) &&
@@ -4420,7 +4766,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
 
   // ------------------------------------------------------------------ نوشتن
   const P_KNOWN = new Set(['uid', 'pid', 'first', 'last', 'sex', 'birth', 'age0', 'ageAt', 'w0', 'height', 'fat0', 'muscle0', 'history', 'allergies',
-    'meds', 'phone', 'notes', 'created', 'u', 'del', 'w0Home', 'w0Kind', 'source', 'fuDate', 'fuNote', 'endDate']);
+    'meds', 'phone', 'notes', 'created', 'u', 'del', 'w0Home', 'w0Kind', 'source', 'fuDate', 'fuNote', 'endDate', 'injCheck', 'qs']);
   function cleanPatient(p) {
     const o = {
       uid: p.uid || newId(), pid: toNum(p.pid) ? Math.round(toNum(p.pid)) : nextPid(),
@@ -4437,12 +4783,39 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     const fd = p.fuDate ? JD.parse(p.fuDate) : null; if (fd) o.fuDate = fd;
     const fn = toText(p.fuNote); if (fn && fd) o.fuNote = fn;
     const ed = p.endDate ? JD.parse(p.endDate) : null; if (ed) o.endDate = ed;
+    if (Array.isArray(p.injCheck)) {
+      const ord = (k) => { const i = INJ_CHECK.findIndex((x) => x[0] === k); return i < 0 ? 99 : i; };
+      const ks = [...new Set(p.injCheck.map(toText).filter(Boolean))].sort((a, b) => ord(a) - ord(b));
+      if (ks.length) o.injCheck = ks;
+    }
+    if (Array.isArray(p.qs)) { const qs = p.qs.filter((q) => q && toText(q.t)).map((q) => ({ d: JD.parse(q.d) || JD.today(), t: toText(q.t) })); if (qs.length) o.qs = qs; }
     return keepUnknown(p, o, P_KNOWN);
   }
   const VISIT_NUM = ['homeW', 'clinicW', 'dose', 'waist', 'abdomen', 'thigh', 'wrist', 'steps', 'pal', 'deficit', 'rmr', 'tee',
     'kcalTarget', 'kcalPlan', 'pC', 'pP', 'pF', 'uGrains', 'uProtein', 'uFats', 'uDairy', 'uFruits', 'uVegetables', 'targetW', 'session'];
   const VISIT_TEXT = ['center', 'type', 'site', 'drug', 'notes', 'activity', 'goal', 'planType', 'regimen', 'supplements', 'mode', 'reason', 'sideFx', 'eating'];
-  const V_KNOWN = new Set(['uid', 'puid', 'kind', 'date', 'created', 'u', 'del', 'fat', 'muscle', 'nextVisit', ...VISIT_NUM, ...VISIT_TEXT]);
+  const V_KNOWN = new Set(['uid', 'puid', 'kind', 'date', 'created', 'u', 'del', 'fat', 'muscle', 'nextVisit', 'lab', 'labText', ...VISIT_NUM, ...VISIT_TEXT]);
+  /** آزمایش‌های یک ویزیت: فقط عددهای پذیرفتنی و تاریخ آزمایش؛ خالی → null */
+  function cleanLab(l, visitDate) {
+    if (!l || typeof l !== 'object') return null;
+    const o = {};
+    for (const [k, , , lo, hi] of LABS) { const n = toNum(l[k]); if (n !== null && n >= lo && n <= hi) o[k] = n; }
+    if (!Object.keys(o).length) return null;
+    o.date = (l.date && JD.parse(l.date)) || visitDate;
+    return o;
+  }
+  const LAB_SHORT = { glu: 'FBS', a1c: 'HbA1c', ins: 'Insulin', tg: 'TG', tc: 'Chol', ldl: 'LDL', hdl: 'HDL', alt: 'ALT', ast: 'AST', ggt: 'GGT', cr: 'Cr', tsh: 'TSH', vitd: 'VitD', ferr: 'Ferritin', b12: 'B12', hb: 'Hb', plt: 'PLT' };
+  /** متن آزمایش برای اکسل: «1405/07/10 | FBS 105 | TG 180» و برگشت آن */
+  function labText(l) { if (!l) return ''; return [l.date, ...LAB_KEYS.filter((k) => typeof l[k] === 'number').map((k) => `${LAB_SHORT[k]} ${l[k]}`)].join(' | '); }
+  function parseLabText(t) {
+    const s = JD.latinDigits(String(t || '')).replace(/٫/g, '.');
+    if (!s.trim()) return null;
+    const o = {};
+    const dm = /(1[34]\d\d\/\d{1,2}\/\d{1,2})/.exec(s);
+    if (dm) o.date = JD.parse(dm[1]);
+    for (const [k, short] of Object.entries(LAB_SHORT)) { const m = new RegExp(`(?:^|\\|)\\s*${short}\\s+(-?\\d+(?:\\.\\d+)?)`, 'i').exec(s); if (m) o[k] = +m[1]; }
+    return o;
+  }
   function cleanVisit(v) {
     const o = { uid: v.uid || newId(), puid: v.puid, kind: v.kind === 'diet' ? 'diet' : 'proc', date: JD.parse(v.date) || JD.today(),
       created: v.created || now(), u: now() };
@@ -4454,6 +4827,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     if (fat !== null) o.fat = fat;
     if (mus !== null) o.muscle = mus;
     if (v.nextVisit) { const nv = JD.parse(v.nextVisit); if (nv) o.nextVisit = nv; }
+    const lab = cleanLab(v.lab, o.date); if (lab) o.lab = lab;
     return keepUnknown(v, o, V_KNOWN);
   }
   // زمان ویرایش همیشه بعد از نسخه قبلی همان رکورد است، حتی اگر ساعت این گوشی عقب باشد (وگرنه در همگام‌سازی، ویرایش تازه گم می‌شد)
@@ -4629,7 +5003,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       if (!cur) cur = patientByPid(pid);
       const incoming = { first: r.first, last: r.last, sex: toSex(r.sex), birth: r.birth ? JD.parse(r.birth) : '', w0: r.w0, height: r.height,
         fat0: r.fat0, muscle0: r.muscle0, history: r.history, allergies: r.allergies, meds: r.meds, phone: r.phone, notes: r.notes,
-        w0Home: r.w0Home, source: r.source };
+        w0Home: r.w0Home, source: r.source, injCheck: r.injCheck !== undefined ? parseChkText(r.injCheck) : null };
       if (cur && !r.uid && nameKey(cur) && nameKey(incoming) && nameKey(cur) !== nameKey(incoming)) {
         const np = savePatient(Object.assign({}, incoming, { pid: nextPid() }));
         rep.renumbered.push([pid, np.pid, fullName(np)]);
@@ -4663,6 +5037,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
         if (!date) { rep.skipped.push(`${sheet} ردیف ${r.$row}: تاریخ نامعتبر`); continue; }
         const rec = Object.assign({}, r, { puid, kind, date });
         delete rec.$row; delete rec.$pid;
+        if (rec.labText !== undefined) { const lb = parseLabText(rec.labText); delete rec.labText; if (lb && Object.keys(lb).some((k) => k !== 'date')) rec.lab = lb; }
         if (kind === 'diet' && rec.regimen && !rec.planType) Object.assign(rec, Object.fromEntries(Object.entries(parseRegimen(rec.regimen)).filter(([k]) => !rec[k])));
         const p = patient(puid);
         const key = `${kind}|${p.pid}|${date}|${toText(r.type)}|${toNum(r.session) ?? ''}`;
@@ -4690,6 +5065,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       if (f === '$pid') return pidOf.get(rec.puid) ?? null;
       if (f === '$age') return ageOf(rec, JD.today());
       if (t === 'formula') return { formula: true };
+      if (t === 'chk') return chkText(rec[f]) || null;
       if (f === 'center' && rec.puid) return placeOf(rec) || null;   // ویزیت آنلاین مثل قبل «آنلاین» نوشته می‌شود
       const v = rec[f];
       if (v === null || v === undefined || v === '') return null;
@@ -4698,19 +5074,20 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       if (t === 'pct') return typeof v === 'number' ? Math.round(v * 10) / 1000 : v;
       return v;
     };
+    const valV = (rec, f, t) => (t === 'lab' ? (labText(rec.lab) || null) : val(rec, f, t));
     const out = { Patients: ps.map((p) => COLS.Patients.map(([, f, t]) => val(p, f, t))) };
     for (const sheet of ['Procedures', 'Nutritions']) {
       const kind = KIND_OF_SHEET[sheet];
-      out[sheet] = visits().filter((v) => v.kind === kind).map((v) => COLS[sheet].map(([, f, t]) => val(v, f, t)));
+      out[sheet] = visits().filter((v) => v.kind === kind).map((v) => COLS[sheet].map(([, f, t]) => valV(v, f, t)));
     }
     return out;
   }
 
   const DB = {
     FORMAT, VERSION, COLS, CENTERS, PLACES, MODES, PROC_TYPES, TYPE_LABEL, DIET_TYPES, SITES, DOSES, DRUGS, PLAN_TYPES_FA, EATING_FA, SHEET_OF_KIND,
-    eatingLabel, parseRegimen,
+    eatingLabel, parseRegimen, INJ_CHECK, LABS, LAB_KEYS, labText, parseLabText, cleanLab, chkText, parseChkText,
     MON_REASONS, SIDE_FX, NO_FX, SOURCES, FU_NOTES, FU_ENDS, RECALL,
-    init, saveNow, snapshot, merge, differsFrom, replaceAll, clearAll, batch,
+    init, saveNow, snapshot, merge, differsFrom, replaceAll, clearAll, batch, lastChange: () => rev,
     patients, patient, patientByPid, visits, visitsOf, visit, nextPid, counts,
     /** این پرونده روی این گوشی حذف شده است؟ (برای تشخیص پرونده حذف‌شده از پرونده‌ای که هنوز همگام نشده) */
     isDeleted(uid) { const r = S.patients.get(uid); return !!(r && r.del); },
@@ -5122,7 +5499,93 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     };
   }
 
-  const Stats = { patientSeries, overview, weightAtWeek, CENTER_ORDER, WEEKS, RET_K, centerKey, mean };
+  // ------------------------------------------------------------------ پاسخ یک بیمار و مقایسه با بیماران دیگر
+  const CMP_WEEKS = [4, 8, 12, 16, 24, 36, 52];
+  const median = (a) => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const groupOf = (prog) => (prog === 'inj' || prog === 'both' ? 'inj' : (prog === 'diet' ? 'diet' : null));
+  /** کاهش وزن همه بیماران هم‌گروه در هفته k (درصد و کیلو)؛ برای چند بار صدا زدن پشت‌سرهم، یک بار ساخته می‌شود */
+  let cohortMemo = null;
+  function cohortAt(group, k, exclude) {
+    const key = `${DB.counts().patients}|${DB.counts().visits}|${DB.lastChange ? DB.lastChange() : ''}`;
+    if (!cohortMemo || cohortMemo.key !== key) {
+      const per = [];
+      for (const p of DB.patients()) {
+        const vs = DB.visitsOf(p.uid);
+        if (!vs.length) continue;
+        const g = groupOf(DB.programOf(vs));
+        if (!g) continue;
+        const s = patientSeries(p);
+        if (!s.base.weight) continue;
+        per.push({ uid: p.uid, g, s, firstDay: JD.dayOf(vs[0].date) });
+      }
+      cohortMemo = { key, per, at: new Map() };
+    }
+    const mk = `${group}|${k}`;
+    if (!cohortMemo.at.has(mk)) {
+      const vals = [];
+      for (const x of cohortMemo.per) {
+        if (x.g !== group || x.firstDay === null) continue;
+        const w = weightAtWeek(x.s.points, x.firstDay, k);
+        if (w !== null) vals.push({ uid: x.uid, pct: (x.s.base.weight - w) / x.s.base.weight * 100, kg: x.s.base.weight - w });
+      }
+      cohortMemo.at.set(mk, vals);
+    }
+    return cohortMemo.at.get(mk).filter((x) => x.uid !== exclude);
+  }
+  /**
+   * پاسخ به درمان: درصد و کیلوی کاهش، سرعت، رسیدن به ۵/۱۰/۱۵/۲۰٪، مقایسه با بیماران هم‌گروه در همان هفته درمان (صدک، رتبه، میانه)
+   * و هشدارها (کمتر از ۵٪ بعد از ۶ ماه تزریق، توقف کاهش وزن).
+   */
+  function response(p, opts) {
+    const o = Object.assign({ today: JD.today(), minPeers: 5 }, opts || {});
+    const vs = DB.visitsOf(p.uid);
+    if (!vs.length) return null;
+    const group = groupOf(DB.programOf(vs));
+    const s = patientSeries(p);
+    const firstDay = JD.dayOf(vs[0].date);
+    const base = s.base.weight;
+    const pts = s.points.filter((x) => x.ws !== null && x.day !== null);
+    const out = { group, base, weeks: null, lossKg: null, lossPct: null, rate: null, rate4: null, milestones: [], cmp: null, flags: [] };
+    if (!base || !pts.length || firstDay === null) return out;
+    const last = pts[pts.length - 1];
+    const days = last.day - firstDay;
+    out.weeks = days / 7;
+    out.lossKg = base - last.ws;
+    out.lossPct = out.lossKg / base * 100;
+    out.rate = days >= 14 ? out.lossKg / out.weeks : null;
+    const recent = pts.filter((x) => x.day >= last.day - 35);
+    if (recent.length >= 2 && recent[recent.length - 1].day - recent[0].day >= 14) out.rate4 = (recent[0].ws - last.ws) / ((last.day - recent[0].day) / 7);
+    for (const t of [5, 10, 15, 20]) {
+      const hit = pts.find((x) => (base - x.ws) / base * 100 >= t);
+      if (hit) out.milestones.push({ pct: t, date: hit.date, uid: hit.uid, weeks: (hit.day - firstDay) / 7 });
+    }
+    // مقایسه در بزرگ‌ترین هفته‌ای که این بیمار وزن دارد و دست‌کم چند بیمار دیگر هم دارند
+    if (group) {
+      for (const k of CMP_WEEKS.slice().reverse()) {
+        const wk = weightAtWeek(s.points, firstDay, k);
+        if (wk === null) continue;
+        const peers = cohortAt(group, k, p.uid);
+        if (peers.length < o.minPeers) continue;
+        const mine = (base - wk) / base * 100, mineKg = base - wk;
+        const below = peers.filter((x) => x.pct < mine).length, eq = peers.filter((x) => x.pct === mine).length;
+        out.cmp = { week: k, mine, mineKg, n: peers.length + 1, pct: Math.round(100 * (below + eq / 2) / peers.length),
+          rank: peers.filter((x) => x.pct > mine).length + 1, median: median(peers.map((x) => x.pct)), medianKg: median(peers.map((x) => x.kg)),
+          rateMine: mineKg / k, rateMedian: median(peers.map((x) => x.kg)) / k };
+        break;
+      }
+    }
+    const today = JD.dayOf(o.today);
+    // معیار NICE: کمتر از ۵٪ بعد از ۶ ماه (روی بالاترین دوز تحمل‌شده) → بازنگری ادامه درمان
+    if (group === 'inj' && days >= 182 && out.lossPct < 5) out.flags.push({ code: 'nice', text: `بعد از ${JD.faDigits(Math.round(days / 30.4))} ماه درمان، کاهش وزن کمتر از ۵٪ است؛ طبق NICE اگر روی بالاترین دوز تحمل‌شده چنین است، ادامه درمان بازنگری شود.` });
+    // توقف کاهش وزن: سه اندازه آخر (دست‌کم دو هفته فاصله) بدون کاهش، در بیمار فعال
+    const l3 = pts.slice(-3);
+    if (l3.length === 3 && l3[2].day - l3[0].day >= 14 && today - l3[2].day <= 45 && l3[2].ws - l3[0].ws > -0.3) {
+      out.flags.push({ code: 'plateau', text: `وزن در ۳ اندازه‌گیری اخیر (${JD.faDigits(Math.round((l3[2].day - l3[0].day) / 7))} هفته) کم نشده است.` });
+    }
+    return out;
+  }
+
+  const Stats = { patientSeries, overview, weightAtWeek, CENTER_ORDER, WEEKS, RET_K, CMP_WEEKS, centerKey, mean, median, response, cohortAt };
   root.Stats = Stats;
   if (typeof module !== 'undefined' && module.exports) module.exports = Stats;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -6453,6 +6916,7 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
       const age = num(r.age);
       return { first: txt(r.first), last: txt(r.last), phone: txt(r.phone), fileNo: num(r.fileNo), puid: txt(r.puid), source: txt(r.source),
         sex: r.sex === 'm' || r.sex === 'f' ? r.sex : '', age: age !== null && age > 0 && age < 120 ? Math.round(age) : null, ageAt: age !== null ? (JD.parse(r.ageAt) || '') : '',
+        birth: JD.parse(r.birth) || '',
         disc: normDisc(r.disc), note: txt(r.note) };
     },
     appts: (r) => ({ cid: txt(r.cid), date: JD.parse(r.date) || JD.today(), time: normTime(r.time), dur: num(r.dur) || 15, center: txt(r.center),
@@ -7086,7 +7550,15 @@ window.XLSX_TEMPLATE_B64 = "UEsDBBQAAAAIAGiXRV3uOhjY/AAAAN0EAAAaAAAAeGwvX3JlbHMv
     }
   }
 
-  const Ledgers = { FORMAT, VERSION, COLS, BASE_COLS, DATED, METHODS, EXP_CATS, STATUS, KINDS, Ledger, makeStore, shardKey, weekStart, newId, num, money, txt, normTime, stable, live, nameKey, phoneKey };
+  /** سن امروزِ مراجع: از تاریخ تولد، یا سنِ ثبت‌شده به‌علاوه سال‌هایی که از زمان ثبتش گذشته */
+  function clientAge(c, at) {
+    if (!c) return null;
+    const T = at || JD.today();
+    if (c.birth) { const a = JD.age(c.birth, T); return a !== null && a >= 0 ? a : null; }
+    if (!c.age) return null;
+    return c.ageAt ? c.age + Math.max(0, JD.age(c.ageAt, T) || 0) : c.age;
+  }
+  const Ledgers = { FORMAT, VERSION, COLS, BASE_COLS, DATED, METHODS, EXP_CATS, STATUS, KINDS, Ledger, makeStore, shardKey, weekStart, newId, num, money, txt, normTime, stable, live, nameKey, phoneKey, clientAge };
   root.Ledgers = Ledgers;
   if (typeof module !== 'undefined' && module.exports) module.exports = Ledgers;
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -9262,10 +9734,14 @@ Located in ./vendor/QRCode
     return { ok: true, msg: 'فایل در پوشه دانلودهای گوشی ذخیره شد.' };
   }
   function dateField(id, label, d, cls) {
+    if (window.DateIn) return window.DateIn.field(id, label, d || today(), 'any', { cls: cls || 'c3', quick: 'office' });
     return `<div class="field ${cls || 'c3'}"><label for="${id}">${label}</label><input id="${id}" value="${esc(JD.show(d || today()))}" autocomplete="off" inputmode="numeric">
       <div class="chips o-quick" data-datefor="${id}"><button type="button" data-d="0">امروز</button><button type="button" data-d="1">فردا</button><button type="button" data-d="7">هفته بعد</button></div></div>`;
   }
+  /** تاریخ خانه (خانه تاریخ هوشمند یا متن ساده) */
+  function dateVal(box, id) { const el = $(`#${id}`, box); return el && window.DateIn && el.dataset.datein ? window.DateIn.value(el) : JD.parse(val(box, id)); }
   function wireDates(box) {
+    if (window.DateIn) { window.DateIn.wire(box); return; }
     box.addEventListener('click', (e) => {
       const b = e.target.closest('[data-datefor] [data-d]');
       if (!b) return;
@@ -9332,8 +9808,9 @@ Located in ./vendor/QRCode
       const b = e.target.closest('[data-day]');
       if (b) { go(Object.assign({}, st, { date: JD.addDays(st.date || today(), +b.dataset.day) }), true); return; }
       if (e.target.closest('[data-pickday]')) {
-        const v = await prompt('رفتن به روز', 'تاریخ (مثلاً ۱۴۰۵/۰۸/۱۵)', JD.show(st.date || today()));
-        const d = v && JD.parse(v);
+        let d = null;
+        if (window.DateIn) d = await window.DateIn.pick(st.date || today(), { kind: 'any' });
+        else { const v = await prompt('رفتن به روز', 'تاریخ (مثلاً ۱۴۰۵/۰۸/۱۵)', JD.show(st.date || today())); d = v && JD.parse(v); }
         if (d) go(Object.assign({}, st, { date: d }), true);
       }
       const w = e.target.closest('[data-wday]');
@@ -9578,7 +10055,7 @@ Located in ./vendor/QRCode
     wireDates(box);
     wireClientChip(box);
     const checkConflict = () => {
-      const date = JD.parse(val(box, 'a-date')), time = val(box, 'a-time');
+      const date = dateVal(box, 'a-date'), time = val(box, 'a-time');
       const cen = segv(box, 'center');
       const el = $('#a-conf', box);
       if (!date || !time) { el.hidden = true; return; }
@@ -9595,7 +10072,7 @@ Located in ./vendor/QRCode
       const E = [];
       const cid = $('.o-client', box).dataset.cid;
       if (!cid) E.push('مراجع را انتخاب کنید.');
-      const date = JD.parse(val(box, 'a-date'));
+      const date = dateVal(box, 'a-date');
       if (!date) E.push('تاریخ معتبر نیست (مثلاً ۱۴۰۵/۰۸/۱۵).');
       errs(box, E);
       if (E.length) return;
@@ -9613,14 +10090,52 @@ Located in ./vendor/QRCode
   const durOf = (svcId) => { const s = svcId ? L().service(svcId) : null; return s ? s.dur || 15 : 15; };
 
   // ------------------------------------------------------------------ صندوق
+  /** شنبه تا جمعه هفته‌ای که این روز در آن است */
+  const weekRange = (d) => { const ws = JD.fromDay(LG.weekStart(d)); return [ws, JD.addDays(ws, 6)]; };
+  function weekBar(date) {
+    const [a, b] = weekRange(date);
+    const [, am, ad] = JD.split(a), [, bm, bd] = JD.split(b);
+    const title = am === bm ? `${fa(ad)} تا ${fa(bd)} ${JD.MONTHS[bm - 1]}` : `${fa(ad)} ${JD.MONTHS[am - 1]} تا ${fa(bd)} ${JD.MONTHS[bm - 1]}`;
+    const t = today(), cur = JD.dayOf(t) >= JD.dayOf(a) && JD.dayOf(t) <= JD.dayOf(b);
+    return navBar('data-wk', 'هفته بعد', 'هفته قبل', `<span class="o-daytitle"><b>هفته ${esc(title)}</b>${cur ? '<span class="tag inj">این هفته</span>' : ''}</span>`);
+  }
+  function wireWeekBar(box, st) {
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-wk]');
+      if (b) go(Object.assign({}, st, { date: JD.addDays(st.date || today(), 7 * +b.dataset.wk) }), true);
+    });
+  }
+  /** تغییر نسبت به بازه قبل (درصد) */
+  function deltaChip(cur, prev) {
+    if (!prev && !cur) return '';
+    if (!prev) return '<small class="o-delta up">تازه</small>';
+    const p = Math.round(100 * (cur - prev) / Math.abs(prev));
+    if (!p) return '<small class="o-delta">بدون تغییر</small>';
+    return `<small class="o-delta ${p > 0 ? 'up' : 'down'}">${p > 0 ? '▲' : '▼'} ${fa(Math.abs(p))}٪</small>`;
+  }
+  /** نمودار ستونی کوچک دریافتی هر روز هفته (شنبه سمت چپ، مثل تقویم) */
+  function weekBars(Lx, from, center) {
+    const days = [];
+    for (let i = 0; i < 7; i++) { const d = JD.addDays(from, i); days.push([d, Lx.totals(d, d, center)]); }
+    const max = Math.max(1, ...days.map(([, x]) => Math.max(x.received, x.income)));
+    const short = (n) => (n >= 1e6 ? `${fa((Math.round(n / 1e5) / 10).toString().replace('.', '٫'))} م` : (n >= 1000 ? `${fa(Math.round(n / 1000))} ه` : (n ? fa(n) : '')));
+    return `<div class="o-wbars" aria-label="خدمات و دریافتی هر روز هفته">${days.map(([d, x]) => `<div class="o-wb${d === today() ? ' is-today' : ''}" title="${esc(`${dateLong(d)}: خدمات ${toman(x.income)}، دریافتی ${toman(x.received)}`)}">
+      <span class="o-wv">${short(x.received)}</span><div class="o-wcol"><i class="inc" style="height:${Math.round(100 * x.income / max)}%"></i><i class="rec" style="height:${Math.round(100 * Math.max(0, x.received) / max)}%"></i></div>
+      <small>${esc(dayName(d).replace('شنبه', 'ش').replace('‌', ''))}</small></div>`).join('')}</div>
+      <div class="o-wlegend"><span><i class="inc"></i>خدمات</span><span><i class="rec"></i>دریافتی (عدد بالای ستون؛ م = میلیون، ه = هزار تومان)</span></div>`;
+  }
   SCREENS.cash = (box, st) => {
     const Lx = L();
-    const span = st.span || 'day';
+    const span = ['day', 'week', 'month'].includes(st.span) ? st.span : 'day';
     const date = st.date || today();
     const month = st.month || monthOf(date);
-    const [from, to] = span === 'day' ? [date, date] : monthRange(month);
+    const [from, to] = span === 'day' ? [date, date] : (span === 'week' ? weekRange(date) : monthRange(month));
     const center = st.center || 'all';
     const t = Lx.totals(from, to, center);
+    // مقایسه با هفته یا ماه قبل
+    let prev = null;
+    if (span === 'week') prev = Lx.totals(JD.addDays(from, -7), JD.addDays(to, -7), center);
+    if (span === 'month') { const [pf, pt] = monthRange(JD.addMonths(month, -1)); prev = Lx.totals(pf, pt, center); }
     const rows = [
       ...t.charges.map((x) => ({ k: 'ch', r: x })), ...t.payments.map((x) => ({ k: 'pay', r: x })), ...t.expenses.map((x) => ({ k: 'exp', r: x })),
     ].sort((a, b) => (JD.dayOf(b.r.date) - JD.dayOf(a.r.date)) || (b.r.at - a.r.at));
@@ -9629,15 +10144,17 @@ Located in ./vendor/QRCode
     for (const ch of t.charges) if (!unpaid.has(ch.cid)) { const due = Lx.unpaid(ch.cid).reduce((a, x) => a + x.due, 0); if (due > 0) unpaid.set(ch.cid, due); }
     const cs = centers();
     box.innerHTML = `${head()}
-      <div class="seg full" style="--n:2" role="radiogroup" aria-label="بازه" data-span><button type="button" role="radio" data-value="day" aria-checked="${span === 'day'}">روز</button><button type="button" role="radio" data-value="month" aria-checked="${span === 'month'}">ماه</button></div>
-      ${span === 'day' ? dayBar(date) : monthBar(month)}
+      <div class="seg full" style="--n:3" role="radiogroup" aria-label="بازه" data-span><button type="button" role="radio" data-value="day" aria-checked="${span === 'day'}">روز</button><button type="button" role="radio" data-value="week" aria-checked="${span === 'week'}">هفته</button><button type="button" role="radio" data-value="month" aria-checked="${span === 'month'}">ماه</button></div>
+      ${span === 'day' ? dayBar(date) : (span === 'week' ? weekBar(date) : monthBar(month))}
       ${cs.length > 1 ? `<div class="seg full" style="--n:${cs.length + 1}" role="radiogroup" aria-label="مرکز" data-centerseg>${[['all', 'همه'], ...cs.map((c) => [c, c])].map(([v, l]) => `<button type="button" role="radio" data-value="${esc(v)}" aria-checked="${v === center}">${esc(l)}</button>`).join('')}</div>` : ''}
       <div class="kpis o-kpis">
-        <div class="kpi"><span>خدمات</span><b class="money">${toman(t.income, true)}</b><small>${fa(t.charges.length)} مورد${t.disc ? ` · تخفیف ${toman(t.disc, true)}` : ''}</small></div>
-        <div class="kpi"><span>دریافتی</span><b class="money">${toman(t.received, true)}</b><small>${fa(t.payments.length)} مورد</small></div>
+        <div class="kpi"><span>خدمات</span><b class="money">${toman(t.income, true)}</b><small>${fa(t.charges.length)} مورد${t.disc ? ` · تخفیف ${toman(t.disc, true)}` : ''}</small>${prev ? deltaChip(t.income, prev.income) : ''}</div>
+        <div class="kpi"><span>دریافتی</span><b class="money">${toman(t.received, true)}</b><small>${fa(t.payments.length)} مورد</small>${prev ? deltaChip(t.received, prev.received) : ''}</div>
         <div class="kpi"><span>مخارج</span><b class="money">${toman(t.spent, true)}</b><small>${fa(t.expenses.length)} مورد</small></div>
         <div class="kpi"><span>دریافتی منهای مخارج</span><b class="money">${toman(t.net, true)}</b><small>تومان</small></div>
       </div>
+      ${prev ? `<div class="hint" style="margin:-4px 0 8px">مقایسه با ${span === 'week' ? 'هفته' : 'ماه'} قبل.</div>` : ''}
+      ${span === 'week' ? weekBars(Lx, from, center) : ''}
       ${Object.keys(t.byMethod).length ? `<div class="o-methods">${Object.entries(t.byMethod).map(([m, v]) => `<span><b>${esc(m)}</b> ${toman(v)}</span>`).join('')}</div>` : ''}
       ${fixBanner()}
       ${unpaid.size ?`<h3 class="sec-title">پرداخت‌نشده</h3><div class="rec-items">${[...unpaid.entries()].map(([cid, due]) => `<button type="button" class="rec-item" data-paycid="${esc(cid)}"><span class="rec-name">${esc(Lx.clientName(Lx.get('clients', cid)))}</span><span class="rec-delta num">${toman(due, true)}<small>تومان</small></span><span class="rec-meta">برای ثبت دریافت بزنید</span></button>`).join('')}</div>` : ''}
@@ -9645,7 +10162,7 @@ Located in ./vendor/QRCode
       <h3 class="sec-title">ثبت‌ها</h3>
       <div class="o-rows">${rows.map(rowHtml).join('') || '<div class="empty">در این بازه ثبتی نیست.</div>'}</div>
       ${voided.length ? `<details class="o-void"><summary>${fa(voided.length)} مورد باطل‌شده</summary>${voided.map((r) => rowHtml({ k: r.unit !== undefined ? 'ch' : 'pay', r })).join('')}</details>` : ''}`;
-    if (span === 'day') wireDayBar(box, st); else wireMonthBar(box, st);
+    if (span === 'day') wireDayBar(box, st); else if (span === 'week') wireWeekBar(box, st); else wireMonthBar(box, st);
     box.onclick = (e) => {
       const sp = e.target.closest('[data-span] [role="radio"]');
       if (sp) { go(Object.assign({}, st, { span: sp.dataset.value }), true); return; }
@@ -9747,7 +10264,7 @@ Located in ./vendor/QRCode
     // خدمت‌هایی که برای همین مراجع در همین روز ثبت شده (مثلاً دکتر در فرم ویزیت): تا مراجع دوبار بدهکار نشود
     const existing = () => {
       if (ch) return [];
-      const cid = $('.o-client', box).dataset.cid, date = JD.parse(val(box, 'c-date'));
+      const cid = $('.o-client', box).dataset.cid, date = dateVal(box, 'c-date');
       if (!cid || !date) return [];
       return Lx.all('charges', (x) => x.cid === cid && x.date === date && !x.pkgN);
     };
@@ -9787,7 +10304,7 @@ Located in ./vendor/QRCode
       const E = [];
       const cid = $('.o-client', box).dataset.cid;
       if (!cid) E.push('مراجع را انتخاب کنید.');
-      const date = JD.parse(val(box, 'c-date'));
+      const date = dateVal(box, 'c-date');
       if (!date) E.push('تاریخ معتبر نیست.');
       const svc = segv(box, 'svc');
       const unit = LG.money(val(box, 'c-unit'));
@@ -9886,7 +10403,7 @@ Located in ./vendor/QRCode
       const E = [];
       const cid = $('.o-client', box).dataset.cid;
       if (!cid) E.push('مراجع را انتخاب کنید.');
-      const date = JD.parse(val(box, 'p-date'));
+      const date = dateVal(box, 'p-date');
       if (!date) E.push('تاریخ معتبر نیست.');
       const amount = LG.money(val(box, 'p-amt'));
       if (!amount || amount <= 0) E.push('مبلغ را بنویسید.');
@@ -9949,7 +10466,7 @@ Located in ./vendor/QRCode
     const txt = (L().meta.recallText || 'سلام {نام} عزیز، وقت بخیر. برای هماهنگی نوبت بعدی در خدمت شما هستیم.').replace(/\{نام\}/g, c.first || '');
     box.innerHTML = `${head()}<button type="button" class="backbtn" data-oback>→ مراجعان</button>
       <div class="pt-head"><h2>${esc(Lx.clientName(c))}</h2>
-        <div class="pt-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.sex ? (c.sex === 'f' ? 'زن' : 'مرد') : '', c.age ? `${fa(c.age)} ساله` : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
+        <div class="pt-meta">${esc([c.fileNo && c.puid ? `پرونده ${fa(c.fileNo)}` : '', c.phone ? fa(c.phone) : '', c.sex ? (c.sex === 'f' ? 'زن' : 'مرد') : '', LG.clientAge(c) ? `${fa(LG.clientAge(c))} ساله` : '', c.source ? `آشنایی: ${c.source}` : ''].filter(Boolean).join(' · '))}</div>
         ${c.disc ? `<div class="pt-meta">تخفیف ثابت: ${c.disc.t === 'pct' ? `${fa(c.disc.v)}٪` : toman(c.disc.v)}${c.disc.why ? ` (${esc(c.disc.why)})` : ''}</div>` : ''}
         ${c.note ? `<div class="pt-meta">${esc(c.note)}</div>` : ''}
         <div class="pt-actions">${c.phone ? `<a class="btn-sm" href="${telHref(c.phone)}">تماس</a><a class="btn-sm" href="${smsHref(c.phone, txt)}">پیامک</a><a class="btn-sm" href="${waHref(c.phone, txt)}" target="_blank" rel="noopener">واتس‌اپ</a>` : ''}
@@ -9998,7 +10515,8 @@ Located in ./vendor/QRCode
         ${F.text('f-phone', 'تلفن', d.phone, { cls: 'c3', mode: 'tel', dir: 'ltr' })}
         <div class="field c3"><label>شماره پرونده</label><div class="o-fileno">${d.fileNo ? `<b>${fa(d.fileNo)}</b>` : '<span>خودکار، بعد از تشکیل پرونده</span>'}</div></div>
         ${F.seg('sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], d.sex || '', 'c3')}
-        <div class="field c3"><label for="f-age">سن (اختیاری)</label><div class="unit-in"><input id="f-age" inputmode="numeric" autocomplete="off" value="${d.age ? esc(fa(d.age)) : ''}"><span>سال</span></div></div>
+        ${window.DateIn ? window.DateIn.field('f-birth', 'تاریخ تولد (اختیاری)', d.birth || '', 'birth', { cls: 'c3' }) : ''}
+        <div class="field c3"><label for="f-cage">سن (اختیاری)</label><div class="unit-in"><input id="f-cage" inputmode="numeric" autocomplete="off" value="${LG.clientAge(d) ? esc(fa(LG.clientAge(d))) : ''}"${d.birth ? ' readonly' : ''}><span>سال</span></div></div>
         ${c && c.puid ? '<div class="hint c6">تغییر نام، تلفن یا منبع آشنایی در پرونده مطب هم ثبت می‌شود.</div>' : ''}
         ${F.chips('src', 'منبع آشنایی', SOURCES(), std ? src : 'سایر', `<input id="f-srcx" class="chip-other" placeholder="توضیح «سایر»" value="${esc(std ? '' : src)}">`)}
         ${F.seg('disc', 'تخفیف ثابت این مراجع', [['', 'ندارد'], ['amt', 'مبلغی'], ['pct', 'درصدی']], d.disc ? d.disc.t : '', 'c6')}
@@ -10006,6 +10524,17 @@ Located in ./vendor/QRCode
         ${F.area('f-note', 'یادداشت', d.note)}
       </form><div class="warns o-errs" hidden></div>`;
     wireForm(box, (name, v) => { if (name === 'disc') $('#discwrap', box).hidden = !v; });
+    if (window.DateIn) {
+      window.DateIn.wire(box);
+      // سن از تاریخ تولد همان لحظه پر و قفل می‌شود
+      const syncAge = () => {
+        const r = window.DateIn.check($('#f-birth', box));
+        const ai = $('#f-cage', box);
+        if (r.date && !r.err) { ai.value = fa(JD.age(r.date)); ai.readOnly = true; } else if (ai.readOnly) { ai.readOnly = false; ai.value = ''; }
+      };
+      box.addEventListener('input', (e) => { if (e.target.id === 'f-birth') syncAge(); });
+      box.addEventListener('change', (e) => { if (e.target.id === 'f-birth') syncAge(); });
+    }
     const save = () => {
       const first = val(box, 'f-first'), last = val(box, 'f-last');
       if (!first && !last) { errs(box, ['نام را بنویسید.']); return; }
@@ -10017,11 +10546,15 @@ Located in ./vendor/QRCode
         if (other && !window.confirm(tw.phoneOnly ? `${nameAndPhone(Lx, other)} با همین شماره ثبت شده است. «${[first, last].filter(Boolean).join(' ')}» نفر دیگری است (مثلاً هم‌خانواده)؟\n(لغو = همان ${nameAndPhone(Lx, other)} باز شود)`
           : `${nameAndPhone(Lx, other)} با همین نام ثبت شده است. این نفر دیگری است؟\n(لغو = همان ${nameAndPhone(Lx, other)} باز شود)`)) { go({ screen: 'client', cid: other.id }, true); return; }
       }
-      const ageTxt = val(box, 'f-age'), age = LG.num(ageTxt);
-      if (ageTxt && (age === null || age < 1 || age > 110)) { errs(box, ['سن را درست بنویسید (مثلاً ۳۴).']); return; }
+      const bEl = $('#f-birth', box);
+      const br = bEl && window.DateIn ? window.DateIn.check(bEl) : { empty: true };
+      if (!br.empty && (!br.date || br.err)) { errs(box, [`تاریخ تولد: ${br.err || 'نامعتبر است.'}`]); return; }
+      const birth = br.date || '';
+      const ageTxt = val(box, 'f-cage'), age = birth ? JD.age(birth) : LG.num(ageTxt);
+      if (!birth && ageTxt && (age === null || age < 1 || age > 110)) { errs(box, ['سن را درست بنویسید (مثلاً ۳۴).']); return; }
       const s = segv(box, 'src'), dt = segv(box, 'disc');
-      const ageChanged = (age ?? null) !== ((c && c.age) ?? null);
-      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), sex: segv(box, 'sex'), age, ageAt: age ? (ageChanged ? today() : (c && c.ageAt) || today()) : '',
+      const ageChanged = (age ?? null) !== (LG.clientAge(c) ?? null);
+      const rec = Lx.put('clients', Object.assign({}, c || {}, { first, last, phone: val(box, 'f-phone'), sex: segv(box, 'sex'), birth, age, ageAt: age ? (ageChanged || birth ? today() : (c && c.ageAt) || today()) : '',
         source: s === 'سایر' ? (val(box, 'f-srcx') || 'سایر') : s,
         disc: dt ? { t: dt, v: LG.num(val(box, 'f-dv')) || 0, why: val(box, 'f-dwhy') } : null, note: val(box, 'f-note') }), user());
       if (H.onClientSaved) H.onClientSaved(Lx, rec);
@@ -10179,7 +10712,7 @@ Located in ./vendor/QRCode
       Lx.voidRec('expenses', x.id, user(), why); back();
     });
     const save = () => {
-      const date = JD.parse(val(box, 'e-date')), amount = LG.money(val(box, 'e-amt'));
+      const date = dateVal(box, 'e-date'), amount = LG.money(val(box, 'e-amt'));
       const cat = segv(box, 'cat') === 'سایر' ? (val(box, 'e-catx') || 'سایر') : segv(box, 'cat');
       const E = [];
       if (!date) E.push('تاریخ معتبر نیست.');
@@ -10273,7 +10806,7 @@ Located in ./vendor/QRCode
       </form><div class="warns o-errs" hidden></div>`;
     wireForm(box); wireDates(box);
     const save = () => {
-      const date = JD.parse(val(box, 'm-date'));
+      const date = dateVal(box, 'm-date');
       let qty = LG.num(val(box, 'm-qty'));
       if (!date || !qty) { errs(box, ['تاریخ و تعداد را بنویسید.']); return; }
       if (k !== 'adjust') qty = Math.abs(qty);
@@ -11306,6 +11839,7 @@ Located in ./vendor/QRCode
     else { state.f = SAMPLE(); state.sample = true; }
     syncForm();
     wireForm(); wirePlan(); wireChrome();
+    if (window.DateIn) window.DateIn.wire($('#form'));
     if (hooks.ready) hooks.ready();
     if (readInputs().ok) {
       compute();
@@ -11534,7 +12068,7 @@ Located in ./vendor/QRCode
       it.lastDose !== null ? `دوز ${n1(it.lastDose)}` : '', DB.placeOf(last)].filter(Boolean).join(' · ');
     return `<div class="rc-item" data-puid="${esc(p.uid)}">
       <div class="rc-head"><button type="button" class="rc-name" data-open>${esc(DB.fullName(p))}</button>${progTag(it.program)}${what}</div>
-      <div class="rc-meta">${esc(lastTxt)}${it.kind === 'late' ? ` · قرار بود ${esc(JD.show(it.due))}` : ''}</div>
+      <div class="rc-meta">${esc(lastTxt)}${it.kind === 'late' ? ` · قرار بود ${esc(JD.show(it.due))}` : ''}${it.kind === 'late' && DB.isInjection(last) && it.overdue > 4 ? ' · بیش از ۴ روز از موعد: طبق برچسب، دوز آن هفته حذف و تزریق بعدی طبق برنامه' : ''}</div>
       <div class="rc-actions">
         ${p.phone ? `<a class="btn-sm" href="tel:${esc(JD.latinDigits(p.phone).replace(/[^\d+]/g, ''))}">تماس</a>
         <a class="btn-sm" href="sms:+${esc(ph)}?&body=${txt}">پیامک</a>
@@ -11542,18 +12076,52 @@ Located in ./vendor/QRCode
         <button type="button" class="btn-sm" data-fu>پیگیری شد</button>
       </div></div>`;
   }
+  // ------------------------------------------------------------------ تولدها
+  /** بیمارانی که تولدشان از امروز تا n روز بعد است (اسفندِ ۳۰ روزه در سال عادی، ۲۹ اسفند) */
+  function birthdaysSoon(n) {
+    const T = JD.today(), td = JD.dayOf(T), [ty] = JD.split(T);
+    const out = [];
+    for (const p of DB.patients()) {
+      const b = p.birth && JD.split(p.birth);
+      if (!b) continue;
+      let next = null;
+      for (const y of [ty, ty + 1]) {
+        const ml = b[1] <= 6 ? 31 : (b[1] <= 11 ? 30 : (JD.isLeap(y) ? 30 : 29));
+        const c = JD.canon(y, b[1], Math.min(b[2], ml));
+        if (JD.dayOf(c) >= td) { next = c; break; }
+      }
+      if (!next) continue;
+      const inDays = JD.dayOf(next) - td;
+      if (inDays <= n) out.push({ p, date: next, inDays, age: JD.split(next)[0] - b[0] });
+    }
+    return out.sort((a, b) => a.inDays - b.inDays);
+  }
+  function birthdayText(p) {
+    const t = App.loadSettings().birthdayText || 'سلام {نام} عزیز، تولدتان مبارک! برایتان سالی پر از سلامتی و شادی آرزو می‌کنیم. مطب دکتر بذرافشان';
+    return t.replace(/\{نام\}/g, p.first || DB.fullName(p));
+  }
+  function birthdayItemHtml(it) {
+    const p = it.p, ph = phoneIntl(p.phone), txt = encodeURIComponent(birthdayText(p));
+    const when = it.inDays === 0 ? 'امروز' : (it.inDays === 1 ? 'فردا' : JD.show(it.date, true));
+    return `<div class="rc-item" data-puid="${esc(p.uid)}">
+      <div class="rc-head"><button type="button" class="rc-name" data-open>${esc(DB.fullName(p))}</button><span class="rc-kind bday">تولد ${esc(when)} · ${fa(it.age)} سالگی</span></div>
+      <div class="rc-actions">${p.phone ? `<a class="btn-sm" href="sms:+${esc(ph)}?&body=${txt}">پیامک تبریک</a><a class="btn-sm" href="https://wa.me/${esc(ph)}?text=${txt}" target="_blank" rel="noopener">واتس‌اپ</a>` : '<span class="rc-meta">شماره تماس ثبت نشده</span>'}</div></div>`;
+  }
+
   function renderRecall() {
     $('#rec-q').hidden = true;
     syncSegs();
     const items = DB.recall({ booked: officeBooked() });
     const late = items.filter((x) => x.kind === 'late'), lost = items.filter((x) => x.kind === 'lost');
+    const bds = birthdaysSoon(7);
     $('#rec-count').textContent = items.length
       ? `${fa(late.length)} نفر از موعد مراجعه گذشته‌اند و ${fa(lost.length)} نفر درمان را قطع کرده‌اند. تزریق هفتگی، رژیم طبق «مراجعه بعدی».`
       : '';
-    $('#rec-items').innerHTML = (late.length ? `<h3 class="sec-title">عقب‌افتاده</h3>${late.map(recallItemHtml).join('')}` : '') +
+    $('#rec-items').innerHTML = (bds.length ? `<h3 class="sec-title">تولد در ۷ روز آینده</h3>${bds.map(birthdayItemHtml).join('')}` : '') +
+      (late.length ? `<h3 class="sec-title">عقب‌افتاده</h3>${late.map(recallItemHtml).join('')}` : '') +
       (lost.length ? `<h3 class="sec-title">قطع درمان</h3>${lost.map(recallItemHtml).join('')}` : '');
     const empty = $('#rec-empty');
-    empty.hidden = !!items.length;
+    empty.hidden = !!(items.length || bds.length);
     empty.textContent = DB.counts().patients ? 'کسی عقب نیفتاده است.' : 'هنوز پرونده‌ای نیست.';
     setRbar(null);
   }
@@ -11606,6 +12174,115 @@ Located in ./vendor/QRCode
     if (!c.size) return `در ${fa(asked)} مراجعه پرسیده شد؛ عارضه‌ای ثبت نشده.`;
     return `${[...c.entries()].sort((a, b) => b[1] - a[1]).map(([f, n]) => `${f} ${fa(n)} بار`).join('، ')} (از ${fa(asked)} مراجعه‌ای که پرسیده شد)`;
   }
+  // ------------------------------------------------------------------ پاسخ به درمان (درصد، سرعت، صدک بین بیماران خودتان، هشدارها)
+  const chipOf = (c) => (c ? `<span class="chip ${({ ok: 'ok', warn: 'warn', bad: 'bad', high: 'bad', low: 'warn' })[c[0]] || 'info'}">${esc(c[1])}</span>` : '');
+  function responseHtml(p, s) {
+    let r = null;
+    try { r = Stats.response(p); } catch (e) { r = null; }
+    const rows = [];
+    if (r && r.lossPct !== null && r.weeks >= 1) {
+      const gname = r.group === 'inj' ? 'بیماران تزریقی' : 'بیماران رژیمی';
+      rows.push(`<div class="rs-row"><span class="rs-l">رسیدن به</span><span class="rs-chips">${[5, 10, 15, 20].map((t) => {
+        const m = r.milestones.find((x) => x.pct === t);
+        return `<span class="chip ${m ? 'ok' : 'muted'}" title="${m ? esc(`${JD.show(m.date)}`) : 'هنوز نه'}">${fa(t)}٪${m ? ` · هفته ${fa(Math.max(1, Math.round(m.weeks)))}` : ''}</span>`;
+      }).join('')}</span></div>`);
+      // پیام تبریک برای مرزی که در ۱۴ روز اخیر رد شده (بدون پنجره مزاحم؛ همین‌جا با یک لمس)
+      const today = JD.dayOf(JD.today());
+      const rm = r.milestones.filter((m) => today - JD.dayOf(m.date) <= 14).pop();
+      if (rm) {
+        const msg = congratsText(p, { lossKg: r.lossKg, lossPct: r.lossPct });
+        const ph = phoneIntl(p.phone), txt = encodeURIComponent(msg);
+        rows.push(`<div class="rs-row rs-cg"><span class="rs-l">تبریک</span><span>رسیدن به <b>${fa(rm.pct)}٪</b> در ${esc(JD.show(rm.date))}${p.phone
+          ? `<span class="rs-acts"><a class="btn-sm" href="https://wa.me/${esc(ph)}?text=${txt}" target="_blank" rel="noopener">واتس‌اپ</a><a class="btn-sm" href="sms:+${esc(ph)}?&body=${txt}">پیامک</a></span>`
+          : ' · شماره تماس ثبت نشده'}<small class="rs-n">${esc(msg)}</small></span></div>`);
+      }
+      if (r.cmp) {
+        rows.push(`<div class="rs-row"><span class="rs-l">هفته ${fa(r.cmp.week)}</span><span><b>${n1(r.cmp.mine)}٪</b> (${n1(r.cmp.mineKg)} کیلو) · صدک <b>${fa(r.cmp.pct)}</b> · رتبه ${fa(r.cmp.rank)} از ${fa(r.cmp.n)}<small class="rs-n">میانه ${esc(gname)} در همین هفته: ${n1(r.cmp.median)}٪ (${n1(r.cmp.medianKg)} کیلو)</small></span></div>`);
+        rows.push(`<div class="rs-row"><span class="rs-l">سرعت</span><span><b>${n1(r.cmp.rateMine, 2)}</b> کیلو در هفته در ${fa(r.cmp.week)} هفته اول${r.rate4 !== null ? ` · ۵ هفته اخیر ${n1(r.rate4, 2)}` : ''}<small class="rs-n">میانه ${esc(gname)}: ${n1(r.cmp.rateMedian, 2)} کیلو در هفته</small></span></div>`);
+      } else {
+        rows.push(`<div class="rs-row"><span class="rs-l">سرعت</span><span>${r.rate !== null ? `<b>${n1(r.rate, 2)}</b> کیلو در هفته` : '—'}${r.rate4 !== null ? ` · ۵ هفته اخیر ${n1(r.rate4, 2)}` : ''}<small class="rs-n">مقایسه با بیماران دیگر وقتی دست‌کم ۵ بیمار هم‌گروه در هفته ۴، ۸، ۱۲، ... وزن داشته باشند.</small></span></div>`);
+      }
+      for (const f of r.flags) rows.push(`<div class="rs-flag">${esc(f.text)}</div>`);
+    }
+    const cs = s.comp;
+    if (cs && cs.leanShare !== null && cs.leanShare > 40 && cs.lost >= 3) {
+      rows.push(`<div class="rs-flag">سهم توده بدون چربی از کاهش وزن ${n1(cs.leanShare, 0)}٪ است؛ بیشتر از حدود ۲۶ تا ۴۰٪ کارآزمایی‌ها. پروتئین و تمرین قدرتی را بررسی کنید (دقت دستگاه‌های بیوامپدانس محدود است).</div>`);
+    }
+    if (s.program === 'inj' || s.program === 'both') {
+      const nChk = (p.injCheck || []).length;
+      if (nChk < DB.INJ_CHECK.length) rows.push(`<div class="rs-note">چک‌لیست شروع تزریق: ${fa(nChk)} از ${fa(DB.INJ_CHECK.length)} · <button type="button" class="linkbtn" data-act="edit">تکمیل</button></div>`);
+    }
+    return rows.length ? `<section class="rs-card"><h3>پاسخ به درمان</h3>${rows.join('')}</section>` : '';
+  }
+  /** بالاترین مرز ۵/۱۰/۱۵/۲۰٪ که دقیقاً در همین مراجعه رد شده */
+  function milestoneAt(p, vuid) {
+    const r = Stats.response(p);
+    if (!r) return null;
+    const hits = r.milestones.filter((m) => m.uid === vuid);
+    return hits.length ? Object.assign({ lossKg: r.lossKg, lossPct: r.lossPct }, hits[hits.length - 1]) : null;
+  }
+  function congratsText(p, m) {
+    const t = App.loadSettings().congratsText || 'سلام {نام} عزیز، تبریک! تا امروز {کیلو} کیلو ({درصد}٪ وزن اولیه‌تان) کم کرده‌اید. همین‌طور ادامه بدهید. مطب دکتر بذرافشان';
+    return t.replace(/\{نام\}/g, p.first || DB.fullName(p)).replace(/\{کیلو\}/g, n1(m.lossKg)).replace(/\{درصد\}/g, n1(m.lossPct, 0));
+  }
+
+  // ------------------------------------------------------------------ آزمایش‌ها در صفحه بیمار
+  function labFlag(k, v, sex) {
+    if (k === 'glu') return v >= 126 ? ['bad', 'محدوده دیابت'] : (v >= 100 ? ['warn', 'اختلال قند ناشتا'] : null);
+    if (k === 'a1c') return v >= 6.5 ? ['bad', 'محدوده دیابت'] : (v >= 5.7 ? ['warn', 'پیش‌دیابت'] : null);
+    if (k === 'tg') return v >= 500 ? ['bad', 'خیلی بالا'] : (v >= 150 ? ['warn', 'بالا'] : null);
+    if (k === 'ldl') { const c = window.Indices ? window.Indices.ldlClass(v) : null; return c && c[0] !== 'ok' ? c : null; }
+    if (k === 'hdl') return v < (sex === 'm' ? 40 : 50) ? ['warn', 'پایین'] : null;
+    if (k === 'vitd') return v < 20 ? ['bad', 'کمبود'] : (v < 30 ? ['warn', 'ناکافی'] : null);
+    return null;
+  }
+  function spark(series) {
+    if (series.length < 2) return '<span class="lb-sp"></span>';
+    const vs = series.map((x) => x.v), lo = Math.min(...vs), hi = Math.max(...vs), W = 64, H = 18;
+    const pts = series.map((x, i) => `${(i / (series.length - 1) * (W - 4) + 2).toFixed(1)},${(H - 3 - (hi === lo ? (H - 6) / 2 : (x.v - lo) / (hi - lo) * (H - 6))).toFixed(1)}`).join(' ');
+    return `<svg class="lb-sp" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" aria-hidden="true" focusable="false"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+  }
+  function labsCardHtml(p, s) {
+    const panels = s.visits.filter((v) => v.lab && v.lab.date).map((v) => v.lab).sort((a, b) => JD.dayOf(a.date) - JD.dayOf(b.date));
+    if (!panels.length) return '';
+    const I = window.Indices;
+    const rows = [];
+    for (const [k, label, unit] of DB.LABS) {
+      const series = panels.filter((l) => typeof l[k] === 'number').map((l) => ({ d: l.date, v: l[k] }));
+      if (!series.length) continue;
+      const last = series[series.length - 1], prev = series.length > 1 ? series[series.length - 2] : null;
+      const delta = prev ? ` · ${last.v > prev.v ? '▲' : (last.v < prev.v ? '▼' : '=')} از ${n1(prev.v, 2)} (${JD.show(prev.d)})` : '';
+      rows.push(`<div class="lb-row"><span class="lb-n">${esc(label)}</span><span class="lb-v">${chipOf(labFlag(k, last.v, p.sex))} <b class="num">${n1(last.v, 2)}</b> <small>${esc(unit)}</small></span>
+        <span class="lb-sub">${esc(JD.show(last.d))}${esc(delta)}${spark(series)}</span></div>`);
+    }
+    const idx = [];
+    if (I) {
+      const latestWith = (keys) => [...panels].reverse().find((l) => keys.every((k) => typeof l[k] === 'number'));
+      let L = latestWith(['glu', 'ins']);
+      if (L) { const h = I.homaIR(L.glu, L.ins); idx.push(['HOMA-IR', n1(h, 2), I.homaClass(h), L.date]); }
+      L = latestWith(['tg', 'glu']);
+      if (L) { const t = I.tyg(L.tg, L.glu); idx.push(['TyG', n1(t, 2), t >= 8.5 ? ['warn', 'بالا'] : null, L.date]); }
+      L = latestWith(['cr']);
+      if (L) { const age = DB.ageOf(p, L.date); const e = age ? I.egfr(L.cr, age, p.sex) : null; if (e !== null) idx.push(['eGFR', n1(e, 0), I.egfrStage(e), L.date]); }
+      L = latestWith(['ast', 'alt', 'plt']);
+      if (L) { const age = DB.ageOf(p, L.date); const f = age ? I.fib4(age, L.ast, L.alt, L.plt) : null; if (f !== null) idx.push(['FIB-4', n1(f, 2), I.fib4Class(f, age), L.date]); }
+      L = latestWith(['tc', 'hdl', 'tg']);
+      if (L && typeof L.ldl !== 'number') { const l = I.ldlSampson(L.tc, L.hdl, L.tg); if (l !== null) idx.push(['LDL محاسبه‌ای', n1(l, 0), I.ldlClass(l), L.date]); }
+      L = latestWith(['tc', 'hdl']);
+      if (L) idx.push(['کلسترول غیر HDL', n1(L.tc - L.hdl, 0), null, L.date]);
+      L = latestWith(['tg', 'ggt']);
+      if (L) {
+        // BMI و دور کمرِ نزدیک‌ترین مراجعه (تا ۳۰ روز فاصله) به تاریخ آزمایش
+        const day = JD.dayOf(L.date), h = DB.toNum(p.height);
+        const near = s.visits.filter((v) => Math.abs(JD.dayOf(v.date) - day) <= 30 && DB.toNum(v.waist) && DB.weightOf(v) !== null)
+          .sort((a, b) => Math.abs(JD.dayOf(a.date) - day) - Math.abs(JD.dayOf(b.date) - day))[0];
+        if (near && h) { const fl = I.fli(L.tg, DB.bmi(DB.weightOf(near), h), L.ggt, DB.toNum(near.waist)); if (fl !== null) idx.push(['شاخص کبد چرب (FLI)', n1(fl, 0), I.fliClass(fl), L.date]); }
+      }
+    }
+    return `<section class="rs-card lb-card"><h3>آزمایش‌ها <small>آخرین مقدار هر مورد؛ برای ثبت، در فرم مراجعه بخش «آزمایش‌ها» را باز کنید</small></h3>${rows.join('')}
+      ${idx.length ? `<h4>شاخص‌های محاسبه‌ای</h4>${idx.map(([n, v, c, d]) => `<div class="lb-row"><span class="lb-n">${esc(n)}</span><span class="lb-v">${chipOf(c)} <b class="num">${esc(v)}</b></span><span class="lb-sub">از آزمایش ${esc(JD.show(d))}</span></div>`).join('')}` : ''}</section>`;
+  }
+
   function renderDetail(puid) {
     const p = DB.patient(puid);
     const box = $('#rec-detail');
@@ -11653,6 +12330,7 @@ Located in ./vendor/QRCode
         <div class="kpi"><span>شاخص توده بدنی</span><b>${s.bmiNow ? n1(s.bmiNow) : '—'}</b><small>${esc(bc)}</small></div>
       </div>
       ${otherLatest}${compTxt}
+      ${responseHtml(p, s)}${labsCardHtml(p, s)}
       <h3 class="sec-title" id="pd-charts">نمودارها</h3>
       <div class="chart-mode" id="pd-wmode" hidden></div>
       <div id="pd-weight"></div>
@@ -11761,6 +12439,24 @@ Located in ./vendor/QRCode
       return `<button type="button" role="radio" data-value="${esc(v)}" aria-checked="${String(v) === String(val)}"${String(v) === String(suggest) ? ' class="suggest"' : ''}>${esc(l)}</button>`;
     }).join('')}</div>${extraHtml || ''}</div>`,
   };
+  /** خانه تاریخ شمسی (datein.js): نوشتن ساده، روز هفته، خطای فوری و تقویم؛ اگر ماژول نبود، خانه متنی ساده */
+  F.date = (id, label, date, kind, o) => (window.DateIn ? window.DateIn.field(id, label, date, kind, o)
+    : F.text(id, label, date ? JD.show(date) : '', { cls: (o && o.cls) || 'c3' }));
+  /** تاریخ خانه برای ذخیره: { date, err } (خطا برای تاریخ نامعتبر یا نامعقول) */
+  function dateOf(id, label, required, errs) {
+    const el = document.getElementById(id);
+    if (window.DateIn && el && el.dataset.datein) {
+      const r = window.DateIn.check(el);
+      if (r.empty) { if (required) errs.push(`${label} را وارد کنید.`); return null; }
+      if (!r.date || r.err) { const m = r.err || 'تاریخ نامعتبر است.'; errs.push(m.startsWith(label) ? m : `${label}: ${m}`); return null; }
+      return r.date;
+    }
+    const t = val(id);
+    if (!t) { if (required) errs.push(`${label} را وارد کنید.`); return null; }
+    const d = JD.parse(t);
+    if (!d) errs.push(`${label} معتبر نیست (مثلاً ۱۴۰۵/۰۸/۱۲).`);
+    return d;
+  }
   F.multi = (name, label, opts, vals, extraHtml) => `<div class="field c6"><label>${label}</label><div class="chips multi" role="group" aria-label="${esc(label)}" data-multi="${name}">${opts.map((o) => {
     const [v, l] = Array.isArray(o) ? o : [o, o];
     return `<button type="button" role="checkbox" data-value="${esc(v)}" aria-checked="${vals.includes(v)}">${esc(l)}</button>`;
@@ -11833,19 +12529,33 @@ Located in ./vendor/QRCode
         ${F.text('p-first', 'نام', p ? p.first : (pre && pre.first), { cls: 'c3' })}${F.text('p-last', 'نام خانوادگی', p ? p.last : (pre && pre.last), { cls: 'c3' })}
         ${F.seg('pf:sex', 'جنس', [['f', 'زن'], ['m', 'مرد']], p ? p.sex : ((pre && pre.sex) || 'f'), 'c3')}
         ${F.num('p-pid', 'شماره پرونده', p ? p.pid : DB.nextPid(), '', { cls: 'c3' })}
-        ${F.text('p-birth', 'تاریخ تولد', p && p.birth ? JD.show(p.birth) : '', { cls: 'c3', ph: 'مثلاً ۱۳۶۷/۰۴/۱۷' })}
-        ${F.num('p-age', 'یا سن', (p ? !p.birth : true) && age !== null ? age : '', 'سال', { cls: 'c3' })}
+        ${F.date('p-birth', 'تاریخ تولد', p && p.birth ? p.birth : (pre && pre.birth) || '', 'birth', { cls: 'c3' })}
+        ${F.num('p-age', 'سن', (p ? !p.birth : !(pre && pre.birth)) && age !== null ? age : '', 'سال', { cls: 'c3', hint: '<span id="p-age-src">اگر تاریخ تولد را ندارید، فقط سن را بنویسید.</span>' })}
         ${F.num('p-height', 'قد', p && p.height, 'سانتی‌متر')}
         ${F.num('p-w0', 'وزن اولیه مطب', p && p.w0, 'کیلوگرم', w0Guess ? { hint: 'در پرونده‌های قبلی «وزن اولیه» ثبت شده بود و وزن مطب فرض شد؛ با ذخیره، تأیید می‌شود.' } : undefined)}
         ${F.num('p-w0h', 'وزن اولیه منزل', p && p.w0Home, 'کیلوگرم')}
         ${F.num('p-fat0', 'درصد چربی اولیه', p && p.fat0 !== null && p.fat0 !== undefined ? (typeof p.fat0 === 'number' ? p.fat0 : '>50') : '', '٪')}
         ${F.num('p-muscle0', 'درصد عضله اولیه', p && p.muscle0, '٪')}${F.text('p-phone', 'تماس', p ? p.phone : (pre && pre.phone), { cls: 'c4 m6' })}
         ${F.chips('pf:source', 'منبع آشنایی', DB.SOURCES, srcStd ? src : 'سایر', '', `<input id="p-source-x" class="chip-other" placeholder="توضیح «سایر» (اختیاری)" value="${esc(srcStd ? '' : src)}" autocomplete="off">`)}
+        <details class="adv c6 chk"><summary>چک‌لیست شروع تزریق (${fa(((p && p.injCheck) || []).length)} از ${fa(DB.INJ_CHECK.length)})</summary>${F.multi('pf:check', '', DB.INJ_CHECK, (p && p.injCheck) || [])}</details>
         ${F.area('p-history', 'سابقه بیماری‌ها', p && p.history)}${F.area('p-allergies', 'آلرژی‌ها', p && p.allergies)}
         ${F.area('p-meds', 'داروها', p && p.meds)}${F.area('p-notes', 'توضیحات', p && p.notes)}
       </div></form>
       <div class="warns" id="form-errs" hidden></div>`;
     wireChips(box);
+    if (window.DateIn) window.DateIn.wire(box);
+    // سن از تاریخ تولد: همان لحظه پر و قفل می‌شود؛ بدون تاریخ تولد، سن دستی است
+    const ageInp = $('#p-age', box);
+    const syncAge = () => {
+      const bEl = $('#p-birth', box);
+      const r = window.DateIn && bEl ? window.DateIn.check(bEl) : { date: JD.parse(bEl ? bEl.value : '') };
+      const a = r.date && !r.err ? JD.age(r.date) : null;
+      if (a !== null && a >= 0) { ageInp.value = fa(a); ageInp.readOnly = true; $('#p-age-src', box).textContent = 'از تاریخ تولد حساب شد و هر سال خودش به‌روز می‌شود.'; }
+      else if (ageInp.readOnly) { ageInp.readOnly = false; ageInp.value = ''; $('#p-age-src', box).textContent = 'اگر تاریخ تولد را ندارید، فقط سن را بنویسید.'; }
+    };
+    box.addEventListener('input', (e) => { if (e.target.id === 'p-birth') syncAge(); });
+    box.addEventListener('change', (e) => { if (e.target.id === 'p-birth') syncAge(); });
+    syncAge();
     box.querySelector('[data-act="back"]').onclick = () => back();
     const save = () => {
       const errs = [];
@@ -11854,9 +12564,8 @@ Located in ./vendor/QRCode
       const pid = numOrNull('p-pid', 'شماره پرونده', 1, 999999, errs);
       const clash = pid !== null && DB.patients().find((x) => x.pid === Math.round(pid) && (!p || x.uid !== p.uid));
       if (clash) errs.push(`شماره پرونده ${fa(pid)} برای «${DB.fullName(clash)}» است.`);
-      let birth = '';
-      if (val('p-birth')) { birth = JD.parse(val('p-birth')); if (!birth) errs.push('تاریخ تولد معتبر نیست (مثلاً ۱۳۶۷/۰۴/۱۷).'); }
-      const age0 = numOrNull('p-age', 'سن', 10, 110, errs);
+      const birth = dateOf('p-birth', 'تاریخ تولد', false, errs) || '';
+      const age0 = birth ? null : numOrNull('p-age', 'سن', 1, 110, errs);
       const height = numOrNull('p-height', 'قد', 100, 230, errs);
       const w0 = numOrNull('p-w0', 'وزن اولیه مطب', 25, 400, errs);
       const w0Home = numOrNull('p-w0h', 'وزن اولیه منزل', 25, 400, errs);
@@ -11869,7 +12578,8 @@ Located in ./vendor/QRCode
       try {
         rec = DB.savePatient(Object.assign({}, p || {}, { first, last, sex: segVal(box, 'pf:sex'), pid: pid ?? undefined, birth: birth || '',
           age0: birth ? null : age0, ageAt: birth ? null : (age0 ? JD.today() : null), height, w0, w0Kind: w0 !== null ? 'clinic' : undefined, w0Home, fat0, muscle0,
-          source, phone: val('p-phone'), history: val('p-history'), allergies: val('p-allergies'), meds: val('p-meds'), notes: val('p-notes') }));
+          source, phone: val('p-phone'), history: val('p-history'), allergies: val('p-allergies'), meds: val('p-meds'), notes: val('p-notes'),
+          injCheck: multiVals(box, 'pf:check') }));
       } catch (e) { showErrs([e.message]); return; }
       toast('پرونده ذخیره شد.');
       // پرونده‌ای که از روی مراجع منشی تشکیل شد، به همان مراجع وصل می‌شود (نوبت‌ها و حسابش هم به این پرونده می‌آید)
@@ -11888,6 +12598,68 @@ Located in ./vendor/QRCode
     return i < 0 ? DB.SITES[0] : DB.SITES[(i + 1) % DB.SITES.length];
   }
   const TYPE_SHORT = { 'تزریق دارو': 'تزریق', 'پایش': 'پایش', 'امبدینگ': 'امبدینگ', 'ویزیت': 'ویزیت' };
+
+  // ------------------------------------------------------------------ راهنمای دوز تزریق (برچسب تیرزپاتاید)
+  // شروع ۲٫۵ میلی‌گرم برای ۴ هفته؛ افزایش ۲٫۵ میلی‌گرمی بعد از دست‌کم ۴ هفته روی هر دوز؛ حداکثر ۱۵؛
+  // دوزِ بیش از ۴ روز دیرشده حذف می‌شود؛ با قرص ضدبارداری، روش کمکی تا ۴ هفته بعد از شروع و هر افزایش.
+  function doseHint(hist, dose, date) {
+    const day = JD.dayOf(date);
+    const prior = hist.filter((x) => JD.dayOf(x.date) < day).sort((a, b) => JD.dayOf(a.date) - JD.dayOf(b.date));
+    const out = [];
+    if (!prior.length) {
+      out.push('شروع درمان: طبق برچسب، ۲٫۵ میلی‌گرم برای ۴ هفته.');
+      if (dose && dose > 2.5) out.push('<span class="warn-t">شروع معمول ۲٫۵ میلی‌گرم است.</span>');
+      out.push('اگر قرص ضدبارداری مصرف می‌کند: روش کمکی تا ۴ هفته.');
+      return out.join(' ');
+    }
+    const last = prior[prior.length - 1], lastDose = DB.toNum(last.dose);
+    let i = prior.length - 1;
+    while (i > 0 && DB.toNum(prior[i - 1].dose) === lastDose) i--;
+    const since = JD.dayOf(prior[i].date);
+    const weeksAt = Math.floor((day - since) / 7);
+    const gap = day - JD.dayOf(last.date);
+    out.push(`دوز قبلی ${n1(lastDose)} میلی‌گرم، ${weeksAt >= 1 ? `${fa(weeksAt)} هفته` : 'کمتر از یک هفته'} روی این دوز (از ${JD.show(prior[i].date)}).`);
+    if (gap > 11) out.push(`<span class="warn-t">${fa(gap)} روز از تزریق قبلی گذشته؛ نوبتِ بیش از ۴ روز دیرشده حذف می‌شود و تزریق از همین نوبت ادامه می‌یابد.</span>`);
+    if (dose && dose > lastDose) {
+      if (weeksAt < 4) out.push('<span class="warn-t">کمتر از ۴ هفته روی دوز قبلی؛ طبق برچسب دست‌کم ۴ هفته.</span>');
+      if (dose - lastDose > 2.5 + 1e-9) out.push('<span class="warn-t">افزایش بیش از ۲٫۵ میلی‌گرم در یک گام.</span>');
+      out.push('افزایش دوز: اگر قرص ضدبارداری مصرف می‌کند، روش کمکی تا ۴ هفته.');
+    } else if (dose && dose === lastDose && weeksAt >= 4 && lastDose < 15) {
+      out.push(`در صورت تحمل و نیاز، افزایش به ${n1(Math.min(15, lastDose + 2.5))} مجاز است.`);
+    }
+    if (dose && dose > 15) out.push('<span class="warn-t">بیشترین دوز برچسب ۱۵ میلی‌گرم است.</span>');
+    return out.join(' ');
+  }
+
+  // ------------------------------------------------------------------ آزمایش‌ها در فرم مراجعه (بخش بسته)
+  function labsFormHtml(lab) {
+    const n = lab ? DB.LAB_KEYS.filter((k) => typeof lab[k] === 'number').length : 0;
+    return `<details class="labs c6" id="v-labs"><summary>آزمایش‌ها <small id="v-labs-sum">${n ? `${JD.show(lab.date)} · ${fa(n)} مورد` : 'اختیاری؛ برای باز کردن بزنید'}</small></summary>
+      <div class="grid" style="margin-top:8px">
+        ${F.date('v-lab-date', 'تاریخ آزمایش', lab ? lab.date : '', 'lab', { cls: 'c6', ph: 'خالی = تاریخ همین مراجعه' })}
+        ${DB.LABS.map(([k, label, unit]) => F.num(`v-lab-${k}`, label, lab && typeof lab[k] === 'number' ? lab[k] : '', unit, { cls: 'c2 m3' })).join('')}
+        <div class="hint c6">فقط خانه‌هایی که پر کنید ثبت می‌شود. اگر بیمار آزمایش قدیمی‌تر آورده، تاریخ خود آزمایش را بنویسید.</div>
+      </div></details>`;
+  }
+  function labsSummary(box) {
+    const n = DB.LAB_KEYS.filter((k) => val(`v-lab-${k}`)).length;
+    const el = $('#v-labs-sum', box);
+    if (el) el.textContent = n ? `${fa(n)} مورد وارد شده` : 'اختیاری؛ برای باز کردن بزنید';
+  }
+  /** آزمایش‌های فرم: { date, ...مقدارها } یا null؛ خطا برای عدد نامعقول */
+  function readLabs(box, visitDate, errs) {
+    if (!$('#v-labs', box)) return undefined;
+    const o = {};
+    for (const [k, label, , lo, hi] of DB.LABS) {
+      const n = numOrNull(`v-lab-${k}`, label, lo, hi, errs);
+      if (n !== null) o[k] = n;
+    }
+    const d = dateOf('v-lab-date', 'تاریخ آزمایش', false, errs);   // تاریخ نادرست همیشه خطا می‌دهد، حتی اگر عددی هنوز درست نوشته نشده
+    if (!Object.keys(o).length) return null;
+    o.date = d || visitDate;
+    return o;
+  }
+
   function renderVisitForm(puid, kind, vuid, fromAppt) {
     const p = DB.patient(puid);
     if (!p) { go({ view: 'records', screen: 'list' }, true); return; }
@@ -11937,7 +12709,7 @@ Located in ./vendor/QRCode
       ? `<div class="form-note c6">برنامه ثبت‌شده: ${esc(['نان', 'گوشت', 'چربی', 'لبنیات', 'میوه', 'سبزی'].map((g, i) => `${g} ${n1(v[['uGrains', 'uProtein', 'uFats', 'uDairy', 'uFruits', 'uVegetables'][i]])}`).join(' · '))}${v.pal ? ` · ضریب فعالیت ${n1(v.pal, 3)}` : ''}${v.tee ? ` · انرژی کل ${fa(Math.round(v.tee))}` : ''}</div>` : '';
     box.innerHTML = `${formHead(v ? 'ویرایش مراجعه' : (kind === 'proc' ? 'ثبت اقدام' : 'ثبت ویزیت رژیم'), DB.fullName(p))}
       <form id="vform" novalidate><div class="grid">
-        ${F.text('v-date', 'تاریخ', JD.show(d.date), { cls: 'c3' })}
+        ${F.date('v-date', 'تاریخ', d.date, 'visit', { cls: 'c3' })}
         ${F.num('v-session', 'نوبت', d.session, '', { cls: 'c3' })}
         ${F.seg('vf:mode', 'نوع ویزیت', DB.MODES, d.mode, 'c3')}
         <div class="c3" data-mode="حضوری">${F.seg('vf:center', 'مرکز', centers, d.center)}</div>
@@ -11948,7 +12720,8 @@ Located in ./vendor/QRCode
           <div class="c6" data-show="inj"><div class="grid">
           ${F.text('v-drug', 'دارو', d.drug, { cls: 'c3', list: 'drug-list' })}<datalist id="drug-list">${DB.DRUGS.map((x) => `<option value="${esc(x)}">`).join('')}</datalist>
           ${F.num('v-dose-x', 'دوز دیگر', doseIsStd ? '' : d.dose, 'mg', { cls: 'c3' })}
-          ${F.chips('vf:dose', 'دوز (میلی‌گرم)', DB.DOSES.map((x) => [x, n1(x)]), doseIsStd ? (d.dose ?? '') : '')}
+          ${F.chips('vf:dose', 'دوز (میلی‌گرم)', DB.DOSES.map((x) => [x, n1(x)]), doseIsStd ? (d.dose ?? '') : '', '', '<div class="hint dose-hint" id="v-dose-hint"></div>')}
+          ${(p.injCheck || []).length < DB.INJ_CHECK.length ? `<details class="adv c6 chk"><summary>چک‌لیست شروع تزریق (${fa((p.injCheck || []).length)} از ${fa(DB.INJ_CHECK.length)})</summary>${F.multi('vf:check', '', DB.INJ_CHECK, p.injCheck || [])}</details>` : ''}
           </div></div>
           <div class="c6" data-show="mon"><div class="grid">
           ${F.chips('vf:reason', 'دلیل تزریق نکردن', DB.MON_REASONS, reasonStd ? (d.reason || '') : 'سایر', '', `<input id="v-reason-x" class="chip-other" placeholder="توضیح (اختیاری)" value="${esc(reasonStd ? '' : d.reason)}" autocomplete="off">`)}
@@ -11968,14 +12741,16 @@ Located in ./vendor/QRCode
           ${F.num('v-wrist', 'دور مچ', d.wrist, 'سانتی‌متر')}${F.num('v-steps', 'قدم روزانه', d.steps, 'قدم')}${F.num('v-target', 'وزن هدف', d.targetW, 'کیلوگرم')}
           ${F.chips('vf:plan', 'نوع رژیم', [...new Set([...Object.values(DB.PLAN_TYPES_FA), d.planType].filter(Boolean))], d.planType || '')}
           ${F.chips('vf:eat', 'فستینگ', [...new Set([...Object.values(DB.EATING_FA), d.eating].filter(Boolean))], d.eating || '', '', '<div class="hint">خالی یعنی وعده‌های معمول.</div>')}
-          ${F.num('v-kcal', 'کالری برنامه', d.kcalPlan, 'kcal', { cls: 'c3' })}${F.text('v-next', 'مراجعه بعدی', d.nextVisit ? JD.show(d.nextVisit) : '', { cls: 'c3', ph: 'مثلاً ۱۴۰۵/۰۸/۰۱' })}
+          ${F.num('v-kcal', 'کالری برنامه', d.kcalPlan, 'kcal', { cls: 'c3' })}${F.date('v-next', 'مراجعه بعدی', d.nextVisit || '', 'next', { cls: 'c3', ref: 'v-date' })}
           ${F.area('v-supp', 'مکمل‌ها', d.supplements)}${planInfo}` : ''}
         ${F.area('v-notes', 'توضیحات', d.notes)}
+        ${labsFormHtml(d.lab)}
       </div></form>
       <div class="hint">نمودار وزن، وزن منزل و مطب را جدا نشان می‌دهد؛ تغییر وزن با یک ترازو حساب می‌شود.</div>
       <div class="warns" id="form-errs" hidden></div>
       ${v ? '<div class="row-btns" style="margin-top:14px"><button type="button" class="btn-sm danger" data-act="del">حذف این مراجعه</button></div>' : ''}`;
     wireChips(box);
+    if (window.DateIn) window.DateIn.wire(box);
     // بخش صندوق اختیاری است: هر خطایی در آن، فرم پرونده را از کار نمی‌اندازد
     try { if (window.DoctorOffice && window.DoctorOffice.hasLinked()) window.DoctorOffice.billBlock(box, { puid, kind, vuid: v && v.uid, type: d.type, dose: d.dose ?? null, date: d.date }); } catch (e) { const bs = $('#vf-bill', box); if (bs) bs.remove(); }
     const redrawBill = () => {
@@ -11985,6 +12760,21 @@ Located in ./vendor/QRCode
       try { bs._redraw(segVal(box, 'vf:type') || d.type, segVal(box, 'vf:type') === 'تزریق دارو' || (!segVal(box, 'vf:type') && kind === 'proc') ? dose : null); } catch (e) { /* صندوق اختیاری است */ }
     };
     box.addEventListener('chips', (e) => { if (e.detail.name === 'vf:dose') redrawBill(); });
+    // راهنمای دوز (برچسب تیرزپاتاید): هفته‌های روی دوز فعلی، فاصله از تزریق قبلی، افزایش دوز
+    const injHist = all.filter((x) => x.kind === 'proc' && (x.type || 'تزریق دارو') === 'تزریق دارو' && DB.toNum(x.dose) !== null && JD.dayOf(x.date) <= JD.dayOf(d.date || JD.today()));
+    const drawDoseHint = () => {
+      const el = $('#v-dose-hint', box);
+      if (!el) return;
+      const dose = DB.toNum(val('v-dose-x')) ?? DB.toNum(segVal(box, 'vf:dose'));
+      el.innerHTML = doseHint(injHist, dose, JD.parse(val('v-date')) || d.date || JD.today());
+    };
+    if (kind === 'proc') {
+      box.addEventListener('chips', (e) => { if (e.detail.name === 'vf:dose') drawDoseHint(); });
+      box.addEventListener('input', (e) => { if (e.target.id === 'v-dose-x' || e.target.id === 'v-date') drawDoseHint(); });
+      drawDoseHint();
+    }
+    // خلاصه بخش آزمایش‌ها با پر کردن خانه‌ها به‌روز می‌شود
+    box.addEventListener('input', (e) => { if (e.target.id && e.target.id.startsWith('v-lab-')) labsSummary(box); });
     const fxBox = $('[data-multi="vf:fx"]', box);
     if (fxBox) fxBox.dataset.exclusive = DB.NO_FX;
     box.addEventListener('chips', (e) => {
@@ -12017,8 +12807,7 @@ Located in ./vendor/QRCode
     };
     const save = (next) => {
       const errs = [];
-      const date = JD.parse(val('v-date'));
-      if (!date) errs.push('تاریخ معتبر نیست (مثلاً ۱۴۰۵/۰۷/۱۳).');
+      const date = dateOf('v-date', 'تاریخ مراجعه', true, errs);
       const mode = segVal(box, 'vf:mode') || 'حضوری';
       const rec = Object.assign({}, v || {}, { puid, kind, date, mode, center: mode === 'آنلاین' ? '' : segVal(box, 'vf:center'), type: segVal(box, 'vf:type'),
         session: numOrNull('v-session', 'نوبت', 1, 999, errs), homeW: numOrNull('v-home', 'وزن منزل', 25, 400, errs),
@@ -12040,8 +12829,7 @@ Located in ./vendor/QRCode
         const allFx = fxs.includes(DB.NO_FX) && !fxx.length ? [DB.NO_FX] : [...fxs.filter((x) => x !== DB.NO_FX), ...fxx];
         rec.sideFx = fxOn && allFx.length ? allFx.join('، ') : null;
       } else {
-        let nextV = '';
-        if (val('v-next')) { nextV = JD.parse(val('v-next')); if (!nextV) errs.push('تاریخ مراجعه بعدی معتبر نیست.'); }
+        const nextV = dateOf('v-next', 'مراجعه بعدی', false, errs) || '';
         Object.assign(rec, { waist: numOrNull('v-waist', 'دور کمر', 30, 250, errs), abdomen: numOrNull('v-abdomen', 'دور شکم', 30, 250, errs),
           thigh: numOrNull('v-thigh', 'دور ران', 20, 150, errs), wrist: numOrNull('v-wrist', 'دور مچ', 8, 40, errs), steps: numOrNull('v-steps', 'قدم روزانه', 0, 100000, errs),
           targetW: numOrNull('v-target', 'وزن هدف', 25, 400, errs), planType: segVal(box, 'vf:plan'), eating: segVal(box, 'vf:eat') || null,
@@ -12049,16 +12837,27 @@ Located in ./vendor/QRCode
           nextVisit: nextV, supplements: val('v-supp') });
         if (rec.planType && rec.kcalPlan && (!v || !v.regimen || v.regimen === `${v.planType} - ${v.kcalPlan}`)) rec.regimen = `${rec.planType} - ${Math.round(rec.kcalPlan)}`;
       }
+      rec.lab = readLabs(box, date, errs);
+      const chkBox = $('[data-multi="vf:check"]', box);
+      const chk = chkBox && rec.type === 'تزریق دارو' ? multiVals(box, 'vf:check') : null;
       showErrs(errs);
       if (errs.length) return;
-      if (rec.homeW === null && rec.clinicW === null && !v && rec.type !== 'امبدینگ' && !window.confirm('وزنی وارد نشده است. مراجعه بدون وزن ثبت شود؟')) return;
+      if (rec.homeW === null && rec.clinicW === null && !v && rec.type !== 'امبدینگ' && !rec.lab && !window.confirm('وزنی وارد نشده است. مراجعه بدون وزن ثبت شود؟')) return;
+      if (chk && JSON.stringify(chk.slice().sort()) !== JSON.stringify((p.injCheck || []).slice().sort())) {
+        try { DB.savePatient(Object.assign({}, DB.patient(puid), { injCheck: chk })); } catch (e) { /* ثبت مراجعه مهم‌تر است */ }
+      }
       let bill = null;
       try { bill = window.DoctorOffice ? window.DoctorOffice.readBill(box) : null; } catch (e) { bill = null; }
       let saved;
       try { saved = DB.saveVisit(rec); } catch (e) { showErrs([e.message]); return; }
       if (window.DoctorOffice) { try { window.DoctorOffice.afterVisitSave(saved, bill); } catch (e) { toast(`مراجعه ثبت شد ولی ثبت در صندوق انجام نشد: ${e.message}`, 9000); } }
       if (mode === 'حضوری' && rec.center) App.saveSettings({ center: rec.center });
-      toast(v ? 'مراجعه به‌روز شد.' : 'مراجعه ثبت شد.');
+      // رسیدن به ۵، ۱۰، ۱۵ یا ۲۰ درصد کاهش وزن در همین مراجعه (فقط مراجعه تازه و نزدیک به امروز):
+      // فقط خبر می‌دهد؛ پیام تبریک آماده در کارت «پاسخ به درمان» صفحه بیمار است و کار را متوقف نمی‌کند
+      let ms = null;
+      try { if (!v && JD.dayOf(saved.date) >= JD.dayOf(JD.today()) - 14) ms = milestoneAt(DB.patient(puid), saved.uid); } catch (e) { ms = null; }
+      toast(ms ? `مراجعه ثبت شد. ${DB.fullName(p)} به ${fa(ms.pct)}٪ کاهش وزن رسید؛ پیام تبریک در «پاسخ به درمان».`
+        : (v ? 'مراجعه به‌روز شد.' : 'مراجعه ثبت شد.'), ms ? 7000 : undefined);
       if (next) openPicker((pt) => go({ view: 'records', screen: 'vform', puid: pt.uid, kind }, true), `${kind === 'proc' ? 'اقدام' : 'ویزیت'} بیمار بعدی`);
       else back();
     };
@@ -12637,7 +13436,7 @@ Located in ./vendor/QRCode
    فقط محاسبه است؛ چیزی در پرونده ذخیره نمی‌شود. ورودی‌ها فقط روی همین دستگاه می‌مانند (مثل پیش‌نویس برنامه‌ساز). */
 (function () {
   'use strict';
-  const App = window.App, I = window.Indices, E = window.Engine, F = window.FA;
+  const App = window.App, I = window.Indices, E = window.Engine, F = window.FA, JD = window.JD;
   if (!App || !I || !E || !F) return;
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -12745,8 +13544,14 @@ Located in ./vendor/QRCode
     const fat = last('fat') ?? (typeof p.fat0 === 'number' ? p.fat0 : null);
     const w = s.curW ?? DB.toNum(p.w0);
     S = { sex: p.sex === 'm' ? 'm' : 'f', act: S.act, v: {}, from: `پرونده ${DB.fullName(p)}` };
-    const put = (k, x) => { if (x !== null && x !== undefined) S.v[k] = F.num(x, 1); };
+    const put = (k, x) => { if (x !== null && x !== undefined) S.v[k] = F.num(x, 2); };
     put('age', s.age); put('height', p.height); put('weight', w); put('waist', last('waist')); put('fat', fat); put('target', last('targetW'));
+    // آخرین مقدار هر آزمایش ثبت‌شده در پرونده
+    const LAB_OF = { glu: 'glu', ins: 'ins', tg: 'tg', tc: 'tc', hdl: 'hdl', scr: 'cr', ast: 'ast', alt: 'alt', plt: 'plt', ggt: 'ggt' };
+    const panels = vs.filter((x) => x.lab && x.lab.date).map((x) => x.lab).sort((a, b) => JD.dayOf(b.date) - JD.dayOf(a.date));
+    let anyLab = false;
+    for (const [ck, lk] of Object.entries(LAB_OF)) { const l = panels.find((x) => typeof x[lk] === 'number'); if (l) { put(ck, l[lk]); anyLab = true; } }
+    if (anyLab) S.from += ` (آزمایش‌ها: آخرین مقدار هر مورد، تا ${JD.show(panels[0].date)})`;
     save(); build();
   }
 
@@ -13163,7 +13968,8 @@ Located in ./vendor/QRCode
     return null;
   }
   /** اطلاعاتی که منشی ثبت کرده، برای پر کردن فرم پرونده تازه */
-  const prefillOf = (c) => ({ first: c.first || '', last: c.last || '', phone: c.phone || '', source: c.source || '', sex: c.sex || '', age: c.age ?? null, by: c.bn || '' });
+  const prefillOf = (c) => ({ first: c.first || '', last: c.last || '', phone: c.phone || '', source: c.source || '', sex: c.sex || '',
+    age: LG.clientAge ? LG.clientAge(c) : (c.age ?? null), birth: c.birth || '', by: c.bn || '' });
   function recordVisit(L, a, c) {
     if (a.status === 'booked') L.put('appts', Object.assign({}, a, { status: 'arrived' }), me());
     const s = a.svc ? L.service(a.svc) : null;
