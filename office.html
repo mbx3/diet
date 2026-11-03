@@ -405,6 +405,24 @@ table.data th { color: var(--muted); font-weight: 600; }
 .rs-l { flex: none; min-width: 64px; color: var(--muted); font-size: 12.5px; }
 .rs-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .rs-n { display: block; font-size: 11.5px; color: var(--muted); }
+.dtbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dtbl th, .dtbl td { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: center; white-space: nowrap; }
+.dtbl thead th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.dtbl tbody th { text-align: right; font-weight: 700; }
+.st-diet { margin-top: 12px; }
+.pc-box { max-width: 520px; }
+.pc-opt { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0 8px; }
+.pc-canvas { width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--line); display: block; margin-bottom: 6px; }
+.qs-list { margin: 8px 0 0; padding-inline-start: 22px; display: grid; gap: 6px; font-size: 14px; }
+.qs-list li span { display: block; line-height: 1.7; }
+.qs-list li small { color: var(--muted); margin-inline-end: 10px; }
+.wk-restrict { margin-bottom: 10px; }
+.wk-restrict label small { color: var(--muted); font-weight: 400; }
+#week-body { margin-top: 8px; display: grid; gap: 10px; }
+.wk-day { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; }
+.wk-day h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--teal); }
+.wk-day p { margin: 3px 0; font-size: 13px; line-height: 1.75; }
+.wk-day p b { font-weight: 700; }
 .rs-acts { display: inline-flex; gap: 6px; margin-inline-start: 8px; vertical-align: middle; }
 .rs-cg .rs-n { margin-top: 4px; }
 .rs-flag { background: var(--warn-soft); border-radius: 8px; padding: 6px 10px; font-size: 12.5px; margin-top: 6px; }
@@ -572,7 +590,7 @@ details.chk .chips.multi button { text-align: start; line-height: 1.5; padding-b
 </nav>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "bdc3864", buildAt: 1793716947452 };</script>
+<script>window.APP_CONFIG = { office: true, lockKey: "clinic-office-lock-v1", build: "13a96cf", buildAt: 1793719039503 };</script>
 <script>
 /* ---- jdate.js ---- */
 /* تاریخ شمسی برای پرونده‌ها: خواندن قالب‌های مختلف، شکل استاندارد «yyyy/mm/dd»، شماره روز برای فاصله و مرتب‌سازی */
@@ -5905,8 +5923,8 @@ Located in ./vendor/QRCode
       if (cst !== null) { injCost += cst; injCostN++; }
     }
     // منبع آشنایی: مراجعان تازه این ماه (اولین خدمت در این ماه) و درآمدشان
-    const firstCh = new Map();
-    for (const ch of Lx.all('charges')) { const d = JD.dayOf(ch.date); if (!firstCh.has(ch.cid) || d < firstCh.get(ch.cid)) firstCh.set(ch.cid, d); }
+    const firstCh = new Map(), firstCenter = new Map();
+    for (const ch of Lx.all('charges')) { const d = JD.dayOf(ch.date); if (!firstCh.has(ch.cid) || d < firstCh.get(ch.cid)) { firstCh.set(ch.cid, d); firstCenter.set(ch.cid, ch.center || ''); } }
     const src = {};
     for (const ch of t.charges) { const c = Lx.get('clients', ch.cid); const k = (c && c.source) || 'نامعلوم'; const o = src[k] || (src[k] = { n: new Set(), neu: new Set(), amount: 0 }); o.n.add(ch.cid); o.amount += ch.amount; if (firstCh.get(ch.cid) >= JD.dayOf(from)) o.neu.add(ch.cid); }
     const debt = Lx.debtors().reduce((a, x) => a - x.b, 0);
@@ -5917,6 +5935,20 @@ Located in ./vendor/QRCode
     const expT = months.map(() => 0);
     months.forEach((mk, i) => { const [a, b] = monthRange(mk); const tt = Lx.totals(a, b, center); for (const ch of tt.charges) { const s = Lx.service(ch.svc); trend[s ? s.kind : 'other'][i] += ch.amount; } expT[i] = tt.spent; });
     const series = kinds.filter((k) => trend[k].some(Boolean)).map((k, i) => ({ name: LG.KINDS[k], colorIdx: i % 3, color: i >= 3 ? 'other' : undefined, values: trend[k].map((v) => Math.round(v / 1e5) / 10) }));
+    // روند شش ماه منبع آشنایی: مراجعان تازه هر ماه (ماهِ اولین خدمت)، سه منبع پرتکرار و بقیه با هم
+    const srcCount = months.map(() => new Map());
+    for (const [cid, d] of firstCh) {
+      const i = months.indexOf(JD.monthKey(JD.fromDay(d)));
+      if (i < 0 || (center !== 'all' && (firstCenter.get(cid) || '') !== center)) continue;
+      const c = Lx.get('clients', cid);
+      const k = (c && c.source) || 'نامعلوم';
+      srcCount[i].set(k, (srcCount[i].get(k) || 0) + 1);
+    }
+    const srcTot = new Map();
+    for (const m of srcCount) for (const [k, n] of m) srcTot.set(k, (srcTot.get(k) || 0) + n);
+    const topSrc = [...srcTot.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
+    const srcSeries = topSrc.map((k, i) => ({ name: k, colorIdx: i, values: srcCount.map((m) => m.get(k) || 0) }));
+    if (srcTot.size > topSrc.length) srcSeries.push({ name: 'بقیه', color: 'other', values: srcCount.map((m) => [...m.entries()].filter(([k]) => !topSrc.includes(k)).reduce((a, [, n]) => a + n, 0)) });
     const cs = centers();
     const tr = (cells) => `<tr>${cells.map((x) => `<td>${x}</td>`).join('')}</tr>`;
     box.innerHTML = `${head()}${formTop('گزارش ماهانه', 'بیشتر')}${monthBar(month)}
@@ -5932,7 +5964,7 @@ Located in ./vendor/QRCode
       <section class="block"><h2>به تفکیک خدمت</h2><table class="data"><tr><th>خدمت</th><th>تعداد</th><th>مبلغ</th></tr>${Object.values(t.bySvc).sort((a, b) => b.amount - a.amount).map((x) => tr([esc(x.label), fa(x.n), toman(x.amount, true)])).join('') || tr(['—', '—', '—'])}</table></section>
       <section class="block"><h2>روش‌های دریافت</h2><table class="data">${Object.entries(t.byMethod).map(([m, v]) => tr([esc(m), toman(v, true)])).join('') || tr(['—', '—'])}</table></section>
       <section class="block"><h2>مخارج به تفکیک دسته</h2><table class="data">${Object.entries(t.byCat).sort((a, b) => b[1] - a[1]).map(([k, v]) => tr([esc(k), toman(v, true)])).join('') || tr(['—', '—'])}</table></section>
-      <section class="block"><h2>منبع آشنایی</h2><div class="form-note">مراجعانی که این ماه خدمت گرفته‌اند؛ «تازه» یعنی اولین خدمتشان در همین ماه بوده است.</div><table class="data"><tr><th>منبع</th><th>مراجع</th><th>تازه</th><th>درآمد</th></tr>${Object.entries(src).sort((a, b) => b[1].amount - a[1].amount).map(([k, o]) => tr([esc(k), fa(o.n.size), fa(o.neu.size), toman(o.amount, true)])).join('') || tr(['—', '—', '—', '—'])}</table></section>
+      <section class="block"><h2>منبع آشنایی</h2><div class="form-note">مراجعانی که این ماه خدمت گرفته‌اند؛ «تازه» یعنی اولین خدمتشان در همین ماه بوده است.</div><table class="data"><tr><th>منبع</th><th>مراجع</th><th>تازه</th><th>درآمد</th></tr>${Object.entries(src).sort((a, b) => b[1].amount - a[1].amount).map(([k, o]) => tr([esc(k), fa(o.n.size), fa(o.neu.size), toman(o.amount, true)])).join('') || tr(['—', '—', '—', '—'])}</table><div id="rp-src"></div></section>
       <section class="block"><h2>ثبت‌ها به تفکیک نفر</h2><table class="data">${Object.entries(t.byUser).map(([k, v]) => tr([esc(k), fa(v)])).join('') || tr(['—', '—'])}</table></section>`;
     if (series.length && root().Charts) {
       const mf = (v) => root().Charts.fmtNum(v, 1);
@@ -5941,6 +5973,13 @@ Located in ./vendor/QRCode
         table: { head: ['ماه', ...series.map((s) => s.name), 'مخارج'], rows: months.map((k, i) => [JD.monthLabel(k, true), ...series.map((s) => toman(s.values[i], true)), toman(expT[i], true)]) },
         legend: series.map((s) => ({ name: s.name, colorIdx: s.colorIdx, color: s.color, kind: 'rect' })), alt: 'درآمد ماهانه به تفکیک نوع خدمت' };
       try { O.charts.push(root().Charts.mount($('#rp-trend', box), spec)); } catch (e) { /* نمودار اختیاری است */ }
+    }
+    if (srcSeries.length && root().Charts) {
+      const spec = { type: 'bar', title: 'مراجعان تازه در شش ماه اخیر (به تفکیک منبع آشنایی)', height: 200, categories: months, series: srcSeries, yLabel: 'نفر', yInt: true,
+        catLabel: (k, i, long) => JD.monthLabel(k, long), valFormat: (v) => fa(v), yFormat: (v) => fa(v),
+        table: { head: ['ماه', ...srcSeries.map((x) => x.name)], rows: months.map((k, i) => [JD.monthLabel(k, true), ...srcSeries.map((x) => fa(x.values[i]))]) },
+        legend: srcSeries.map((x) => ({ name: x.name, colorIdx: x.colorIdx, color: x.color, kind: 'rect' })), alt: 'مراجعان تازه هر ماه به تفکیک منبع آشنایی' };
+      try { O.charts.push(root().Charts.mount($('#rp-src', box), spec)); } catch (e) { /* نمودار اختیاری است */ }
     }
     wireMonthBar(box, st);
     box.onclick = (e) => { const seg = e.target.closest('[data-centerseg] [role="radio"]'); if (seg) go(Object.assign({}, st, { center: seg.dataset.value }), true); };
